@@ -562,7 +562,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v3</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v4</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -666,7 +666,7 @@ const PHASES = [
  steps:[
   {who:'PM', t:'<b>Exterior walkaround</b> — chocks, tyres, gear pins, probes and static ports, fuel caps, reverser doors stowed, baggage door. Report back.', say:'Exterior inspection complete, no discrepancies.', c:'low', ev:'No walkaround exists in Operators Guide §XVII — the section opens at Cockpit Inspection. The items are generic business-jet exterior checks and the PM-does-it split is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B.'},
   {who:'PF', t:'<b>Landing gear handle DOWN</b> before anything is powered. Then <b>STBY PWR — test and hold ten seconds</b>, green light, then ON.', c:'vhigh', ev:'Operators Guide §XVII p.17-2 Cockpit Inspection 3 (LANDING GEAR handle DOWN) and 1 (STBY PWR TEST and hold, green ≥10 sec, then ON). Order reversed here so the gear handle is checked before anything is powered.'},
-  {who:'PF', t:'<b>EMER LTS — ARM</b> · <b>BATT buttons both ON</b>, check volts as the displays come up.', c:'vhigh', ev:'Operators Guide §XVII p.17-2 Cockpit Inspection 2 (EMER LTS ARM) and 4 (BATT buttons both ON, Check Volts).'},
+  {who:'PF', t:'<b>EMER LTS — ARM</b> · <b>BATT buttons both ON</b>, check volts as the displays come up.', note:'<b>Nic&rsquo;s sim:</b> the EMER LTS switch is not wired to hardware yet — set it in the virtual cockpit, and a Streamdeck button is coming. It is not cosmetic: leave it out of ARM and the pre-flight synoptic withholds a takeoff condition, which puts <b>NO TAKEOFF</b> on the CAS and takeoff is prohibited.', c:'full', ev:'Operators Guide §XVII p.17-2 Cockpit Inspection 2 (EMER LTS ARM) and 4 (BATT buttons both ON, Check Volts). NIC CONFIRMED 2026-09-13 (v3 review, item 1.3): the switch is not yet wired in his sim and a Streamdeck button is planned, “because if it&rsquo;s not in the right position we get a NO TAKEOFF warning on the CAS”. The CAS message is Operators Guide §III Crew Alerting System — NO TAKEOFF: “Conditions for takeoff listed in the pre-flight synoptic page have not been appropriately met and takeoff is prohibited.” Sim-hardware note, but the consequence is a real aeroplane behaviour.'},
   {who:'PM', t:'<b>Power source</b> — external power ON if <b>AVAIL</b> is lit, <i>or</i> start the APU. Either way the batteries end up <b>0 or charging</b>.', note:'APU knob ON, then START. Green RPM and EGT within ten seconds.', c:'vhigh', ev:'Operators Guide §XVII p.17-2 Cockpit Inspection 6a–6e (EXT PWR if AVAIL, or APU ON/START, BATT amps 0 or charging), plus p.17-11 Starting APU 2a — green RPM% and EGT digits within 10 seconds of ON.'},
   {who:'PF', t:'<b>EIS and CAS reviewed.</b> Anything amber gets said out loud, not silently accepted.', c:'high', ev:'The item is Operators Guide §XVII Cockpit Inspection 5 (EIS/CAS — Check). “Anything amber gets said out loud” is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B — monitoring discipline, not an Operators Guide instruction.'},
   {who:'PM', t:'Exterior and interior lights — <b>on, checked, off</b>, or set as required.', c:'vhigh', ev:'Operators Guide §XVII p.17-2 Cockpit Inspection 7 — Exterior/Interior Lights, ON/Check/Off or as Required.'},
@@ -690,60 +690,64 @@ const PHASES = [
   {who:'PM', t:'<b>APU running</b>, external power disconnected, batteries charging. <b>Engine dry motor — consider</b> if we shut down between 15 minutes and 3 hours ago.', c:'vhigh', ev:'Operators Guide §XVII Cockpit Preparation 3, 4 and 5 (APU, external power disconnected, Engine Dry Motor — Consider). The 15-minutes-to-3-hours window is the Operators Guide systems section: a dry motor is recommended if a start is attempted “15 to 180 minutes after engine shutdown”, and the white ENG DRY MTR PROC L/R message is triggered when it is.'},
   {who:'PM', to:'ATC', t:'<b>ATIS and clearance</b> copied, read back to ATC, then <b>repeated inside the cockpit</b> one item at a time.', say:'Turn above ten-thirty, below four thousand, max two-twenty.', g5:['radios'], c:'full', ev:'The item is Operators Guide §XVII Cockpit Preparation 6 (ATIS/Clearance). The echo-inside-the-cockpit mechanic and the wording are the video, 1:09–2:00: “turn above 10:30, below four … max 220” / “That is there, max 220.”'},
   {who:'PF', t:'Acknowledge each element as it lands.', say:'That’s in — max two-twenty.', c:'full', ev:'Video VS-001 (CitationMax N2RF, real Longitude crew) — the PF acknowledges each element as it lands — “That is there.” / “That’s in.” / “Yep.” — one item at a time.'},
+  {who:'PM', t:'<b>Flight plan loaded, then checked</b> — <b>SimBrief</b> on the GTC Home page, select the flight, load it. Then <b>departure runway, SID and route</b> read down the map fix by fix, <b>both of you looking</b>.', note:'The G5000 assumes the SimBrief planning stage is already done, so this is an <b>import</b> — closer to an ACARS uplink than to data entry. On VATSIM the plan is filed from inside SimBrief, and the callsign must match what goes into vPilot at <b>Connect</b> or the two never tie up.', say:'Runway two five, SID as cleared, then as filed.', g5:['simbrief','route','standby','departure'], c:'full', ev:'NIC REQUESTED 2026-09-13 (v3 review, item 2): “prompts for entering/checking the RWY, SID, and flight plan route should be here”. His FYI in the same mail supplies the mechanism — “On the GTC, we click ‘SimBrief’ on Home page, select flight, then load the plan (similar to ACARS)”, and for VATSIM, “we submit the flight plan to VATSIM within SimBrief. As long as the callsigns match when we ‘Connect’ to VATSIM in vPilot, it will all sync up.” A REAL GAP HE CAUGHT: the page already carried route/departure G5000 badges on the weight-and-fuel step, but no step ever asked anyone to enter or check the route. NOT an Operators Guide item — §XVII Cockpit Preparation has no flight-plan entry step at all. SimBrief is a Working Title/MSFS addition to the GTC Home page and is not on the Garmin captures. The example call is invented, in the crew’s style.'},
   {who:'PF', t:'<b>Trims — check and set for takeoff</b>, stab against the CG schedule.', note:'Roughly −6.5° at 24 % MAC through −2.5° at 36 % MAC.', c:'vhigh', ev:'Operators Guide §XVII Cockpit Preparation 7 (Trims — Check/Set for Takeoff) plus the STAB TRIM vs CG chart on p.17-3. Figures match JayDee MSFS checklist v1.32.3 — 24% MAC → −6.5°, 36% MAC → −2.5°. NOTE: JayDee adds that as of AAU2 the stab trim value should be set 2° below the chart — not yet reflected on this page.'},
-  {who:'PM', t:'<b>GTC: PERF → WEIGHT AND FUEL</b> — operating weight and payload in, fuel synced. <b>Narrate it</b>; heads-down silence is the amateur tell.', g5:['route','standby','departure','weight-fuel'], c:'high', ev:'Operators Guide §XVII Cockpit Preparation 8 names the page (Weight and Fuel, MFD GTC: Perf); JayDee MSFS checklist v1.32.3 — gives the route (HOME → PERF → WEIGHT AND FUEL, enter OP weight and payload, sync fuel). “Narrate it” is ours, from CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B.'},
+  {who:'PM', t:'<b>Initialisation page</b> — step through the prompts in order, get every figure in and calculated, finish on <b>Accept Initialisation</b>. Operating weight and payload in, fuel synced. <b>Narrate it</b>; heads-down silence is the amateur tell.', note:'The initialisation page is the <b>normal route</b> to everything from here down to the fuel figure — it comes up first and walks you through it. <b>PERF → WEIGHT AND FUEL</b> and <b>PERF → TAKEOFF DATA</b> are where the same numbers live afterwards, and where you go to change one.', g5:['initialisation','weight-fuel'], c:'full', ev:'Operators Guide §XVII Cockpit Preparation 8 names the page (Weight and Fuel, MFD GTC: Perf); JayDee MSFS checklist v1.32.3 — gives the route (HOME → PERF → WEIGHT AND FUEL, enter OP weight and payload, sync fuel). “Narrate it” is ours, from CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B. NIC CONFIRMED 2026-09-13 (v3 review, items 2.F–2.K): “Longitude has that initialisation page that comes up first. We step through the prompts there to get all the figures in and calculated. Final step is to ‘Accept Initialisation’.” That is a Working Title G5000 flow, not an Operators Guide procedure — the Guide describes the PERF pages only — so the wording here follows Nic and the PERF pages are named as the place the numbers live afterwards.'},
   {who:'PM', t:'<b>PERF → TAKEOFF DATA</b> — origin and runway verified, weather and takeoff configuration entered, <b>speeds accepted</b>. Then <b>SPEED BUGS</b> to confirm they reached the tape.', g5:['takeoff-data','speed-bugs'], c:'vhigh', ev:'Operators Guide §XVII Cockpit Preparation 9 (Takeoff Data, MFD GTC: Perf) and JayDee MSFS checklist v1.32.3 — verbatim: verify origin and runway, enter weather and takeoff config, accept takeoff speeds, then SPEED BUGS.'},
   {who:'PM', t:'Say the speeds out loud — this is the crosscheck that matters.', say:'Ninety-nine, one-fifteen, one-twenty, enroute one-eighty-five.', c:'full', ev:'Video VS-001 (CitationMax N2RF, real Longitude crew) — “Speeds are posted.” / “99, 115, 120, 185.” Real Longitude V1/VR/V2/enroute at that day’s weight. The mechanic — PM states them aloud — is the crosscheck the video actually performs.'},
   {who:'PF', t:'Answer them individually, off your own tape.', say:'Ninety-nine, one-fifteen, one-twenty, one-eighty-five — set and crosschecked.', c:'low', ev:'Crosscheck mechanic from CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B — each seat reads its own tape. Stricter than the reference crew: the video PF answers with a single “Check.”'},
   {who:'PM', t:'<b>Pressurisation LDG ELEV</b> verified. <b>Fuel quantity and balance</b> — state the figure.', say:'Ten-three-eighty, and we are balanced.', c:'full', ev:'Items are Operators Guide §XVII Cockpit Preparation 11 and 12. The response is the Video VS-001 (CitationMax N2RF, real Longitude crew) verbatim: “10,380 and we are balanced.”'},
   {who:'PF', t:'<b>Autopilot engage and disengage</b> if it’s the first flight of the day. Altimeters set local.', c:'vhigh', ev:'Operators Guide §XVII Cockpit Preparation 13 (Autopilot, first flight of day — Engage/Disengage) plus JayDee MSFS checklist v1.32.3 — Altimeter SET LOCAL.'},
+  {who:'PF', t:'<b>Crew departure briefing</b> — here, on the stand, while it is quiet. Runway and length, static or rolling, flaps, anti-ice, speeds, <b>abort policy</b>, engine-failure plan, clean-up at <b>V2 + 20</b>, the SID and first altitude, threats.', note:'Brief it <b>now</b> and the Before Takeoff <i>Crew briefing</i> item becomes a ten-second re-open — “any questions on the departure?” — instead of a two-minute recital at the holding point. That is exactly what the reference crew does when the departure is rushed, and theirs was.', say:'I’ll brief the departure.', c:'full', ev:'NIC REQUESTED 2026-09-13 (v3 review, item 2): “somewhere in this flow – add ‘crew departure briefing’”. Corroborated by the reference crew, and it closes a hole this page had: VS-002 @ 4:09 answers the Before Takeoff crew-briefing item with “We did brief the departure — any questions on the departure?”, which only works because the brief happened EARLIER — and no step on this page was where that earlier brief happened. Step 7.2 already told you to re-open it rather than re-read it, pointing at a briefing that did not exist. The content list is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B shape, the same list as step 7.1; the Operators Guide requires the briefing (§XVII Before Takeoff 7) but scripts no content.'},
   {par:{c:'low', ev:'2007 World Flight Australia 737 pack — shape only. Trigger → two parallel columns → checklist is the master flow diagram’s shape. The items are Operators Guide §XVII Cockpit Preparation redistributed across two seats — and no Longitude source assigns them to a seat. The split is a proposal for Nic.', cue:'Cockpit preparation — in parallel',
-    lead:'Neither of you waits for the other. You work different panels and <b>meet at the speeds</b>, which is the only item that has to be said twice.',
+    lead:'Neither of you waits for the other. You work different panels and <b>meet at the speeds</b>, which is the only item that has to be said twice — then the PF briefs the departure to both of you.',
     pf:['<b>Trims</b> — stab against the CG schedule.',
         '<span class="xc">ATC</span>Clearance copied and read back, then <b>repeated inside</b>.',
         'Altimeters set local; seat, pedals and harness.',
-        'Autopilot in and out, first flight of the day.'],
+        'Autopilot in and out, first flight of the day.',
+        '<b>Briefs the departure</b> — out loud, in full, before anyone moves.'],
     pm:['<span class="xc">ATC</span>ATIS — runway, wind, QNH, transition level.',
+        '<b>SimBrief loaded</b>; runway, SID and route checked on the map.',
+        '<b>Initialisation page</b> stepped through → <b>Accept Initialisation</b>.',
         '<b>MFD GTC → PERF</b>: weight and fuel, takeoff data, speed bugs.',
-        '<b>LDG ELEV</b> verified; fuel quantity and balance stated.',
-        'Departure loaded and looked at on the map.'],
-    conv:'Cockpit Preparation checklist'}}
+        '<b>LDG ELEV</b> verified; fuel quantity and balance stated.'],
+    conv:'Departure briefing → Cockpit Preparation checklist'}}
  ]},
 
 {kind:'list', short:'Prep', title:'Cockpit Preparation', mode:'When PF requests · challenge &amp; response',
  items:[
   ['Cockpit inspection','Complete','BOTH',{c:'vhigh', ev:'Operators Guide §XVII p.17-3 Cockpit Preparation 1, verbatim.'}],
   ['EIS / CAS','Checked','BOTH',{c:'vhigh', ev:'Operators Guide §XVII p.17-3 Cockpit Preparation 2, verbatim.'}],
-  ['APU','On, generator on line','PM',{c:'high', ev:'Operators Guide §XVII p.17-3 Cockpit Preparation 3 (APU Knob — ON/START). “Generator on line” is an inference from the APU systems description, not an Operators Guide checklist response.'}],
-  ['External power','Disconnected','PM',{c:'vhigh', ev:'Operators Guide §XVII p.17-3 Cockpit Preparation 4, verbatim.'}],
+  ['APU — <i>if not on external power</i>','On, generator on line','PM',{c:'full', ev:'Operators Guide §XVII p.17-3 Cockpit Preparation 3 (APU Knob — ON/START). “Generator on line” is an inference from the APU systems description, not an Operators Guide checklist response. NIC CONFIRMED 2026-09-13 (v3 review, items 2.C / 2.D): “It’s one or the other and can be different each flight. If using APU, don’t need external power on, and vice versa.” The Operators Guide lists both as flat items and the page read as though you did both every time; these two are now marked as the alternatives they are.'}],
+  ['External power — <i>if not on the APU</i>','Connected, or disconnected before start','PM',{c:'full', ev:'Operators Guide §XVII p.17-3 Cockpit Preparation 4 reads “External Power — Disconnected”, which assumes you were on it. NIC CONFIRMED 2026-09-13 (v3 review, items 2.C / 2.D): APU and external power are alternatives, chosen per flight — “If using APU, don’t need external power on, and vice versa.” He is adding a “Connect external power” Streamdeck button (v3 review, item 2.D), so expect this to be the quick path on his sim.'}],
   ['ATIS and clearance','Copied and set','PM',{c:'vhigh', ev:'Operators Guide §XVII p.17-3 Cockpit Preparation 6, verbatim.'}],
   ['Trims','Checked, set for takeoff','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-3 Cockpit Preparation 7, verbatim.'}],
   ['Weight and fuel','Completed','PM',['weight-fuel'],{c:'vhigh', ev:'Operators Guide §XVII p.17-3 Cockpit Preparation 8, verbatim.'}],
   ['Takeoff data','Completed','PM',['takeoff-data'],{c:'vhigh', ev:'Operators Guide §XVII p.17-3 Cockpit Preparation 9, verbatim.'}],
-  ['V-speeds','99, 115, 120, 185 — set and crosschecked','BOTH',{c:'high', ev:'The item is Operators Guide §XVII Cockpit Preparation 10 (V Speeds — Verify/Set), verbatim. The four numbers are the reference crew’s at their weight (video) and are ILLUSTRATIVE ONLY — they are not your speeds. Kept because they give a correct sense of scale.'}],
+  ['V-speeds','<b>Stated aloud</b> — V1, VR, V2, enroute — set and crosschecked','BOTH',{c:'full', ev:'Operators Guide §XVII Cockpit Preparation 10 (V Speeds — Verify/Set), verbatim. CHANGED 2026-09-13: NIC QUERIED (v3 review, item 2.I) “Stated V-speeds?” — the response used to read “99, 115, 120, 185”, which were the REFERENCE CREW’S numbers at their weight from VS-001, illustrative only. Read on the tablet mid-flow they looked like values to set, which is exactly the trap. The response now names the four speeds to be spoken instead of quoting four that are not yours. The mechanic — PM states them aloud, PF answers off their own tape — is unchanged and is the crew’s (VS-001, “Speeds are posted” / “99, 115, 120, 185”); it is the numbers that have gone. Flow steps 2.8 and 2.9 still carry them as a spoken EXAMPLE, where the context makes that obvious.'}],
   ['Pressurisation LDG ELEV','Verified','PM',{c:'vhigh', ev:'Operators Guide §XVII p.17-3 Cockpit Preparation 11, verbatim.'}],
-  ['Fuel quantity and balance','10,380 and balanced','PM',{c:'high', ev:'The item is Operators Guide §XVII Cockpit Preparation 12 (Fuel Quantity and Balance — Check). The figure is the reference crew’s, verbatim from the video, and is illustrative only.'}],
+  ['Fuel quantity and balance','<b>Figure stated</b> — and balanced','PM',{c:'full', ev:'Operators Guide §XVII Cockpit Preparation 12 (Fuel Quantity and Balance — Check). CHANGED 2026-09-13: NIC QUERIED (v3 review, item 2.K) “Stated fuel amount?” — the response used to read “10,380 and balanced”, the reference crew’s figure from VS-001, illustrative only and easily mistaken for a target. The response now asks for the figure to be SPOKEN rather than quoting someone else’s. Saying the number aloud is the whole point of the item, and that part is the crew’s, verbatim: “10,380 and we are balanced.” Flow step 2.10 keeps their figure as a spoken example.'}],
   ['Autopilot','Engaged and disengaged','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-3 Cockpit Preparation 13, verbatim.'}]
  ]},
 
 /* 3 ------------------------------------------------------------ */
 {kind:'flow', trigger:'Boarding complete', title:'Passengers, doors, ready to start', when:'Cabin, doors, ground crew — three conversations at once',
  steps:[
-  {who:'PM', to:'PA', t:'Passengers boarded and <b>briefed</b>, cabin secure, <b>door closed and latched</b> — handle and indication, not one or the other.', c:'low', ev:'Not an Operators Guide item — Operators Guide §XVII Before Start is two items only (park brake, EIS/CAS). Cabin and door discipline is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B; the video does brief passengers (3:36). “Handle AND indication, not one or the other” is ours.'},
+  {who:'PM', to:'PA', t:'Passengers boarded and <b>briefed</b>, cabin secure, <b>door closed and latched</b> — handle and indication, not one or the other.', note:'<b>Nic’s sim:</b> the door went in on 2026-09-13, so this is a real action now and the indication is worth looking at — the pre-flight synoptic carries a doors line.', c:'low', ev:'Not an Operators Guide item — Operators Guide §XVII Before Start is two items only (park brake, EIS/CAS). Cabin and door discipline is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B; the video does brief passengers (3:36). “Handle AND indication, not one or the other” is ours. NIC 2026-09-13 (v3 review, item 3): “I installed the door today!” — that confirms the step is actionable on his hardware, not that the procedure is sourced, so the rating does not move.'},
   {who:'PM', t:'Passenger signs <b>ON</b>. The beacon comes on with the engine masters — no separate switch.', c:'high', ev:'JayDee MSFS checklist v1.32.3 — Passenger Signs AS REQ/ON, and the p.1 note “Beacon is fully automated and not switchable”. Sim-build behaviour on a Longitude source; no Operators Guide equivalent.'},
   {who:'PF', t:'Seats, pedals and harness adjusted <b>now</b>, not after start.', c:'low', ev:'CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B — seat, pedal and harness adjustment before start. No Longitude source.'},
-  {who:'PM', to:'ATC', t:'Pushback or start clearance obtained; ramp clear behind.', c:'high', ev:'JayDee MSFS checklist v1.32.3 — ATC CLEARANCE (PUSHBACK/START) AS REQ/DES. “Ramp clear behind” is ours.'},
-  {who:'PM', to:'GND', t:'Ground crew on headset and acknowledged, or visibly clear. <b>Say which</b> — the two are not the same.', c:'vlow', ev:'Not in any Longitude source. Generic ground-handling practice, and the insistence on saying WHICH (headset vs. visibly clear — “the two are not the same”) is entirely ours. A house convention to put to Nic.'},
+  {who:'PM', to:'ATC', t:'<b>Start clearance</b> obtained; ramp clear behind. <b>Pushback</b> only if the stand needs it.', note:'Pushback is rare on this aeroplane in practice — most stands are taxied off. Kept as an option, not the default.', c:'high', ev:'JayDee MSFS checklist v1.32.3 — ATC CLEARANCE (PUSHBACK/START) AS REQ/DES. “Ramp clear behind” is ours. NIC 2026-09-13 (v3 review, item 3): “pushback is rarely (if ever?) used in real life, but can be left there as an option.” Reordered so start clearance leads and pushback is the exception; kept on the page at his direction.'},
+  {who:'PM', to:'GND', t:'<b>Ground crew visual, and acknowledged by hand signal.</b> There is no headset loop — everything with the ground is <b>hand signals</b>, so you need eyes on them before anything turns.', note:'No intercom means no way to stop a marshaller mid-gesture. Get the acknowledgement <i>before</i> you need it, not during the start.', c:'full', ev:'NIC ANSWERED 2026-09-13 (v3 review, item 3.5): “No ground comms, its all done with hand-signals.” REPLACES the previous step, which offered “on headset and acknowledged, or visibly clear — say which”, rated vlow as an explicit house-convention question for him. He has now answered it: there is no headset option, so the either/or is gone and the step is hand-signals only. This is the first line on the page to reach `full` on Nic’s word alone.'},
   {who:'PF', t:'<b>EMER/PARK BRAKE handle — SET.</b> Confirm <b>PARK BRAKE ON</b> on the CAS, not just the handle position.', c:'vhigh', ev:'Operators Guide §XVII p.17-4 Before Start 1 — EMER/PARK BRAKE Handle, Set (PARK BRAKE ON Displayed). The confirm-on-the-CAS-not-the-handle point is the Operators Guide’s own parenthesis.'},
   {who:'PF', t:'', say:'Before Start checklist.', c:'full', ev:'Video VS-001 (CitationMax N2RF, real Longitude crew) — the PF calls every checklist by name.'},
   {par:{c:'low', ev:'2007 World Flight Australia 737 pack — shape only. The items are real (Operators Guide Before Start plus cabin/ground work) but the two-column split and the “three conversations at once” framing are ours. A proposal for Nic.', cue:'Three conversations at once',
     lead:'This is the phase where a single pilot runs out of hands. Split it: the PF owns the aeroplane and the ground, the PM owns the cabin and the radio.',
     pf:['<b>EMER/PARK BRAKE set</b> — confirmed on the CAS, not the handle.',
-        '<span class="xc">GND</span>Ground crew: brakes set, ready for pushback.',
+        '<span class="xc">GND</span>Ground crew: <b>eyes on them, hand signals only</b>.',
         'Seats, pedals, harness — last chance.'],
     pm:['<span class="xc">PA</span>Passengers briefed, signs on.',
         'Door closed and latched — handle <b>and</b> indication.',
-        '<span class="xc">ATC</span>Pushback or start clearance, read back.'],
+        '<span class="xc">ATC</span>Start clearance, read back. Pushback only if the stand needs it.'],
     conv:'Before Start checklist'}}
  ]},
 
@@ -756,24 +760,24 @@ const PHASES = [
 /* 4 ------------------------------------------------------------ */
 {kind:'flow', trigger:'Start clearance', title:'Engine start', when:'APU bleed available',
  steps:[
-  {who:'PF', t:'<b>Throttles IDLE.</b> Confirm the side is clear before anything turns.', say:'Clear right?', c:'high', ev:'Throttles IDLE is Operators Guide §XVII p.17-4 Starting Engines 1, verbatim. The “Clear right?” challenge is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B — not an Operators Guide item.'},
+  {who:'PF', t:'<b>Thrust levers IDLE.</b> Confirm the side is clear before anything turns — and it is the <b>right</b> side first, because the right engine starts first.', say:'Clear right?', c:'full', ev:'Thrust levers IDLE is Operators Guide §XVII p.17-4 Starting Engines 1, verbatim — the Guide says “Throttles”; “thrust levers” is Nic’s house term, adopted 2026-09-13 (v3 review, item 4: “‘Throttles’ should be ‘Thrust levers’”) and applied to every visible line on the page. Operators Guide citations in these evidence strings still quote its own word. The “Clear right?” challenge is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B. Why RIGHT first is now sourced: NIC CONFIRMED 2026-09-13 (v3 review, items 4.b & 4.d) “Start sequence is typically Right (#2), then Left (#1)” — which is also why this challenge names the right side, something the page previously did by accident.'},
   {who:'PM', t:'Look, then answer. Never from memory.', say:'Clear right.', c:'low', ev:'CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B — the answering pilot must look before answering. No Longitude source.'},
-  {who:'PF', t:'<b>ENGINE RUN/STOP — RUN</b> on the first engine.', c:'vhigh', ev:'Operators Guide §XVII p.17-4 Starting Engines 2, verbatim.'},
+  {who:'PF', t:'<b>ENGINE RUN/STOP — RUN</b> on the <b>right engine (#2)</b>. That is the one that starts first.', c:'full', ev:'Operators Guide §XVII p.17-4 Starting Engines 2, verbatim — the Guide says only “either engine”. NIC CONFIRMED 2026-09-13 (v3 review, items 4.b & 4.d): “Start sequence is typically Right (#2), then Left (#1).” The Guide leaves the order open; Nic has closed it, so the page now names the engine rather than saying “the first engine”.'},
   {who:'PM', t:'<b>Verify start pressure ≥ 32 PSI</b> on the EIS before the starter goes in. Say the number.', say:'Thirty-eight PSI.', c:'vhigh', ev:'Operators Guide §XVII p.17-4 Starting Engines 3 (Verify ≥ 32 PSI), corroborated by Operators Guide §I Limitations — Minimum Start Pressure 32 PSI, and by JayDee MSFS checklist v1.32.3 — verify Start Pressure on EIS min. 32 PSI. Saying the number aloud is ours.'},
   {who:'PF', t:'<b>ENGINE STARTER — push.</b>', c:'vhigh', ev:'Operators Guide §XVII p.17-4 Starting Engines 4, verbatim.'},
   {who:'PM', t:'<b>Monitor and call</b> — N2 rotation, ignition, fuel flow, light-off, ITT. Start limit is <b>650 °C</b>.', note:'Call a hot or hung start early; the PF owns the abort.', c:'vhigh', ev:'The item is Operators Guide §XVII Starting Engines 5 (Engine Instruments — Monitor). The 650 °C figure is Operators Guide §I Limitations — Engine Start Limits table, Start ITT 650. The list of what to watch, and who owns the abort, are ours.'},
   {who:'PM', t:'Stabilised, generator on line, no messages.', say:'Good start, right.', c:'low', ev:'CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B — a stabilised-start report from the monitoring pilot. The phrasing is ours; no Longitude source.'},
-  {who:'PF', t:'<b>Repeat for the opposite engine</b>, then EIS and CAS checked.', c:'vhigh', ev:'Operators Guide §XVII p.17-4 Starting Engines 6 (Opposite Engine — repeat steps 1 thru 4) and 7 (EIS/CAS — Check).'}
+  {who:'PF', t:'<b>Repeat for the left engine (#1)</b> — clear left, then the same four steps. Then EIS and CAS checked.', say:'Clear left?', c:'full', ev:'Operators Guide §XVII p.17-4 Starting Engines 6 (Opposite Engine — repeat steps 1 thru 4) and 7 (EIS/CAS — Check). NIC CONFIRMED 2026-09-13 (v3 review, items 4.b & 4.d): right (#2) first, then left (#1) — so “the opposite engine” is named here as the left. The “Clear left?” challenge mirrors step 4.1 and is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B.'}
  ]},
 
 {kind:'list', short:'Start', title:'Starting Engines', mode:'When PF requests · do &amp; confirm, APU bleed',
  items:[
-  ['Throttles','Idle','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-4 Starting Engines 1, verbatim.'}],
-  ['ENGINE RUN/STOP — either engine','Run','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-4 Starting Engines 2, verbatim.'}],
+  ['Thrust levers','Idle','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-4 Starting Engines 1, verbatim.'}],
+  ['ENGINE RUN/STOP — <b>right (#2)</b> first','Run','PF',{c:'full', ev:'Operators Guide §XVII p.17-4 Starting Engines 2, verbatim — the Guide says “either engine” and leaves the order open. NIC CONFIRMED 2026-09-13 (v3 review, item 4.b): “Start sequence is typically Right (#2), then Left (#1).” Named here rather than left open, because a fixed order is what makes the “clear right / clear left” challenge mean anything.'}],
   ['Start pressure','Verified 32 PSI or more','PM',{c:'vhigh', ev:'Operators Guide §XVII p.17-4 Starting Engines 3, verbatim.'}],
-  ['ENGINE STARTER button','Pushed','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-4 Starting Engines 4, verbatim.'}],
+  ['ENGINE STARTER button — <b>same side</b>','Pushed','PF',{c:'full', ev:'Operators Guide §XVII p.17-4 Starting Engines 4, verbatim. NIC CONFIRMED 2026-09-13 (v3 review, item 4.d): the starter follows the RUN/STOP button on the same engine, right (#2) first. “Same side” added because the starter is per-engine and this item sits two rows below the one that chose the engine.'}],
   ['Engine instruments','Monitored — ITT within limits','PM',{c:'high', ev:'Operators Guide §XVII p.17-4 Starting Engines 5 says only “Monitor”. “ITT within limits” is added here, backed by Operators Guide §I Limitations — start ITT limit 650 °C.'}],
-  ['Opposite engine','Started','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-4 Starting Engines 6, verbatim.'}],
+  ['Left engine (#1)','Started','PF',{c:'full', ev:'Operators Guide §XVII p.17-4 Starting Engines 6 (“Opposite Engine”), verbatim. NIC CONFIRMED 2026-09-13 (v3 review, items 4.b & 4.d): right first, so the opposite engine is the left (#1) and is named as such.'}],
   ['EIS / CAS','Checked','BOTH',{c:'vhigh', ev:'Operators Guide §XVII p.17-4 Starting Engines 7, verbatim.'}]
  ]},
 
@@ -786,7 +790,7 @@ const PHASES = [
   {who:'PM', t:'<b>Flight instruments and avionics</b> — attitude, heading and air data <b>aligned, no flags</b>.', g5:['gtc-split'], c:'vhigh', ev:'Operators Guide §XVII p.17-4 Before Taxi 4a — Attitude & Heading, Air Data Displays — Aligned/No Flags.'},
   {who:'PM', t:'<b>Altimeters — confirm and compare:</b> within <b>75 ft of field elevation</b> and <b>50 ft of each other</b>. Say both numbers.', say:'Four-nine-five and five-two-oh, field is five hundred — inside limits.', g5:['sensors'], c:'vhigh', ev:'Operators Guide §XVII p.17-4 Before Taxi 4b, verbatim: Altimeters — Confirm and Compare, 75 feet of field elevation, 50 feet of each other.'},
   {who:'PF', t:'<b>ENGINE ICE PROTECTION as required</b>. On the ground in icing, it is ON.', c:'high', ev:'The item is Operators Guide §XVII Before Taxi 5 (ENGINE ICE PROTECTION — As Required). “On the ground in icing it is ON” is an inference from Operators Guide §I Limitations — item 3, which mandates ENGINE, WING and STAB ON immediately prior to takeoff if icing may be met at or below 400 ft AGL.'},
-  {who:'PM', t:'Altitude selector to the cleared altitude, <b>SPD knob FMS</b>, heading bug to runway heading.', c:'high', ev:'JayDee MSFS checklist v1.32.3 — After Engine Start block, verbatim: Altitude Selector SET cleared ALT, SPD Selector verify FMS, HDG Selector SET T.O. RWY HEADING. Not an Operators Guide item.'},
+  {who:'PM', t:'Altitude selector to the cleared altitude, <b>SPD knob FMS</b>, heading bug to runway heading. Then <b>TAXI LIGHT ON</b>, passenger signs on, transponder verified.', note:'<b>Taxi light on before you move</b>, not as you start rolling. It comes off again at line-up, when the landing lights go on.', c:'full', ev:'JayDee MSFS checklist v1.32.3 — After Engine Start / Before Taxi block, verbatim: Altitude Selector SET cleared ALT, SPD Selector verify FMS, HDG Selector SET T.O. RWY HEADING, Passenger Signs AS REQ/ON, Taxi Light ON, Transponder verify SET & AUTO. Not an Operators Guide item. NIC REQUESTED 2026-09-13 (v3 review, item 5): “Add to flow — Taxi Light ON.” Folded into this existing PM sweep rather than inserted as a step of its own, so no flow step in phase 5 renumbers; JayDee groups it with exactly these items anyway.'},
   {who:'PM', t:'<b>TO/GA pushed</b> — verify <b>TO / TO green</b>, <b>ALTS white</b>, flight director up.', c:'high', ev:'JayDee MSFS checklist v1.32.3 — verbatim: TO/GA Button PUSH — verify TO / TO (green) and ALTS (white) in FMA, verify FD did come ON. Not an Operators Guide item; sim-build specific.'},
   {who:'PF', t:'', say:'Before Taxi checklist.', c:'full', ev:'Video VS-001 (CitationMax N2RF, real Longitude crew) — 4:35, the PF calls for the Before Taxi checklist by name.'},
   {par:{c:'low', ev:'2007 World Flight Australia 737 pack — shape only. The “PF checks what moves, PM checks what reads” division is ours. Items are Operators Guide Before Taxi, redistributed.', cue:'After start — in parallel',
@@ -797,6 +801,7 @@ const PHASES = [
     pm:['Attitude, heading and air data aligned — no flags.',
         'Altimeters compared: <b>75 ft of field, 50 ft of each other</b>.',
         'Altitude select, <b>SPD knob FMS</b>, heading bug on the runway.',
+        '<b>Taxi light ON</b>, signs on, transponder verified.',
         'TO/GA pushed — <b>TO / TO green, ALTS white</b>.'],
     conv:'Before Taxi checklist'}}
  ]},
@@ -809,7 +814,7 @@ const PHASES = [
   ['Attitude, heading, air data','Aligned, no flags','PM',{c:'full', ev:'Operators Guide §XVII p.17-4 Before Taxi 4a, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 2:07 — “flight instruments and avionics are all set” — so this item is a Longitude document AND the real crew running it.'}],
   ['Altimeters','Confirmed and compared — 75 and 50','BOTH',{c:'vhigh', ev:'Operators Guide §XVII p.17-4 Before Taxi 4b, verbatim.'}],
   ['ENGINE ICE PROTECTION','As required','PF',{c:'full', ev:'Operators Guide §XVII p.17-4 Before Taxi 5, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 2:09 — “engine ice protection” / “it’s not needed” — so this item is a Longitude document AND the real crew running it.'}],
-  ['Altitude select · SPD knob · heading','Set · FMS · runway heading','PM',{c:'high', ev:'ADDED to the Operators Guide list. JayDee MSFS checklist v1.32.3 — Altitude Selector / SPD Selector / HDG Selector, After Engine Start block.'}],
+  ['Altitude select · SPD knob · heading · taxi light','Set · FMS · runway heading · <b>on</b>','PM',{c:'full', ev:'ADDED to the Operators Guide list. JayDee MSFS checklist v1.32.3 — Altitude Selector / SPD Selector / HDG Selector / Taxi Light ON, all in the After Engine Start block. NIC REQUESTED 2026-09-13 (v3 review, item 5): “Add to flow — Taxi Light ON.” Appended to this existing item rather than added as a new row, so the phase 5 checklist letters do not shift.'}],
   ['Flight director','TO / TO green, ALTS white','PM',{c:'high', ev:'ADDED to the Operators Guide list. JayDee MSFS checklist v1.32.3 — verify TO / TO (green) and ALTS (white) in FMA.'}]
  ]},
 
@@ -843,7 +848,7 @@ const PHASES = [
   {who:'PM', t:'Answer it, every time.', say:'No questions.', c:'full', ev:'Video VS-001 (CitationMax N2RF, real Longitude crew) — 8:16 — “No questions.”'},
   {who:'PM', t:'<b>V-speeds displayed</b> on both tapes · <b>SPD knob FMS</b> · <b>trims set</b> · <b>speedbrakes retracted</b> · flaps confirmed.', c:'vhigh', ev:'Operators Guide §XVII p.17-5 Before Takeoff 5, 6, 3, 2 and 1 (V Speeds Displayed; SPD Knob FMS; Trims; Speedbrakes Retracted; Flaps), gathered into one PM sweep.'},
   {who:'PM', t:'<b>Ice protection checked and as required.</b> In icing: <b>PITOT/STATIC ON 15 seconds within a minute of takeoff</b>, then NORM.', note:'If icing below 400 ft is likely — engine, wing and stab ON immediately before rolling.', c:'vhigh', ev:'Operators Guide §XVII p.17-5 Before Takeoff 4 and 9, verbatim — PITOT/STATIC in icing conditions within 1 min before takeoff, ON 15 seconds then NORM. The note is Operators Guide §I Limitations — item 3, verbatim: if icing may be encountered at or below 400 feet AGL, ENGINE, WING and STAB ICE PROTECTION must be selected ON immediately prior to takeoff.'},
-  {who:'PM', t:'Radar as required. MFD synoptic pre-flight page <b>all green</b>.', g5:['preflight-synoptic'], c:'high', ev:'Radar is Operators Guide §XVII Before Takeoff 8, verbatim. The MFD synoptic pre-flight page all-green check is JayDee MSFS checklist v1.32.3 — only — not an Operators Guide item.'},
+  {who:'PM', t:'<b>Weather radar</b> as required. <b>Systems → Synoptics → Pre-Flight</b> on the MFD GTC — <b>all green</b>.', note:'This is the page the <b>NO TAKEOFF</b> message is computed from, so an amber line here is not advisory — it is the takeoff being withheld.', g5:['preflight-synoptic'], c:'high', ev:'Radar is Operators Guide §XVII Before Takeoff 8, verbatim; NIC CLARIFIED 2026-09-13 (v3 review, item 7.h) that it is the WEATHER radar. The pre-flight synoptic all-green check is JayDee MSFS checklist v1.32.3 — only — not an Operators Guide checklist item, though the Guide describes the page (§IX Pneumatics, Pre-Flight Synoptic: “accessible through the Systems page on a MFD GTC”). The NO TAKEOFF link is Operators Guide §III: “Conditions for takeoff listed in the pre-flight synoptic page have not been appropriately met and takeoff is prohibited.” Navigation wording follows Nic’s FYI 2026-09-13 — “we use the ‘Systems’ page, then ‘Synoptics’ … then visually confirm status on the schematics displayed on the MFD”.'},
   {who:'PF', t:'', say:'Before Takeoff checklist.', c:'full', ev:'Video VS-001 (CitationMax N2RF, real Longitude crew) — 7:20 — “taxi checklist, report before takeoff”. The PF names the next list.'}
  ]},
 
@@ -856,7 +861,7 @@ const PHASES = [
   ['V-speeds','Displayed, both sides','BOTH',{c:'full', ev:'Operators Guide §XVII p.17-5 Before Takeoff 5, verbatim. “Both sides” is ours. Corroborated on camera — VS-002 (Innsbruck–London) @ 4:01 — “V-speeds” — so this item is a Longitude document AND the real crew running it.'}],
   ['SPD knob','FMS','PM',{c:'full', ev:'Operators Guide §XVII p.17-5 Before Takeoff 6, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 4:07 — “speed knob” / “FMS” — so this item is a Longitude document AND the real crew running it.'}],
   ['Crew briefing','Complete','BOTH',{c:'full', ev:'Operators Guide §XVII p.17-5 Before Takeoff 7, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 4:07 — “crew briefing”, answered by re-opening the earlier brief for questions — so this item is a Longitude document AND the real crew running it.'}],
-  ['Radar','As required','PM',{c:'full', ev:'Operators Guide §XVII p.17-5 Before Takeoff 8, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 4:31 — “radar” / “is not required” — so this item is a Longitude document AND the real crew running it.'}],
+  ['<b>Weather</b> radar','As required','PM',{c:'full', ev:'Operators Guide §XVII p.17-5 Before Takeoff 8, verbatim (the Guide says just “Radar”). Corroborated on camera — VS-002 (Innsbruck–London) @ 4:31 — “radar” / “is not required” — so this item is a Longitude document AND the real crew running it. NIC CLARIFIED 2026-09-13 (v3 review, item 7.h): “7.h is weather radar.” Named explicitly because a bare “Radar” on a tablet reads just as easily as the transponder or TCAS, both of which are set two items away at line-up.'}],
   ['PITOT/STATIC — in icing','On 15 seconds, then NORM','PM',{c:'full', ev:'Operators Guide §XVII p.17-5 Before Takeoff 9, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 4:34 — “pitot/static button” / “not required” — so this item is a Longitude document AND the real crew running it.'}]
  ]},
 
@@ -865,7 +870,7 @@ const PHASES = [
  steps:[
   {who:'PM', to:'ATC', t:'Read the clearance back, then look both ways down the approach and <b>say what you see</b>.', say:'Runway two four, final clear left, runway confirmed — heading agrees.', c:'low', ev:'CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B — read back, then look down the approach and state what you see. No Longitude source; the “runway confirmed — heading agrees” wording is ours.'},
   {who:'PF', t:'<b>Flight controls free</b> one last time as we line up.', c:'vhigh', ev:'Operators Guide §XVII p.17-5 CLEARED FOR TAKEOFF 1 — Flight Controls, Free.'},
-  {who:'PM', t:'<b>ICE PROTECTION as required</b> · landing and strobe lights <b>ON</b> · taxi light off · transponder <b>AUTO</b>.', g5:['xpdr-lineup','timers'], c:'vhigh', ev:'Operators Guide §XVII p.17-5 CLEARED FOR TAKEOFF 2 and 3 (ICE PROTECTION and Exterior Lights, As Required); the breakdown is JayDee MSFS checklist v1.32.3 — Landing Lights ON, Anti-Collision ON, Taxi Light OFF, Transponder AUTO.'},
+  {who:'PM', t:'<b>ICE PROTECTION as required</b> · <b>PULSE ON</b> entering the runway · <b>ANTI COLL ON</b> · taxi light off · transponder <b>AUTO</b>. <b>Landing lights on with the takeoff clearance.</b>', note:'<b>Pulse is the runway light</b> — on whenever you are on a runway or crossing one, off once you are clear. It shares the belly fixtures with the landing lights and <b>the two cannot be selected together</b>: select LDG and the pulse function drops out, which is exactly what you want on the roll. <b>Not “strobes”</b> — the white flashing light on this aeroplane is the <b>anti-collision</b>, on the ANTI COLL button, and the red beacon comes on by itself with the engine masters.', g5:['xpdr-lineup','timers'], c:'full', ev:'Operators Guide §XVII p.17-5 CLEARED FOR TAKEOFF 2 and 3 (ICE PROTECTION and Exterior Lights, As Required); JayDee MSFS checklist v1.32.3 — Landing Lights ON, Anti-Collision ON, Taxi Light OFF, Transponder AUTO. NIC REQUESTED 2026-09-13 (v3 review, item 8): “Add to flow… Pulse Light ON (ie whenever on or crossing a runway) (note this replaces ‘Strobes’).” He is right twice over, and the Operators Guide backs both halves — §XVI Lighting p.16-4: the belly lights “also serve as the recognition lights (constant, low intensity) or pulse lights (flashing, high intensity)”, selected with the PULSE button, and “the recognition or pulse lights functions CANNOT be selected when the landing lights function is also selected”; and there is no light called a strobe on the type — the white flashing light is the ANTI COLL, the red flashing beacon is automatic on engine RUN. The page said “landing and strobe lights ON”, which was wrong terminology AND the wrong light for runway occupancy. The pulse/landing interlock is a real hardware constraint worth watching in the sim.'},
   {who:'PM', t:'<b>EIS and CAS checked</b> — no message, no takeoff. That rule is absolute on this aeroplane.', g5:['cas-scroll'], c:'vhigh', ev:'The item is Operators Guide §XVII CLEARED FOR TAKEOFF 4 (EIS/CAS — Check) and the absolute is a real limitation: Operators Guide §I Limitations — item 4, “Takeoff with any emergency or abnormal cockpit message is prohibited unless otherwise allowed in an AFM procedure, specifically authorized in an approved MEL, or not applicable for dispatching.”'},
   {who:'PF', t:'', say:'Cleared for Takeoff items.', c:'high', ev:'The Operators Guide titles this block CLEARED FOR TAKEOFF, so naming it is faithful. Calling it aloud as a separate short block is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B.'},
   {who:'PF', t:'<b>Arm the autothrottle.</b>', say:'Autothrottle armed.', c:'vhigh', ev:'Arming at this point is a limitation, not a preference: Operators Guide §I Limitations — “Autothrottle may not be armed during taxi operations or before takeoff clearance is received.” The FMA state is JayDee MSFS checklist v1.32.3 — ARM Autothrottle → verify AT FMA = TO (white).'},
@@ -876,7 +881,7 @@ const PHASES = [
  items:[
   ['Flight controls','Free','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-5 CLEARED FOR TAKEOFF 1, verbatim.'}],
   ['ICE PROTECTION buttons','As required','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-5 CLEARED FOR TAKEOFF 2, verbatim.'}],
-  ['Exterior lights','Set — landing and strobes on','PM',{c:'vhigh', ev:'Operators Guide §XVII p.17-5 CLEARED FOR TAKEOFF 3, verbatim; the landing/strobe detail is JayDee MSFS checklist v1.32.3.'}],
+  ['Exterior lights','Set — <b>pulse</b> and anti-collision on, taxi off, landing on with the clearance','PM',{c:'full', ev:'Operators Guide §XVII p.17-5 CLEARED FOR TAKEOFF 3, verbatim; the breakdown is JayDee MSFS checklist v1.32.3 (Landing Lights ON, Anti-Collision ON, Taxi Light OFF). CHANGED 2026-09-13 — NIC (v3 review, item 8): pulse light on whenever on or crossing a runway, and it “replaces ‘Strobes’”. The old response said “landing and strobes on”: there is no strobe on the Longitude (the white flashing light is the ANTI COLL — Operators Guide §XVI p.16-4), and pulse is the light that marks runway occupancy. Same page notes pulse and landing lights share the belly fixtures and cannot both be selected, so selecting landing on the clearance drops pulse.'}],
   ['EIS / CAS','Checked — no messages','BOTH',{c:'vhigh', ev:'Operators Guide §XVII p.17-5 CLEARED FOR TAKEOFF 4, verbatim, with Operators Guide §I Limitations — item 4 behind it (takeoff with any abnormal message prohibited).'}],
   ['Autothrottle','Armed, TO white','BOTH',{c:'vhigh', ev:'ADDED to the Operators Guide block, but on the Operators Guide’s own authority: Operators Guide §I Limitations — autothrottle may not be armed before takeoff clearance is received. FMA state from JayDee MSFS checklist v1.32.3.'}]
  ]},
@@ -884,12 +889,12 @@ const PHASES = [
 /* 9 ------------------------------------------------------------ */
 {kind:'flow', trigger:'Cleared for takeoff', title:'Takeoff roll &amp; rotation', when:'The most scripted 60 seconds of the flight',
  steps:[
-  {who:'PF', t:'<b>Static:</b> throttles to <b>TO</b>, confirm, then release brakes. <b>Rolling:</b> brakes off first, throttles TO <b>within 500 ft</b>.', c:'vhigh', ev:'Operators Guide §XVII p.17-6 Takeoff, both variants verbatim — Static: Throttles TO, then Brakes Release. Rolling: Brakes Release, then Throttles TO within 500 feet after brake release.'},
+  {who:'PF', t:'<b>Static:</b> thrust levers to <b>TO</b>, confirm, then release brakes. <b>Rolling:</b> brakes off first, thrust levers TO <b>within 500 ft</b>.', c:'vhigh', ev:'Operators Guide §XVII p.17-6 Takeoff, both variants verbatim — Static: Throttles TO, then Brakes Release. Rolling: Brakes Release, then Throttles TO within 500 feet after brake release.'},
   {who:'PM', t:'Confirm the levers went where they were asked. The crew’s own wording is autothrottle-aware — it reports that the thrust <i>arrived</i>, not just that it was commanded.', say:'Takeoff power is set and achieved.', c:'full', ev:'The item is Operators Guide §XVII Takeoff 2 (Autothrottle — Check Green HOLD). The wording is now the crew’s own, verbatim and STABLE ACROSS TWO FLIGHTS: VS-001 takeoff sequence and Video VS-002 (CitationMax N2RF, Innsbruck–London, the return leg of VS-001, same crew) @ 5:48. “Thrust set, HOLD green” was our shorter substitute and is still a fine call; theirs is what a Longitude crew actually says.'},
   {who:'PM', t:'The CAS check, spoken as a sentence.', say:'Two good engines, no messages, speeds both sides.', c:'full', ev:'VS-001 takeoff sequence, near-verbatim: “Two good engines, no messages, speeds — five, both sides.” Literally a CAS check spoken as a sentence. Video VS-002 (CitationMax N2RF, Innsbruck–London, the return leg of VS-001, same crew) @ 5:48 runs the same report with a DIFFERENT middle: “two good engines, airspeed’s alive, both sides.” The two are not a correction of each other — together they show the phrase is not fixed. What IS fixed: two engines, something about speed, and “both sides”. Note also that the crew says this and the thrust call as ONE breath; splitting them into two rows here is a teaching device, not their cadence.'},
   {who:'PM', t:'Their call is the bare number. Adding <i>crosschecked</i> is the operator-SOP version and says a little more.', say:'Eighty knots.', c:'high', ev:'CORRECTED 2026-09-13. This line previously read “DELIBERATELY ADDED — the reference crew makes no 80-knot call”, on the evidence of VS-001 alone. That is FALSE: Video VS-002 (CitationMax N2RF, Innsbruck–London, the return leg of VS-001, same crew) @ 5:53 calls “80 knots” in the takeoff roll, between the thrust/engine report and V1. The same crew does make the call; VS-001 simply did not capture it. The bare number is theirs; “crosschecked” remains the CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B extension. No Operators Guide item.'},
   {who:'PM', t:'Two <b>separate</b> calls — but the gap is short, and it closes when the crew is busy.', say:'V1. … Rotate.', c:'full', ev:'VS-001 @ 12:16 — PM calls “V1”, then “Rotate”, as two separate calls. Video VS-002 (CitationMax N2RF, Innsbruck–London, the return leg of VS-001, same crew) @ 5:53 runs them close enough that the transcriber rendered them as one line, “V1, rotate”, on a rushed slot-time departure. Ours stays the stricter house rule — it is the one that survives a busy day — but do not expect a metronome.'},
-  {who:'PF', t:'Hand off the throttles at V1. Rotate smoothly to <b>10° nose up</b> and follow the bars.', c:'vhigh', ev:'Operators Guide §XVII p.17-6 Takeoff 5 — Elevator Control, Rotate at VR (10 degrees initial pitch); same in JayDee MSFS checklist v1.32.3 — slowly rotate at VR and follow FD bars. Handing the throttles off at V1 is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B.'},
+  {who:'PF', t:'Hand off the thrust levers at V1. Rotate smoothly to <b>10° nose up</b> and follow the bars.', c:'vhigh', ev:'Operators Guide §XVII p.17-6 Takeoff 5 — Elevator Control, Rotate at VR (10 degrees initial pitch); same in JayDee MSFS checklist v1.32.3 — slowly rotate at VR and follow FD bars. Handing the throttles off at V1 is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B.'},
   {who:'PM', t:'', say:'V2.', c:'full', ev:'Video VS-001 (CitationMax N2RF, real Longitude crew) — takeoff sequence — PM calls “V2”.'},
   {who:'PM', t:'', say:'Positive rate.', c:'full', ev:'Video VS-001 (CitationMax N2RF, real Longitude crew) — takeoff sequence — PM calls “Positive rate”.'},
   {who:'PF', t:'', say:'Gear up.', c:'full', ev:'Video VS-001 (CitationMax N2RF, real Longitude crew) — takeoff sequence — PF commands “Gear up”.'},
@@ -898,7 +903,7 @@ const PHASES = [
 
 {kind:'list', short:'Takeoff', title:'Takeoff', nocall:true, mode:'Not called — flown, then verified',
  items:[
-  ['Throttles','TO — static, or within 500 ft rolling','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-6 Takeoff — Static 1 / Rolling 2, verbatim.'}],
+  ['Thrust levers','TO — static, or within 500 ft rolling','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-6 Takeoff — Static 1 / Rolling 2, verbatim.'}],
   ['Autothrottle','Green HOLD','PM',{c:'vhigh', ev:'Operators Guide §XVII p.17-6 Takeoff 2 — Autothrottle, Check Green HOLD.'}],
   ['EIS / CAS','N1 matches command, green TO','PM',{c:'vhigh', ev:'Operators Guide §XVII p.17-6 Takeoff 3 — EIS/CAS, Check (N1 matches command, green TO).'}],
   ['Brakes','Released','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-6 Takeoff — Static 4 / Rolling 1, verbatim.'}],
@@ -922,7 +927,7 @@ const PHASES = [
     pf:['Flies. Pitch to the bars, wings level, track the departure.',
         'Commands “Gear up”, then “Flaps up, climb thrust”.',
         'Calls for the autopilot above <b>400 ft</b>, and for the checklist.'],
-    pm:['Gear up; flaps up at <b>V2 + 20</b>; throttles <b>CLB</b>.',
+    pm:['Gear up; flaps up at <b>V2 + 20</b>; thrust levers <b>CLB</b>.',
         'Reads the <b>full FMA</b> back at every mode change.',
         'Lights, pressurisation, ice protection, <b>APU off before FL350</b>.',
         '<span class="xc">ATC</span>Checks in with departure.'],
@@ -933,7 +938,7 @@ const PHASES = [
  items:[
   ['Landing gear','Up','PM',{c:'vhigh', ev:'Operators Guide §XVII p.17-6 After Takeoff/Climb 1, verbatim.'}],
   ['Flaps','Up — at or above V2 + 20','PM',{c:'vhigh', ev:'Operators Guide §XVII p.17-6 After Takeoff/Climb 2, verbatim.'}],
-  ['Throttles','CLB','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-6 After Takeoff/Climb 3, verbatim.'}],
+  ['Thrust levers','CLB','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-6 After Takeoff/Climb 3, verbatim.'}],
   ['ICE PROTECTION buttons','As required','PM',{c:'vhigh', ev:'Operators Guide §XVII p.17-6 After Takeoff/Climb 4, verbatim.'}],
   ['Pressurisation','Checked','PM',{c:'vhigh', ev:'Operators Guide §XVII p.17-6 After Takeoff/Climb 5, verbatim.'}],
   ['Altimeters','Set at transition altitude','BOTH',{c:'vhigh', ev:'Operators Guide §XVII p.17-6 After Takeoff/Climb 6, verbatim.'}],
@@ -952,14 +957,14 @@ const PHASES = [
   {who:'BOTH', t:'<b>Sterile below 10,000 ft.</b> Above it, relax — the reference crew chat at altitude and go crisp below. That texture is correct.', c:'low', ev:'The sterile-below-10,000 rule is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B. The observation that the reference crew chats at altitude and goes crisp below is from the video — real, but it is a texture, not a procedure.'},
   {who:'PM', to:'ATC', t:'Every clearance read back to ATC and then inside the cockpit; every bug change stated aloud.', c:'full', ev:'Video VS-001 (CitationMax N2RF, real Longitude crew) — every clearance is read back to ATC and then repeated inside the cockpit; every bug change is stated aloud. Used continuously through the flight.'},
   {who:'PM', t:'Level-off confirmed against the FMA, not the altimeter alone.', say:'Altitude hold, flight level four-one-zero set.', c:'high', ev:'JayDee MSFS checklist v1.32.3 — verify the FMA at each phase. Confirming level-off against the FMA rather than the altimeter alone is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B; the wording is ours.'},
-  {who:'PF', t:'Throttles <b>CRU</b>, fuel balanced, fuel flow against plan at each waypoint.', note:'Above FL410: PRESS SOURCE and ENG BLEED NORM, ECS NORM. In RVSM, altimeters crosschecked hourly within 200 ft.', g5:['sensors','radios'], c:'vhigh', ev:'Operators Guide §XVII p.17-7 Cruise 1 (Throttles CRU or as Desired) and 3 (Altimeters in RVSM, crosscheck within 200 feet at 1 hour intervals or less). The note is Operators Guide §I Limitations — verbatim: PRESS SOURCE and ENG BLEED must be NORM above FL410, and ECS must be NORM above FL410.'},
+  {who:'PF', t:'Thrust levers <b>CRU</b>, fuel balanced, fuel flow against plan at each waypoint.', note:'<b>There is no CRU gate to feel for.</b> The levers are continuous with <b>no detents</b> — TO is fully forward, and CLB then CRU sit progressively further back; the FADEC picks the mode from lever angle and annunciates it. So “CRU” names a <b>thrust mode you see</b>, not a notch you click into. And with the autothrottle in, you will not set it by hand at all: the AT has no CRU mode of its own and holds <b>SPD</b> in the cruise. Above FL410: PRESS SOURCE and ENG BLEED NORM, ECS NORM. In RVSM, altimeters crosschecked hourly within 200 ft.', g5:['sensors','radios'], c:'vhigh', ev:'Operators Guide §XVII p.17-7 Cruise 1 (Throttles CRU or as Desired) and 3 (Altimeters in RVSM, crosscheck within 200 feet at 1 hour intervals or less). The note is Operators Guide §I Limitations — verbatim: PRESS SOURCE and ENG BLEED must be NORM above FL410, and ECS must be NORM above FL410.'},
   {who:'PF', t:'Settled at the final level, close the loop on all three altimeters.', say:'Maintaining flight level four-one-zero, on standard.', c:'low', ev:'CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B — closing the loop at the final level. Wording is ours.'},
   {who:'PM', t:'', say:'Checked.', c:'low', ev:'CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B — the monitoring pilot acknowledges. Wording is ours.'}
  ]},
 
 {kind:'list', short:'Cruise', title:'Cruise', mode:'At level-off, then each waypoint · challenge &amp; response',
  items:[
-  ['Throttles','CRU or as desired','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-7 Cruise 1, verbatim.'}],
+  ['Thrust levers','<b>CRU</b> annunciated — or as desired, or autothrottle in <b>SPD</b>','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-7 Cruise 1, verbatim (“Throttles — CRU or as Desired”). NIC QUERIED 2026-09-13 (v3 review, item 11): “CRU?” — a fair question, because the response read as though there were a CRU position to select. There is not. Operators Guide §VI p.6-3/6-4: “The throttle levers are continuous and have NO DETENTS; instead the FADEC will choose the appropriate thrust mode based on where the throttle lever is placed in the range… TO thrust mode is selected by moving the throttles fully forward, with CLB and CRU modes progressively further back.” So CRU is an annunciated FADEC mode, not a gate. And the autothrottle mode list on the same pages (TO, HOLD, CLIMB, DESC, SPD, RETARD, MAX/MIN SPD) contains no CRU at all — with the AT engaged the cruise is flown in SPD. Response reworded to say what you are looking for rather than what you are moving.'}],
   ['Autopilot — in RVSM','On','PF',{c:'high', ev:'Operators Guide §XVII p.17-7 Cruise 2 says “Autopilot (if in RVSM airspace) — As Required”. “On” is OUR tightening: RVSM in practice needs an operative autopilot. Flagged because it changes the Operators Guide response.'}],
   ['Altimeters — in RVSM','Crosschecked within 200 ft','BOTH',{c:'vhigh', ev:'Operators Guide §XVII p.17-7 Cruise 3, verbatim (the Operators Guide adds “at 1 hour intervals or less”).'}],
   ['Fuel','Balanced, on plan','PM',{c:'low', ev:'Not an Operators Guide cruise item — Cruise is three items only — and not in JayDee either. Fuel monitoring against plan is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B.'}],
@@ -1006,7 +1011,7 @@ const PHASES = [
  steps:[
   {who:'PF', t:'Descent on the VNAV path; <b>speedbrakes</b> are legitimate and get called.', say:'Speed brakes out.', c:'high', ev:'JayDee MSFS checklist v1.32.3 — use speed brakes if necessary to stay on V PATH. Calling the speedbrakes aloud is ours. NOTE Operators Guide §I Limitations — item 3: speedbrake operation below 500 feet AGL during landing is prohibited.'},
   {who:'PM', t:'At transition — QNH set and said.', say:'One zero one three set, both sides.', g5:['baro'], c:'high', ev:'The item is Operators Guide §XVII Descent 3 and JayDee MSFS checklist v1.32.3 — @TRANSITION FLIGHT LEVEL, Altimeters SET LOCAL QNH. “Both sides”, and saying it aloud, are ours.'},
-  {who:'PM', to:'PA', t:'Passing 10,000: landing lights on, <b>passenger signs and cabin secure</b>, pressurisation checked, <b>APU on</b> if not already.', note:'Do the cabin properly here — signs, divider, curtain, belts — because the Approach checklist now verifies all four, and a checklist that finds work undone is a checklist doing the flow’s job.', c:'high', ev:'JayDee MSFS checklist v1.32.3 — @10,000 ft — Landing Lights AS REQ/ON, APU AS DES/ON, Pressurization CHECK. Passenger signs and cabin secure are CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B. The cabin items the note names are VS-002 (Innsbruck–London) @ 21:43–21:58, added to the Approach checklist on 2026-09-13.'},
+  {who:'PM', to:'PA', t:'Passing 10,000: landing lights on, <b>passenger signs and cabin secure</b>, pressurisation checked, <b>APU on</b> if not already.', note:'Do the cabin properly here — signs, seats, belts — because the Approach checklist verifies them, and a checklist that finds work undone is a checklist doing the flow’s job.', c:'high', ev:'JayDee MSFS checklist v1.32.3 — @10,000 ft — Landing Lights AS REQ/ON, APU AS DES/ON, Pressurization CHECK. Passenger signs and cabin secure are CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B. The cabin items the note names are VS-002 (Innsbruck–London) @ 21:43–21:58, added to the Approach checklist on 2026-09-13.'},
   {who:'BOTH', t:'<b>Sterile below 10,000.</b> From here the only voices in the cockpit are doing a job.', c:'low', ev:'CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B — sterile cockpit below 10,000 ft. No Longitude source states it.'},
   {who:'PF', t:'Join at about <b>3,000 ft above the field and 220 KIAS</b>, or the published procedure altitudes.', c:'high', ev:'JayDee MSFS checklist v1.32.3 — verbatim — approach at ~3,000 ft above landing elevation and ~220 KIAS, or use proper procedure altitudes per the charts.'},
   {who:'PM', t:'<b>Nav source verified both sides</b> — and for an ILS it must be <b>LOC before the FAF</b>.', say:'Nav source LOC, two five two set, both sides. Minimums set.', g5:['nav-source','gtc-split','bearing'], c:'high', ev:'UPGRADED 2026-09-13 from med. The per-side nav source is a Garmin G5000 fact from the G5000 Cockpit Reference Guide, which is written for the Citation 560XL — right avionics, wrong airframe. Video VS-002 (CitationMax N2RF, Innsbruck–London, the return leg of VS-001, same crew) @ 19:08–19:11 supplies the missing airframe: running the Approach checklist, the flight-instruments item is answered <b>twice, once per seat</b> — “are set on my side” / “set on my side” — which is the per-side discipline being practised on a real Longitude. “LOC before the FAF” remains standard ILS practice, not a Longitude-sourced rule.'},
@@ -1035,18 +1040,16 @@ const PHASES = [
   ['Minimums','Set','PM',['minimums'],{c:'vhigh', ev:'Operators Guide §XVII p.17-7 Approach 3b — Minimums, Set.'}],
   ['Altimeters','Verified','BOTH',{c:'vhigh', ev:'Operators Guide §XVII p.17-7 Approach 3c — Altimeters, Verify Setting.'}],
   ['Crew briefing','Complete','BOTH',{c:'full', ev:'Operators Guide §XVII p.17-7 Approach 4, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 19:11–21:43 — “crew briefing”, briefed in full, closed “crew briefing complete” — so this item is a Longitude document AND the real crew running it.'}],
-  ['Passenger briefing','Complete','PM',{c:'high', ev:'ADDED 2026-09-13, and NOT an Operators Guide item — §XVII Approach is five items and carries no cabin content at all, so this block is THEIR OPERATOR’S list, not Cessna’s. VS-002 (Innsbruck–London) @ 21:43–21:58, run immediately after “crew briefing complete” and before the flap call. Inserted with Neil’s approval on 2026-09-13, before Nic began his review. Verbatim: “Passenger briefing.” / “Is complete.”'}],
-  ['Cabin divider','Open','PM',{c:'high', ev:'ADDED 2026-09-13, and NOT an Operators Guide item — §XVII Approach is five items and carries no cabin content at all, so this block is THEIR OPERATOR’S list, not Cessna’s. VS-002 (Innsbruck–London) @ 21:43–21:58, run immediately after “crew briefing complete” and before the flap call. Inserted with Neil’s approval on 2026-09-13, before Nic began his review. Verbatim: “Cabin divider.” / “Is open.” CABIN FURNISHING — the real aeroplane has a divider at the forward cabin; MSFS does not model it. Say it anyway: it costs nothing and it is what the crew says.'}],
-  ['Cabin door curtain','Stowed','PM',{c:'high', ev:'ADDED 2026-09-13, and NOT an Operators Guide item — §XVII Approach is five items and carries no cabin content at all, so this block is THEIR OPERATOR’S list, not Cessna’s. VS-002 (Innsbruck–London) @ 21:43–21:58, run immediately after “crew briefing complete” and before the flap call. Inserted with Neil’s approval on 2026-09-13, before Nic began his review. Verbatim: “Cabin door curtain.” / “Is stowed.” CABIN FURNISHING — as above, not modelled in the sim. Both this and the divider are about the cockpit door aperture being clear, which is why they sit together.'}],
-  ['Seats and seatbelts','Set — on my side, and on mine','BOTH',{c:'high', ev:'ADDED 2026-09-13, and NOT an Operators Guide item — §XVII Approach is five items and carries no cabin content at all, so this block is THEIR OPERATOR’S list, not Cessna’s. VS-002 (Innsbruck–London) @ 21:43–21:58, run immediately after “crew briefing complete” and before the flap call. Inserted with Neil’s approval on 2026-09-13, before Nic began his review. Verbatim: “Seats, seatbelts.” / “Are set on my side.” / “And set on my side.” ANSWERED PER SEAT, like the flight-instruments item at 19:08 — that is the point of it, and the reason it is a BOTH row.'}],
-  ['Seatbelt sign','On','PM',{c:'high', ev:'ADDED 2026-09-13, and NOT an Operators Guide item — §XVII Approach is five items and carries no cabin content at all, so this block is THEIR OPERATOR’S list, not Cessna’s. VS-002 (Innsbruck–London) @ 21:43–21:58, run immediately after “crew briefing complete” and before the flap call. Inserted with Neil’s approval on 2026-09-13, before Nic began his review. Verbatim: “Seatbelt button.” / “Is on.” Distinct from the passing-10,000 signs call in flow step 13.3 — this is the checklist verifying what the flow already did, which is what the whole page is built on.'}],
+  ['Passenger briefing','Complete','PM',{c:'high', ev:'ADDED 2026-09-13, and NOT an Operators Guide item — §XVII Approach is five items and carries no cabin content at all, so this block is THEIR OPERATOR’S list, not Cessna’s. VS-002 (Innsbruck–London) @ 21:43–21:58, run immediately after “crew briefing complete” and before the flap call. Inserted with Neil’s approval on 2026-09-13, before Nic began his review. NIC TRIMMED THE BLOCK 2026-09-13 (v3 review, item 13): “13.i & j – can be removed” — the cabin divider and cabin door curtain items are gone. Both were the ones flagged CABIN FURNISHING, not modelled in MSFS; he kept the three that are actionable. The block is therefore no longer the crew’s full list, and is not claimed to be. Verbatim: “Passenger briefing.” / “Is complete.”'}],
+  ['Seats and seatbelts','Set — on my side, and on mine','BOTH',{c:'high', ev:'ADDED 2026-09-13, and NOT an Operators Guide item — §XVII Approach is five items and carries no cabin content at all, so this block is THEIR OPERATOR’S list, not Cessna’s. VS-002 (Innsbruck–London) @ 21:43–21:58, run immediately after “crew briefing complete” and before the flap call. Inserted with Neil’s approval on 2026-09-13, before Nic began his review. NIC TRIMMED THE BLOCK 2026-09-13 (v3 review, item 13): “13.i & j – can be removed” — the cabin divider and cabin door curtain items are gone. Both were the ones flagged CABIN FURNISHING, not modelled in MSFS; he kept the three that are actionable. The block is therefore no longer the crew’s full list, and is not claimed to be. Verbatim: “Seats, seatbelts.” / “Are set on my side.” / “And set on my side.” ANSWERED PER SEAT, like the flight-instruments item at 19:08 — that is the point of it, and the reason it is a BOTH row.'}],
+  ['Seatbelt sign','On','PM',{c:'high', ev:'ADDED 2026-09-13, and NOT an Operators Guide item — §XVII Approach is five items and carries no cabin content at all, so this block is THEIR OPERATOR’S list, not Cessna’s. VS-002 (Innsbruck–London) @ 21:43–21:58, run immediately after “crew briefing complete” and before the flap call. Inserted with Neil’s approval on 2026-09-13, before Nic began his review. NIC TRIMMED THE BLOCK 2026-09-13 (v3 review, item 13): “13.i & j – can be removed” — the cabin divider and cabin door curtain items are gone. Both were the ones flagged CABIN FURNISHING, not modelled in MSFS; he kept the three that are actionable. The block is therefore no longer the crew’s full list, and is not claimed to be. Verbatim: “Seatbelt button.” / “Is on.” Distinct from the passing-10,000 signs call in flow step 13.3 — this is the checklist verifying what the flow already did, which is what the whole page is built on.'}],
   ['Flaps','One or two','PM',{c:'vhigh', ev:'Operators Guide §XVII p.17-7 Approach 5, verbatim — Flaps, 1 or 2, when Desired.'}]
  ]},
 
 /* 14 ----------------------------------------------------------- */
 {kind:'flow', trigger:'Established inbound', title:'Final approach', when:'Approach armed → minimums',
  steps:[
-  {who:'PF', t:'', say:'Approach mode.', g5:['activate-approach'], c:'high', ev:'JayDee MSFS checklist v1.32.3 — activate APPR mode at this point. Not an Operators Guide item; the command wording is ours.'},
+  {who:'PF', t:'<b>This flow is written for an ILS.</b> On an RNAV, a VOR or a visual, several steps below change or drop out — see the <b>Approach type</b> reference card before you brief.', say:'Approach mode.', g5:['activate-approach'], c:'high', ev:'JayDee MSFS checklist v1.32.3 — activate APPR mode at this point. Not an Operators Guide item; the command wording is ours. NIC FLAGGED 2026-09-13 (v3 review, item 14): “some items change depending on the type of approach – eg RNAV, VOR, visual.” He is right and this flow was silently ILS-only — nav source LOC, glideslope alive, one dot below the glideslope. Rather than renumber phase 14 into branches, the differences are gathered on a new unnumbered reference card and this step now says so out loud.'},
   {who:'PM', t:'Arm it and read what the FMA says.', say:'Approach armed — localizer and glideslope armed.', c:'high', ev:'JayDee MSFS checklist v1.32.3 — verify FMA arms LOC and GS (white). Reading it back aloud is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B.'},
   {who:'PM', t:'', say:'Localizer captured… glideslope alive.', c:'high', ev:'JayDee MSFS checklist v1.32.3 — verify LOC capture, FMA LOC green. “Glideslope alive” is standard phraseology, not from a Longitude source.'},
   {who:'PM', t:'At the FAF, close the loop on the <b>height</b> as well as the fix — and on a non-precision approach, keep reading the distances down.', say:'FAF inbound, height checked, missed approach altitude set.', g5:['slope-check'], c:'low', ev:'CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B — close the loop on height as well as fix at the FAF, and read distances down on a non-precision approach. No Longitude source.'},
@@ -1055,9 +1058,9 @@ const PHASES = [
   {who:'PM', to:'ATC', t:'<b>Landing clearance.</b> If it has not arrived, say so — and keep saying so. It is tracked out loud on both recorded flights, and on both it is still missing inside a thousand feet.', say:'No landing clearance yet.', c:'full', ev:'VS-001 @ 32:57 — “No landing clearance yet.” Video VS-002 (CitationMax N2RF, Innsbruck–London, the return leg of VS-001, same crew) @ 30:36, configured and inside the FAF: “so continue, just right?” / “yeah, just continue — no landing clearance”, and the clearance does not arrive until 31:08. Corroborated on two flights: this is a habit of the crew, not an artefact of one busy arrival.'},
   {who:'PF', t:'At intercept, one command.', say:'Flaps full, set missed approach altitude, Before Landing checklist.', c:'full', ev:'Video VS-001 (CitationMax N2RF, real Longitude crew) — 32:31 “Flaps full, landing checklist” and 32:07 “And set missed approach altitude for me please.” Folded into one command here.'},
   {who:'PM', t:'Set both, then run the list.', say:'Flaps full… indicating full. Missed approach altitude set.', c:'full', ev:'Video VS-001 (CitationMax N2RF, real Longitude crew) — 32:43 “Flaps are full” and “And set.” The state is confirmed back before the list runs.'},
-  {who:'PM', t:'<b>1,000 ft gate.</b>', say:'One thousand.', c:'low', ev:'CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B — the 1,000 ft stabilised-approach gate. No Longitude source. EVIDENCE CORRECTED 2026-09-13: this used to reason “the reference crew calls Five hundred (34:28) but no 1,000 call appears”, treating the 500 as a crew call and the missing 1,000 as a crew omission. The 500 is the aeroplane (see step 14 “Five hundred”), so the comparison never held — NEITHER gate is spoken by a pilot on either recorded flight. That makes both gate calls ours, not theirs, and part of the same question for Nic.'},
+  {who:'PM', t:'<b>1,000 ft gate — precision approach.</b> The verdict, not the height: <b>stable</b>, or <b>unstable</b> and the item that makes it so.', note:'Say one or the other. <b>Silence is not a pass</b> — that is the whole point of a gate.', say:'Stable.  /  Unstable — speed.', c:'full', ev:'NIC ANSWERED AND SPLIT THE GATES 2026-09-13 (v3 review, item 15.3): “I would add PM ‘stable / unstable’ calls at 1000 AGL on a precision approach, 500 AGL on visual.” So this is now the PRECISION gate and the 500 (step 14.13) is the VISUAL one — the page previously ran both on every approach, which is not what he wants. He also settled what the PM speaks: the VERDICT, not the number. That resolves the open question raised here on 2026-09-13, when both gate calls were downgraded after the “Five hundred” on VS-001 @ 34:28 turned out to be the aeroplane, not the PM — see the note on step 14.13. The underlying gate is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B; the assignment to 1,000 ft precision and the verdict-only wording are Nic’s. Stability criteria are on the Stabilised approach reference card.'},
   {who:'PF', t:'Take the speed off the FMS by hand here — <b>SPD to MAN, VREF + 5</b>.', say:'Configured. Speed manual, VREF plus five.', c:'full', ev:'JayDee MSFS checklist v1.32.3 — verbatim — @1000 AGL or 3 NM OUT, SPD from FMS to MAN → VREF+5 KIAS — and the video: “Autopilot is off and airspeed is coming back to you.”'},
-  {who:'PM', t:'<b>500 ft gate</b> — stable, or name the offending item. <b>Question for Nic:</b> the aeroplane calls the height itself, so is the PM’s job the <i>height</i>, or only the verdict — <span class="say">Stable</span> / the offending item?', say:'Five hundred — stable.', c:'low', ev:'OPEN QUESTION FOR NIC, raised 2026-09-13. DOWNGRADED from full 2026-09-13, and the old evidence was wrong. It read simply: “VS-001 @ 34:28 — ‘Five hundred.’”, crediting the crew. In context that line is the FIRST OF SEVEN in an unbroken automated descent — 34:26 “Auto-throttle”, then 500, 400, 300, 200, 100, then the flare countdown — continuing straight through two ATC transmissions. It is the aeroplane, not the PM. Same error class as the 80-knot call, in the opposite direction: there we denied the crew a call they make, here we credited them with one they do not. The 500 ft GATE is real and is CE-525 operator SOP + AC 120-71B; what is unevidenced is the PM speaking the number. Hence low.'},
+  {who:'PM', t:'<b>500 ft gate — visual approach.</b> Same two words, and again the verdict only — the aeroplane is already calling the height.', note:'On a precision approach the gate was at 1,000 (step 14.10) and this one is not repeated. <b>One gate per approach</b>, chosen by the type you are flying.', say:'Stable.  /  Unstable — sink rate.', c:'full', ev:'NIC ANSWERED 2026-09-13 (v3 review, item 15.3): “I would add PM ‘stable / unstable’ calls at 1000 AGL on a precision approach, 500 AGL on visual” — so 500 ft is now the VISUAL gate specifically, and the PM speaks the verdict, never the height. RESOLVES the open question this step carried, which was right to be sceptical: the old evidence read “VS-001 @ 34:28 — ‘Five hundred.’” and credited the crew, but in context that line is the first of seven in an unbroken automated descent (34:26 “Auto-throttle”, then 500, 400, 300, 200, 100, then the flare countdown) running straight through two ATC transmissions. It is the aeroplane. Nic has confirmed the aeroplane owns the numbers and the PM owns the verdict — the same answer he gave for the flare countdown, where the shadowing step is deleted outright. The gate itself is CE-525 operator SOP + AC 120-71B; its placement and wording are his.'},
   {who:'PF', t:'Autopilot out by 200 ft at the latest; the hard limit is 160 ft.', say:'Autopilot off, my speed.', c:'vhigh', ev:'The 200 ft is JayDee MSFS checklist v1.32.3 — Autopilot OFF, latest at 200 ft AGL. The 160 ft hard limit is Operators Guide §I Limitations — AFCS table, Approach Autopilot Minimum 160 Feet AGL. Operators Guide §XVII Before Landing 6 says “prior to minimum use height”.'},
   {who:'PM', t:'', say:'One hundred above… minimums.', c:'full', ev:'Video VS-001 (CitationMax N2RF, real Longitude crew) — 33:01 — “Minimums. Minimums.” The “one hundred above” prefix is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B.'},
   {who:'PF', t:'One of two answers, and only one is negotiable.', say:'Landing.  /  Going around.', c:'full', ev:'Video VS-001 (CitationMax N2RF, real Longitude crew) — “We’re landing.” / “Airport’s in sight.” / “Visual.” One of two answers at minimums.'},
@@ -1080,11 +1083,10 @@ const PHASES = [
 /* 15 ----------------------------------------------------------- */
 {kind:'flow', trigger:'Fifty feet', title:'Flare &amp; rollout', when:'Retard → clear of the runway',
  steps:[
-  {who:'PM', t:'At 50 ft the autothrottle closes the levers — <b>and your hardware throttles do not move themselves</b>.', say:'Retard.', c:'vhigh', ev:'Operators Guide §XVII p.17-8 Landing 1 — Autothrottle, Check Green RETARD at 50 feet AGL. The hardware-throttle caveat is JayDee MSFS checklist v1.32.3 — verify AT FMA → RETARD and retard your hardware throttle. Sim-specific but Longitude-sourced.'},
+  {who:'PM', t:'At 50 ft the autothrottle closes the levers — <b>and your hardware thrust levers do not move themselves</b>.', say:'Retard.', note:'<b>This is the only thing the PM says through the flare.</b> The height countdown — fifty, forty, thirty, twenty, ten — is the aeroplane, and you stay off it.', c:'vhigh', ev:'Operators Guide §XVII p.17-8 Landing 1 — Autothrottle, Check Green RETARD at 50 feet AGL. The hardware-lever caveat is JayDee MSFS checklist v1.32.3 — verify AT FMA → RETARD and retard your hardware throttle. Sim-specific but Longitude-sourced. NOTE ON THE DELETED STEP: this phase used to carry a step shadowing the automatic flare countdown, held open as a question for Nic and marked “if the answer is stay quiet, this step gets deleted”. NIC ANSWERED 2026-09-13 (v3 review, item 15.3): “yep, stay quiet on those.” The step is gone and phase 15 renumbered from it — steps 15.4 to 15.10 in v3 are 15.3 to 15.9 here. Both recorded flights already showed the countdown was automation (VS-001 @ 34:26–35:07 runs it straight through two ATC transmissions; VS-002 @ 32:47 interleaves the autothrottle annunciation into it); Nic has confirmed the crew convention matches.'},
   {who:'PF', t:'<b>Bring the levers to idle by hand.</b> This is the classic sim tell if you don’t.', c:'vhigh', ev:'Operators Guide §XVII p.17-8 Landing 2 — Throttles, IDLE. By hand, per JayDee MSFS checklist v1.32.3.'},
-  {who:'PM', t:'<b>Question for Nic — does the PM shadow the automatic calls, or stay quiet?</b> The aeroplane makes this countdown itself; both recorded crews say nothing over it. <b>If the answer is “stay quiet”, this step gets deleted.</b>', say:'(the aeroplane) Fifty… forty… thirty… twenty… ten.', c:'low', ev:'OPEN QUESTION FOR NIC, raised 2026-09-13. CONFIRMED AS AUTOMATION and this step is probably wrong to assign to the PM. VS-002 @ 32:47 records the countdown unbroken — “100, autothrottle, 50, 40, 30, 20, 10” — with the autothrottle annunciation INTERLEAVED, which no human would say that way, and @ 32:28 “minimums, minimums” doubling in the same cadence. VS-001 @ 34:26–35:07 is the same stream: “Auto-throttle. Five hundred. Four hundred. Three hundred. Two hundred. One hundred. Fifty, forty, thirty, twenty, ten” — running straight THROUGH two ATC transmissions, which settles it. Neither crew makes these calls. Kept pending Nic because deleting it renumbers the page; see also step 14 “Five hundred”, mis-attributed for the same reason.'},
   {who:'PF', t:'Touch down under <b>600 fpm</b>, fly the nosewheel on, then brakes.', c:'vhigh', ev:'Brakes after nosewheel touchdown is Operators Guide §XVII Landing 3, verbatim. The 600 fpm is Operators Guide §I Limitations — Maximum Landing Sink Rate, 600 Feet Per Minute — a published limitation, not a technique target.'},
-  {who:'PM', t:'Ground spoilers are <b>automatic</b> on this aeroplane, so the call is a confirmation — and the version in brackets is the one that matters. The crew calls them <b>speed brakes</b>, and says they are <b>out</b>.', say:'Speed brakes are out.  /  Speed brakes not out.', c:'full', ev:'Automatic ground spoilers is a Longitude systems fact (there is no autobrake either), established while checking the 737 pack rather than copying it; the bracketed-exception convention is that pack’s, shape only. Video VS-002 (CitationMax N2RF, Innsbruck–London, the return leg of VS-001, same crew) @ 32:54, immediately after touchdown: “Alright, speed brakes are out” — so the call is real, and the wording is now theirs rather than our 737-flavoured “spoilers up”. Changed here and on the Reject card together.'},
+  {who:'PM', t:'Ground spoilers are <b>automatic</b> on this aeroplane, so the call is a confirmation — and the version in brackets is the one that matters. The crew calls them <b>speed brakes</b>, and says they are <b>out</b>.', say:'Speed brakes are out.  /  Speed brakes not out.', c:'full', ev:'Automatic ground spoilers is a Longitude systems fact (there is no autobrake either), established while checking the 737 pack rather than copying it; the bracketed-exception convention is that pack’s, shape only. Video VS-002 (CitationMax N2RF, Innsbruck–London, the return leg of VS-001, same crew) @ 32:54, immediately after touchdown: “Alright, speed brakes are out” — so the call is real, and the wording is now theirs rather than our 737-flavoured “spoilers up”. Changed here and on the Reject card together. NIC IS NOT SURE 2026-09-13 (v3 review, item 15.5 — this step, before the phase renumbered): “not sure about this – we’ll need to check for real.” Worth being precise about what is and is not in doubt. The AEROPLANE is settled: Operators Guide §II Aircraft Overview p.2-5 — “Ground spoilers are fully automatic and extend during landing or rejected takeoff maneuvers and add the inboard spoiler panel to the deployment of all panels.” The CALL is settled too — VS-002 @ 32:54, in those words. What is genuinely open is whether the MSFS/Working Title build models the automatic extension faithfully, which is a sim question and only a session in the sim answers it. Rating held at full on the aeroplane and the crew; flagged here so the check actually gets done.'},
   {who:'PM', t:'The crew counts them.', say:'Two deployed.', c:'full', ev:'Operators Guide §XVII p.17-8 Landing 4 — Thrust Reversers, Deploy. Video VS-002 (CitationMax N2RF, Innsbruck–London, the return leg of VS-001, same crew) @ 33:00 — “two deployed” — which carries more than “deployed” does, because the number is exactly what a single-reverser failure takes away. The bare call is CE-525 operator SOP + AC 120-71B.'},
   {who:'PF', t:'<b>Reverse to idle by 45 KIAS</b> — a hard limit, not a guideline.', c:'vhigh', ev:'Operators Guide §XVII p.17-8 Landing 4, verbatim — Deploy (Reverse Idle by 45 KIAS).'},
   {who:'PM', t:'', say:'Eighty knots… sixty knots.', c:'low', ev:'CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B — rollout speed calls. No Longitude source specifies 80 and 60.'},
@@ -1095,7 +1097,7 @@ const PHASES = [
 {kind:'list', short:'Landing', title:'Landing', nocall:true, mode:'Not called — flown, then verified',
  items:[
   ['Autothrottle','Green RETARD at 50 ft','PM',{c:'vhigh', ev:'Operators Guide §XVII p.17-8 Landing 1, verbatim.'}],
-  ['Throttles','Idle — by hand','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-8 Landing 2, verbatim; “by hand” from JayDee MSFS checklist v1.32.3.'}],
+  ['Thrust levers','Idle — by hand','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-8 Landing 2, verbatim; “by hand” from JayDee MSFS checklist v1.32.3.'}],
   ['Brakes','Applied after nosewheel touchdown','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-8 Landing 3, verbatim.'}],
   ['Thrust reversers','Deployed — idle by 45 KIAS','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-8 Landing 4, verbatim.'}],
   ['Touchdown rate','Under 600 fpm','PF',{c:'vhigh', ev:'ADDED to the Operators Guide list, but from the Operators Guide itself: Operators Guide §I Limitations — Maximum Landing Sink Rate, 600 Feet Per Minute.'}]
@@ -1106,7 +1108,7 @@ const PHASES = [
  steps:[
   {who:'PF', t:'<b>Thrust reversers stowed</b>, indications clear.', c:'vhigh', ev:'Operators Guide §XVII p.17-9 After Landing 1 — Thrust Reversers, Stow.'},
   {who:'PM', t:'<b>Flaps as desired</b> — normally up · ice protection: <b>WING OFF, STAB OFF</b>, engine as required.', c:'vhigh', ev:'Operators Guide §XVII p.17-9 After Landing 2 and 3a/3b/3c, verbatim — Flaps As Desired; ENGINE buttons As Required, WING OFF, STAB OFF.'},
-  {who:'PM', t:'Exterior lights set for taxi — landing lights off, taxi light on. Transponder and radar as required.', g5:['xpdr-ground'], c:'high', ev:'Exterior lights is Operators Guide §XVII After Landing 4 (As Required). The landing-off / taxi-on breakdown and the transponder GND selection are JayDee MSFS checklist v1.32.3.'},
+  {who:'PM', t:'Exterior lights set for taxi — <b>landing lights off, anti-collision off, pulse off, taxi light on</b>. Transponder and weather radar as required.', note:'Pulse goes off with the runway behind you — it is the light that says “I am on a runway”.', g5:['xpdr-ground'], c:'high', ev:'Exterior lights is Operators Guide §XVII After Landing 4 (As Required). The landing-off / anti-collision-off / taxi-on breakdown and the transponder GND selection are JayDee MSFS checklist v1.32.3 — After Landing block, verbatim. Pulse off follows from NIC 2026-09-13 (v3 review, item 8): pulse is on “whenever on or crossing a runway”, so vacating is when it comes off. “Weather radar” per his item 7.h.'},
   {who:'PM', to:'ATC', t:'Ground clearance obtained and read back; stand confirmed.', c:'low', ev:'CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B — ground clearance and stand before taxiing in. No Longitude source.'},
   {who:'PF', t:'They call it <b>cleanups</b>, and they ask rather than order.', say:'Do you have the cleanups?', c:'full', ev:'VS-001 @ 36:04 “Alright, cleanups, please” and Video VS-002 (CitationMax N2RF, Innsbruck–London, the return leg of VS-001, same crew) @ 33:48 “Do you have the cleanups?” — the same name on both flights. Video VS-002 (CitationMax N2RF, Innsbruck–London, the return leg of VS-001, same crew) @ 34:58 closes it the standard way: “Alright, after landing’s complete.”'},
   {par:{c:'low', ev:'2007 World Flight Australia 737 pack — shape only. The point being made (nothing happens until the tail is clear) is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B; items are Operators Guide After Landing, redistributed.', cue:'Runway vacated — and not one second earlier',
@@ -1137,7 +1139,7 @@ const PHASES = [
   {who:'PF', t:'Onto the stand straight, <b>EMER/PARK BRAKE set</b>.', c:'vhigh', ev:'Operators Guide §XVII p.17-9 Shutdown 2 — EMER/PARK BRAKE Handle, Set. “Onto the stand straight” is ours.'},
   {who:'PM', to:'GND', t:'Chocks called for, and <b>confirmed in</b> before the brake is even thought about.', c:'low', ev:'CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B — chocks confirmed in before the brake is released. No Longitude source.'},
   {who:'PM', to:'PA', t:'Passenger signs off only when it is genuinely safe to move about.', c:'low', ev:'CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B — passenger signs off only when it is safe to move about. No Longitude source.'},
-  {who:'PF', t:'Throttles <b>IDLE</b>, engine ice protection <b>off</b>, then <b>ENGINE RUN/STOP both OFF</b> when the ground is clear.', c:'vhigh', ev:'Operators Guide §XVII p.17-9 Shutdown 1, 3 and 4 — Throttles IDLE, ENGINE ICE PROTECTION both OFF, ENGINE RUN/STOP both OFF.'},
+  {who:'PF', t:'Thrust levers <b>IDLE</b>, engine ice protection <b>off</b>, then <b>ENGINE RUN/STOP both OFF</b> when the ground is clear.', c:'vhigh', ev:'Operators Guide §XVII p.17-9 Shutdown 1, 3 and 4 — Throttles IDLE, ENGINE ICE PROTECTION both OFF, ENGINE RUN/STOP both OFF.'},
   {who:'PM', t:'Watch them run down — ITT and the CAS as the generators drop off.', c:'low', ev:'CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B — monitor the run-down. No Longitude source; the Operators Guide gives no run-down item.'},
   {who:'PF', t:'<b>EMER LTS off · STBY PWR off · APU off · exterior lights off · BATT buttons both off</b>, in that order.', c:'vhigh', ev:'Operators Guide §XVII p.17-9 Shutdown 5, 6, 7, 8 and 9, verbatim and in that order.'},
   {who:'PM', t:'If we are turning round rather than finishing: <b>Quick Turn</b> instead — engines stopped, power back on APU or external, then straight back to Cockpit Preparation.', c:'vhigh', ev:'Operators Guide §XVII p.17-10 Quick Turn, verbatim — engines to STOP, power on APU or external, then “Return to Normal Procedures, Cockpit Preparation”.'},
@@ -1146,7 +1148,7 @@ const PHASES = [
 
 {kind:'list', short:'Shutdown', title:'Shutdown', mode:'When PF requests · read &amp; do, in this order',
  items:[
-  ['Throttles','Idle','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-9 Shutdown 1, verbatim.'}],
+  ['Thrust levers','Idle','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-9 Shutdown 1, verbatim.'}],
   ['EMER / PARK BRAKE handle','Set','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-9 Shutdown 2, verbatim.'}],
   ['ENGINE ICE PROTECTION — both','Off','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-9 Shutdown 3, verbatim.'}],
   ['ENGINE RUN/STOP — both','Off','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-9 Shutdown 4, verbatim.'}],
@@ -1184,7 +1186,7 @@ const PHASES = [
 +'<div class="rsec"><h4>Physical territory</h4>'
 +'<table class="rtab">'
 +'<tr><td class="q"><b>Guidance panel, autopilot, FD</b></td><td>PF. Hand-flying, the PF <b>directs</b> the PM to make the selections rather than reaching across — and the PM reads the FMA back.</td></tr>'
-+'<tr><td class="q"><b>Throttles, tiller, brakes</b></td><td>PF. Including the speedbrake lever.</td></tr>'
++'<tr><td class="q"><b>Thrust levers, tiller, brakes</b></td><td>PF. Including the speedbrake lever.</td></tr>'
 +'<tr><td class="q"><b>Gear and flap levers</b></td><td>PM, on command, every time.</td></tr>'
 +'<tr><td class="q"><b>Overhead, lights, ice protection</b></td><td>PM.</td></tr>'
 +'<tr><td class="q"><b>Radios and transponder</b></td><td>PM, unless handed over out loud.</td></tr>'
@@ -1225,12 +1227,15 @@ const PHASES = [
 +'<li>Set the next frequency in <b>standby</b> during the cruise. A handoff should be a transfer, not a keypad entry.</li>'
 +'<li><b>Monitor</b> keeps the old frequency audible while you check in on the new one. <span data-g5="radios"></span></li>'
 +'<li>If a call goes unanswered twice, <b>say so</b> rather than trying a third time in silence.</li>'
++'<li><b>Nothing with the ground crew is on a radio</b> — it is hand signals. Get their eye before you need them.</li>'
++'<li><b>A CPDLC uplink is read, not heard</b>, so it reaches one pilot only until someone says it out loud. '
++'Read it back on the datalink, then read it across the cockpit. See the <b>Before you sit down</b> card.</li>'
 +'</ul></div>'
 
 +'<div class="rsec"><h4>What leaves the cockpit, phase by phase</h4>'
 +'<table class="rtab"><tr><th>Phase</th><th><span class="xc">ATC</span></th><th><span class="xc">PA</span> &middot; <span class="xc">GND</span></th></tr>'
 +'<tr><td class="q">Cockpit prep</td><td>ATIS; clearance</td><td>—</td></tr>'
-+'<tr><td class="q">Before start</td><td>Pushback or start clearance</td><td><b>PA</b> welcome and brief, signs on<br><b>GND</b> headset, brakes set, pushback</td></tr>'
++'<tr><td class="q">Before start</td><td>Start clearance; pushback only if the stand needs it</td><td><b>PA</b> welcome and brief, signs on<br><b>GND</b> <b>hand signals only</b> — eyes on them first</td></tr>'
 +'<tr><td class="q">Taxi</td><td>Taxi clearance</td><td>—</td></tr>'
 +'<tr><td class="q">Holding point</td><td>Ready for departure</td><td><b>PA</b> cabin secure, if not already</td></tr>'
 +'<tr><td class="q">Line-up</td><td>Line-up / takeoff clearance</td><td>—</td></tr>'
@@ -1312,7 +1317,7 @@ const PHASES = [
 
 +'<div class="rsec"><h4>The stream</h4>'
 +'<table class="rtab">'
-+'<tr><td class="q"><span class="who PF">PF</span></td><td><span class="say">Reject.</span> Throttles closed, <b>maximum braking</b>, reversers.</td></tr>'
++'<tr><td class="q"><span class="who PF">PF</span></td><td><span class="say">Reject.</span> Thrust levers closed, <b>maximum braking</b>, reversers.</td></tr>'
 +'<tr><td class="q"><span class="who PM">PM</span></td><td><span class="say">Spoilers up.</span> &nbsp;/&nbsp; <span class="say">Spoilers not up.</span></td></tr>'
 +'<tr><td class="q"><span class="who PM">PM</span></td><td><span class="say">Reversers deployed.</span> &nbsp;/&nbsp; <span class="say">No reverse, left.</span></td></tr>'
 +'<tr><td class="q"><span class="who PM">PM</span></td><td><span class="say">Eighty knots… sixty knots.</span></td></tr>'
@@ -1331,7 +1336,130 @@ const PHASES = [
 +'<div class="rsec"><h4>Above V1</h4>'
 +'<p>The PM’s job becomes <span class="say">Continue</span> plus <b>what they can see</b>, as briefed — '
 +'and then nothing is touched, by anybody, until <b>400 ft</b> and the PF calls for it. The PF states the '
-+'failure and the intent; the PM confirms the identification before a single lever moves.</p></div>'}
++'failure and the intent; the PM confirms the identification before a single lever moves.</p></div>'},
+
+/* ---- added 2026-09-14, from Nic's v3 review. All three are appended here
+   rather than inserted into a phase, so no flow step or checklist item
+   renumbers on their account. ---- */
+
+{kind:'ref', c:'full', ev:'Entirely from Nic, 2026-09-13 (v3 review, the FYI block and the closing paragraph). The SimBrief load sequence, the VATSIM callsign-matching rule and the Hoppie CPDLC plugin are all his, verbatim in substance: “the G5000 pre-assumes we have completed the SimBrief planning stage. On the GTC, we click SimBrief on Home page, select flight, then load the plan (similar to ACARS)”; “For a VATSIM online flight we submit the flight plan to VATSIM within SimBrief. As long as the callsigns match when we Connect to VATSIM in vPilot, it will all sync up”; “Hoppie has created a CPDLC plugin which integrates into the G5000 GTCs. VATSIM Europe and Oceania using simulated CPDLC extensively now for text ATC-aircraft clearances and some comms. Essential for oceanic flights with ADS coverage too.” NONE of this is in the Model 700 Operators Guide or the Garmin CRG — it is the simulator and network layer that sits underneath the aeroplane, and it has no aircraft source by definition. Rated full because Nic is the authority on his own rig and network, not because a document says so.', short:'Planning', title:'Before you sit down',
+ when:'SimBrief, VATSIM and CPDLC &middot; the layer under the aeroplane',
+ html:
+ '<div class="rsec"><h4>The G5000 assumes the planning is already done</h4>'
++'<p>For a point-to-point flight the aeroplane expects a <b>SimBrief</b> plan to exist before anyone sits '
++'down. Nothing in the flight deck builds one. On the GTC it is <b>Home &rsaquo; SimBrief &rsaquo; select the '
++'flight &rsaquo; load</b> &mdash; and it is worth thinking of that as an <b>uplink</b>, the way an ACARS '
++'flight plan arrives, rather than as data entry. <span data-g5="simbrief"></span></p>'
++'<p>Which is also why the check afterwards matters: an import that silently half-succeeds looks exactly '
++'like one that worked. <b>Read the runway, the SID and the route down the map</b> before you touch PERF. '
++'<span data-g5="standby"></span></p></div>'
+
++'<div class="rsec"><h4>Flying it online</h4>'
++'<table class="rtab">'
++'<tr><td class="q"><b>File the plan</b></td><td>From inside <b>SimBrief</b>, not separately. One plan, one source.</td></tr>'
++'<tr><td class="q"><b>Connect</b></td><td><b>vPilot</b>. The <b>callsign must match</b> what was filed &mdash; that single string is what ties the flight plan, the aeroplane and the controller together.</td></tr>'
++'<tr><td class="q"><b>Mismatch</b></td><td>Nothing syncs up. It is the first thing to check when a controller cannot see you.</td></tr>'
++'</table></div>'
+
++'<div class="rsec"><h4>CPDLC &mdash; text clearances, in the GTCs</h4>'
++'<p>Hoppie has a <b>CPDLC plugin that integrates into the G5000 GTCs</b>, so datalink clearances arrive '
++'where you would actually look for them rather than in a separate window. <b>VATSIM Europe and Oceania use '
++'it extensively</b> for text ATC clearances and some routine comms, and it is <b>essential for oceanic</b> '
++'flying, where ADS coverage is the norm and voice is not.</p>'
++'<p>Two-crew, it changes the comms stream in one specific way: a datalink message is <b>read, not heard</b>. '
++'That means the PM has to say it out loud anyway &mdash; the <b>echo inside the cockpit</b> is the only thing '
++'that puts a text clearance into both heads. <b>Treat an uplink exactly like a voice clearance:</b> read it '
++'back on the datalink, then read it across the cockpit and get an answer.</p></div>'
+
++'<div class="rsec"><h4>Where this came from</h4>'
++'<p>All of this is <b>Nic&rsquo;s</b>, from his v3 review. None of it is in the Operators Guide or the Garmin '
++'guide, and none of it could be &mdash; it is the simulator and the network, not the aeroplane.</p></div>'},
+
+{kind:'ref', c:'high', ev:'The two gates and the verdict-only wording are NIC 2026-09-13 (v3 review, item 15.3): “I would add PM stable / unstable calls at 1000 AGL on a precision approach, 500 AGL on visual. And we will need to come up stabilised approach criteria.” That is a direct request for this card, so it exists at his instruction. The GATE STRUCTURE is therefore full; the CRITERIA BENEATH IT ARE NOT HIS AND ARE NOT LONGITUDE FIGURES — they are conventional transport-category stabilised-approach criteria from CE-525 operator SOPs (Alpha Jet / AeroJet) and AC 120-71B, reproduced from Stable-Approach-and-Landing.md. The three that ARE Longitude-sourced are marked on the card itself: 600 fpm maximum landing sink rate and the 500 ft speedbrake prohibition are Operators Guide §I Limitations, and the 160 ft autopilot minimum is the §I AFCS table. Everything else is a convention to agree, not a limit. Rated high rather than full for that reason: Nic asked for the card and set the gates, but has not yet agreed the numbers inside it.', short:'Stabilised', title:'Stabilised approach',
+ when:'The gates, the criteria, and who calls what',
+ html:
+ '<div class="rsec"><h4>One gate, chosen by the approach</h4>'
++'<p>Not two gates every time. <b>The type of approach decides which one you use</b>, and the PM speaks the '
++'<b>verdict</b> &mdash; never the height. The aeroplane is already calling heights, and talking over it adds '
++'nothing.</p>'
++'<table class="rtab"><tr><th>Approach</th><th>Gate</th><th><span class="who PM">PM</span></th></tr>'
++'<tr><td class="q"><b>Precision</b> &mdash; ILS, LPV</td><td><b>1,000 ft AGL</b></td><td><span class="say">Stable.</span> &nbsp;/&nbsp; <span class="say">Unstable &mdash; [item].</span></td></tr>'
++'<tr><td class="q"><b>Visual</b></td><td><b>500 ft AGL</b></td><td><span class="say">Stable.</span> &nbsp;/&nbsp; <span class="say">Unstable &mdash; [item].</span></td></tr>'
++'</table>'
++'<p><b>Silence is not a pass.</b> If the call is not made, the gate did not happen &mdash; and an unstable '
++'approach that nobody named is the single most common way a serviceable aeroplane ends up off the far end.</p></div>'
+
++'<div class="rsec"><h4>The criteria &mdash; all of them, or it is not stable</h4>'
++'<ul>'
++'<li>On the <b>correct lateral and vertical path</b>.</li>'
++'<li><b>Landing configuration</b> &mdash; gear down and three green, flaps FULL, speedbrakes retracted.</li>'
++'<li>Speed <b>VREF to VREF + 10</b>, settling on VREF + 5.</li>'
++'<li><b>Sink rate not more than 1,000 fpm</b> &mdash; and never a rate needing an unusual correction.</li>'
++'<li><b>Thrust stabilised.</b> With the autothrottle in, that means the FMA is settled and N1 is not hunting.</li>'
++'<li>Bank <b>15&deg; or less</b>, no large corrections.</li>'
++'<li>All briefings and checklists <b>complete</b>.</li>'
++'</ul>'
++'<p>One deviation, called and corrected within a couple of seconds, is a correction. <b>Two, or one that '
++'persists, is a go-around.</b></p></div>'
+
++'<div class="rsec"><h4>The three numbers that are the aeroplane&rsquo;s, not a convention</h4>'
++'<table class="rtab">'
++'<tr><td class="q"><b>600 fpm</b></td><td>Maximum landing sink rate. A published <b>limitation</b>, not a technique target.</td></tr>'
++'<tr><td class="q"><b>160 ft AGL</b></td><td>Autopilot minimum use height on approach. JayDee has it out by <b>200 ft</b>; 160 is the limit.</td></tr>'
++'<tr><td class="q"><b>500 ft AGL</b></td><td><b>Speedbrake operation below this is prohibited</b> on landing. The aeroplane raises its own caution.</td></tr>'
++'</table>'
++'<p>Everything in the list above these three is ordinary transport-category practice, <b>not</b> a Model 700 '
++'figure. Treat it as a convention to agree.</p></div>'
+
++'<div class="rsec"><h4>Go around</h4>'
++'<p><b>Either pilot may call it, and it is not negotiable once called.</b> Not a discussion, not a question.</p>'
++'<table class="rtab">'
++'<tr><td class="q"><span class="who PF">PF</span></td><td>TO/GA &middot; thrust levers <b>TO</b> &middot; pitch <b>7.5&deg;</b> &middot; <span class="say">Flaps two.</span></td></tr>'
++'<tr><td class="q"><span class="who PM">PM</span></td><td>Selects flaps 2. <span class="say">Flaps two, go-around mode.</span></td></tr>'
++'<tr><td class="q"><span class="who PM">PM</span></td><td><span class="say">Positive rate.</span></td></tr>'
++'<tr><td class="q"><span class="who PF">PF</span></td><td><span class="say">Gear up.</span></td></tr>'
++'<tr><td class="q"><span class="who PF">PF</span></td><td>At VAPP + 10 &mdash; <span class="say">Flaps up, speed FMS.</span></td></tr>'
++'<tr><td class="q"><span class="who PM">PM</span></td><td><span class="xc">ATC</span> Then, and only then, tell them.</td></tr>'
++'</table>'
++'<p>Fly the published missed approach first and talk to ATC second. <b>In that order, every time.</b></p></div>'},
+
+{kind:'ref', c:'low', ev:'NIC FLAGGED 2026-09-13 (v3 review, item 14): “some items change depending on the type of approach – eg RNAV, VOR, visual.” The observation is his and it is correct — the phase 14 flow was written for an ILS throughout (nav source LOC, glideslope alive, gear at one dot below the glideslope) without ever saying so. The CONTENT of this card is NOT his and is not Longitude-sourced: the per-type differences are generic instrument-flying practice plus the Garmin G5000 Cockpit Reference Guide, which is written for the Citation 560XL — right avionics, wrong airframe. Nothing in the Model 700 Operators Guide distinguishes approach types; §XVII Approach is five items and is type-agnostic. Rated low deliberately. This card is a first cut for Nic to correct, and the RNAV row in particular needs checking against what the Working Title build actually annunciates.', short:'Approach type', title:'Approach type &mdash; what changes',
+ when:'The phase 14 flow is an ILS &middot; here is everything else',
+ html:
+ '<div class="rsec"><h4>What is the same on all of them</h4>'
++'<p>The descent, the arrival, the briefing, the Approach checklist, the configuration schedule, the '
++'stability gate and the go-around are <b>identical</b> whatever you are flying. So is the discipline that '
++'matters most: <b>nav source and minimums are set per seat</b>, on each pilot&rsquo;s own outboard GTC, and '
++'nothing on screen tells you when only one side is done. <span data-g5="gtc-split"></span></p></div>'
+
++'<div class="rsec"><h4>What changes</h4>'
++'<table class="rtab"><tr><th>&nbsp;</th><th>ILS</th><th>RNAV</th><th>VOR</th><th>Visual</th></tr>'
++'<tr><td class="q"><b>Nav source</b></td><td><b>LOC</b> before the FAF</td><td><b>FMS</b> throughout</td><td><b>VOR</b> before the FAF</td><td>FMS, backing up the eyes</td></tr>'
++'<tr><td class="q"><b>Vertical guidance</b></td><td>Glideslope</td><td>Glidepath on <b>LPV / LNAV+V</b>; <b>none</b> on bare LNAV</td><td>None &mdash; step down, or a computed path</td><td>None</td></tr>'
++'<tr><td class="q"><b>Gear trigger</b></td><td>One dot below the glideslope</td><td>Same, if there is a glidepath; otherwise <b>by distance</b></td><td><b>By distance</b> to the FAF</td><td>Downwind, or on final by range</td></tr>'
++'<tr><td class="q"><b>Minimums</b></td><td><b>DA</b>, baro</td><td><b>DA</b> on LPV; <b>MDA</b> on LNAV</td><td><b>MDA</b></td><td>Circling minima, or visual</td></tr>'
++'<tr><td class="q"><b>Stability gate</b></td><td><b>1,000 ft</b></td><td><b>1,000 ft</b></td><td><b>1,000 ft</b></td><td><b>500 ft</b></td></tr>'
++'<tr><td class="q"><b>PM reads down</b></td><td>Height at the FAF</td><td>Height at each named fix</td><td><b>Distance and height, continuously</b></td><td>Nothing &mdash; watches outside</td></tr>'
++'</table></div>'
+
++'<div class="rsec"><h4>Three traps</h4>'
++'<ul>'
++'<li><b>Bare LNAV has no vertical guidance, and the needle does not tell you so.</b> A glidepath you can '
++'follow and a profile you have to fly look different only if you read the annunciation. Check what the '
++'approach actually armed as. <span data-g5="activate-approach"></span></li>'
++'<li><b>Nav source is the one that bites.</b> On an ILS or a VOR it has to change; on an RNAV it must '
++'<b>not</b>. One side changed and the other not looks completely normal from either seat. '
++'<span data-g5="nav-source"></span></li>'
++'<li><b>MDA is not DA.</b> At an MDA you may not descend below it without the runway &mdash; so the '
++'<span class="say">Minimums</span> call means something different, and the missed approach starts at the '
++'missed approach point, not at the height. <span data-g5="minimums"></span></li>'
++'</ul></div>'
+
++'<div class="rsec"><h4>Where this came from</h4>'
++'<p><b>This card is a first cut and the weakest thing on the page.</b> Nic spotted that the flow was '
++'silently ILS-only; the differences here are ordinary instrument practice and the Garmin guide for the '
++'<b>560XL</b>, not the Longitude. <b>Nothing in the Model 700 Operators Guide distinguishes approach types '
++'at all.</b> Correct it rather than trusting it.</p></div>'}
 ];
 
 /* =================================================================
@@ -1415,6 +1543,51 @@ function gpage(a){
 /* ---------------- the entries ---------------- */
 const G5 = {
 
+/* ---- added 2026-09-14 from Nic's v3 review. Both of these are Working Title
+   additions to the G5000 and appear on NEITHER source document, so neither can
+   be ringed on the real Home-screen captures. They use navRaw and say so. ---- */
+
+'simbrief': {who:'PM', t:'<b>Load the SimBrief plan.</b> The aeroplane assumes the planning is already done.',
+  navRaw:'<div class="gp"><div class="gp-tab">MFD GTC &mdash; HOME</div>'
+       + '<div class="gp-grid c2"><div class="gp-btn hot">SimBrief</div><div class="gp-btn">Flight Plan</div></div>'
+       + '<div class="gp-note"><b>Working Title addition.</b> This button is not on the Garmin Home screen '
+       + 'captured in the Operators Guide, so it cannot be ringed on the real screenshot.</div></div>',
+  navCap:'<b>Home page of the MFD GTC.</b> Nic&rsquo;s words: &ldquo;we click &lsquo;SimBrief&rsquo; on Home page, '
+       + 'select flight, then load the plan (similar to ACARS)&rdquo;.',
+  act:{tab:'SIMBRIEF', seq:['Open <b>SimBrief</b> from the GTC Home page',
+                            'Select the flight from the list',
+                            '<b>Load</b> the plan into the FMS',
+                            'Then <b>check it</b> — runway, SID, route, fix by fix'],
+       note:'Loading is an <b>import</b>, not entry. Treat it like an ACARS uplink: something arrived, and '
+          + 'nobody has yet confirmed it arrived intact.'},
+  actCap:'<span class="src">From Nic, 2026-09-13 — not in either source document.</span>',
+  warn:{lead:'A half-loaded plan looks exactly like a loaded one', t:'The import is the moment to be '
+      + 'suspicious, not relaxed. <b>Read the departure runway, the SID and the route down the map</b> before '
+      + 'anyone touches PERF — because every performance figure you are about to compute is derived from a '
+      + 'route nobody has looked at yet.'}},
+
+'initialisation': {who:'PM', t:'<b>Work the Initialisation page in order</b> and finish on <b>Accept Initialisation</b>.',
+  navRaw:'<div class="gp"><div class="gp-tab">MFD GTC &mdash; INITIALISATION</div>'
+       + '<div class="gp-grid c1"><div class="gp-btn hot">Initialisation<span class="v">comes up first</span></div></div>'
+       + '<div class="gp-note"><b>Working Title flow.</b> The Operators Guide documents the PERF pages only '
+       + 'and has no initialisation page, so there is nothing to ring here either.</div></div>',
+  navCap:'<b>It presents itself</b> on power-up rather than being navigated to. The PERF pages are where the '
+       + 'same numbers live afterwards.',
+  act:{tab:'INITIALISATION', seq:['Step through each prompt in the order it offers them',
+                                  'Weights and payload',
+                                  'Fuel — synced',
+                                  'Departure and runway, weather, takeoff configuration',
+                                  'Let it <b>calculate</b>',
+                                  '<b>Accept Initialisation</b> — the last prompt, and the one people miss'],
+       note:'Nothing is set until <b>Accept</b>. Stopping one prompt short leaves the figures on screen and '
+          + 'not in the aeroplane.'},
+  actCap:'<span class="src">From Nic, 2026-09-13 — a Working Title flow, not an Operators Guide procedure.</span>',
+  warn:{lead:'It replaces the page-hopping, not the crosscheck', t:'Walking the initialisation prompts gets '
+      + 'every figure in with far less GTC navigation, which is why it is the normal route. It does <b>not</b> '
+      + 'make the numbers a one-person job: the <b>speeds still get said out loud and answered off the other '
+      + 'pilot&rsquo;s own tape</b>. One pilot accepting an initialisation is one pilot&rsquo;s work, however '
+      + 'tidy the page looks.'}},
+
 'route': {who:'PM', t:'<b>Build or check the route.</b> Origin, enroute, destination.',
   nav:{gtc:'mfd', btn:'Flight Plan', cap:'Route entry and every flight-plan edit starts here.'},
   act:{tab:'ACTIVE FLIGHT PLAN', btns:[['Add Waypoint',0],['Flight Plan Options',1]], cols:2,
@@ -1468,17 +1641,21 @@ const G5 = {
        note:'Per-speed toggles plus <b>All On</b> / <b>All Off</b>. Then look at the PFD, not at this page.'}},
 
 'synoptics': {who:'PM', t:'<b>Put the flight-controls synoptic up for the control check</b> &mdash; full travel becomes something you can see.',
-  nav:{gtc:'mfd', btn:'Aircraft Systems', cap:'The Longitude systems synoptics.'},
-  act:{tab:'AIRCRAFT SYSTEMS',
-       btns:[['Flight Controls',1],['Electrical',0],['Fuel',0],['Hydraulics',0],['Anti-Ice',0],['Pre-Flight',0]], cols:3,
-       note:'Call the surfaces as they move. <b>Pre-Flight</b> gives an all-green summary that makes a fast '
-          + 'before-takeoff item. <i>(sim behaviour)</i>'}},
+  nav:{gtc:'mfd', btn:'Aircraft Systems', cap:'<b>The button says Aircraft Systems; the page it opens is the '
+     + 'Systems page.</b> Synoptics are the schematics on it &mdash; pick one, then read the MFD, not the GTC.'},
+  act:{tab:'SYSTEMS &rsaquo; SYNOPTICS',
+       btns:[['Flight Controls',1],['Electrical',0],['Fuel',0],['Hydraulics',0],['Anti-Ice',0],['ECS',0],['Summary',0],['Pre-Flight',0]], cols:4,
+       note:'<b>The synoptic draws on the MFD, not here.</b> The GTC only chooses which one. Call the surfaces '
+          + 'as they move, off the schematic. <b>Pre-Flight</b> is the all-green summary used before takeoff.'}},
 
-'preflight-synoptic': {who:'PM', t:'<b>Pre-flight synoptic page &mdash; all green.</b>',
-  nav:{gtc:'mfd', btn:'Aircraft Systems', cap:'Same synoptics page as the control check.'},
-  act:{tab:'AIRCRAFT SYSTEMS &rsaquo; PRE-FLIGHT',
-       fields:[['Electrical','green'],['Fuel','green'],['Hydraulics','green'],['Anti-ice','green'],['Doors','closed']],
-       note:'Catches things CAS will not phrase for you. <i>(sim behaviour)</i>'}},
+'preflight-synoptic': {who:'PM', t:'<b>Pre-flight synoptic &mdash; all green.</b>',
+  nav:{gtc:'mfd', btn:'Aircraft Systems', cap:'Same route as the control check: <b>Systems &rsaquo; Synoptics '
+     + '&rsaquo; Pre-Flight</b>, then read the schematic on the MFD.'},
+  act:{tab:'SYSTEMS &rsaquo; SYNOPTICS &rsaquo; PRE-FLIGHT',
+       fields:[['Power-on pneumatic tests','passed'],['Taxi tests','passed'],['Electrical','green'],['Fuel','green'],['Hydraulics','green'],['Anti-ice','green'],['Doors','closed']],
+       note:'<b>This is the page NO TAKEOFF is computed from.</b> The Operators Guide is explicit: the message '
+          + 'means &ldquo;conditions for takeoff listed in the pre-flight synoptic page have not been '
+          + 'appropriately met and takeoff is prohibited&rdquo;. An amber line here is not advice.'}},
 
 'xpdr-lineup': {who:'PM', t:'<b>Transponder to its airborne mode</b> as you enter the runway &mdash; not before.',
   nav:{gtc:'mfd', btn:'XPDR', cap:'Shortcut in the top-right corner of every MFD GTC page &mdash; no need to go Home.'},
@@ -1582,7 +1759,7 @@ const G5 = {
        + '<b>inboard MFD GTC</b>. <b>Nav source, minimums, timers, bearings and sensors</b> are on the '
        + '<b>outboard PFD GTC</b>, and that one is <b>per seat</b>.',
   act:{tab:'AREAS OF RESPONSIBILITY',
-       fields:[['Guidance panel, autopilot, FD','PF'],['Throttles, tiller, brakes, speedbrake lever','PF'],
+       fields:[['Guidance panel, autopilot, FD','PF'],['Thrust levers, tiller, brakes, speedbrake lever','PF'],
                ['MFD GTC &mdash; FMS, PERF, PROC, charts','PM'],['PFD GTC &mdash; nav source, minimums, timers','each pilot, own side'],
                ['Gear and flap levers','PM, on command'],['Overhead, lights, ice protection','PM'],
                ['Radios and transponder','PM']],
