@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Unlisted, not secret. Belt and braces with robots.txt: robots.txt stops the crawl,
+     this stops indexing if the URL is ever reached some other way. -->
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate">
+<meta name="googlebot" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
 <title>Longitude EFB — Flow, Checklists &amp; G5000</title>
 <!-- Inline so the page stays a single self-contained file. Without it the browser
      asks the host for /favicon.ico and takes a 404 on every load. -->
@@ -240,10 +245,15 @@
   .head .cf{align-self:center;margin-top:0;opacity:.6}
   .pcue .cf{margin:0 0 0 8px;vertical-align:middle}
   .row.done .cf,.item.done .cf{opacity:.2}
-  body[data-conf="off"] .cf{display:none}
-  #conf[aria-pressed="true"]{color:var(--c-high);border-color:var(--c-high)}
+  /* Confidence rides on REVIEW mode, not a toggle of its own. Review is the editorial
+     view — line numbers on, Garmin badges off — and "how well sourced is this line" is
+     an editorial question. In the running view the page is a checklist, not an argument
+     about its own provenance. */
+  .cf{display:none}
+  body[data-dev="on"] .cf{display:inline-flex}
   /* the legend — one row of live chips, so it can never drift from the renderer */
-  .confcav{border-left-color:var(--c-high)}
+  .confcav{display:none;border-left-color:var(--c-high)}
+  body[data-dev="on"] .confcav{display:block}
   .confcav .lg{display:inline-flex;align-items:center;gap:5px;margin:0 12px 4px 0;white-space:nowrap}
   .confcav .lg .cf{cursor:default}
   .confcav .lgs{display:flex;flex-wrap:wrap;margin-top:7px}
@@ -554,8 +564,7 @@
         </div>
         <button id="reset">Reset</button>
         <button id="theme">Light</button>
-        <button id="conf" aria-pressed="true" title="Confidence chips — how well sourced each line is">Conf</button>
-        <button id="dev" aria-pressed="false" title="Number every line, for review feedback">Review</button>
+        <button id="dev" aria-pressed="false" title="Number every line and show how well sourced it is">Review</button>
       </div>
     </div>
   </div>
@@ -605,18 +614,19 @@
   header to open it, tap any line to tick it off. The phase menu jumps to the flow that
   precedes each checklist and shows where you are; <b>Reset</b> clears the ticks and folds
   everything away again.</p>
-  <p><b>Review</b> (top right) numbers every line so changes can be named precisely: flow steps
+  <p><b>Review</b> (top right) is the editorial view — it numbers every line so changes can be
+  named precisely, and puts the sourcing on show. Flow steps
   are <b>13.1, 13.2…</b> and checklist items <b>13.a, 13.b…</b>, both keyed to the phase number.
   “Swap 13.2 and 13.6, drop 12.d” is enough to act on. Parallel bands and reference cards carry no
   numbers — name them by phase and column instead (“the PM column in 12”, “the Monitoring card”).</p>
 
-  <p><b>Conf</b> (top right) hides the confidence chips. The rating is a claim about the
-  <i>source</i>, not about how confident the wording sounds — an invented line written with
-  total assurance still rates red. Every rating carries its evidence in the chip’s tooltip and
-  in a <code>data-ev</code> attribute, so a future pass can be argued with rather than
-  guessed at. <b>The point of the scale is what happens when a new source arrives:</b> a step
-  the new source also does moves up, and a step it omits is our bug if we rated it low, or
-  their variation if we rated it Confirmed.</p>
+  <p><b>Review also shows a confidence chip on every line</b> — six cells saying how well
+  sourced it is. The rating is a claim about the <i>source</i>, not about how confident the
+  wording sounds: an invented line written with total assurance still rates red. Each one
+  carries its evidence in the chip’s tooltip and in a <code>data-ev</code> attribute, so a
+  later pass can be argued with rather than guessed at. <b>The point of the scale is what
+  happens when a new source arrives:</b> a step the new source also does moves up, and a step
+  it omits is our bug if we rated it low, or their variation if we rated it Confirmed.</p>
 </footer>
 <div class="tail" aria-hidden="true"></div>
 
@@ -1968,11 +1978,11 @@ function headConf(card, p){
   const n = {};
   cells.forEach(e => n[e.dataset.c] = (n[e.dataset.c] || 0) + 1);
   el.innerHTML =
-    '<b>Confidence.</b> Every line carries a six-cell chip saying <b>how well sourced it is</b> — ' +
-    'not how sure it sounds. Green means a real Longitude crew is on record doing it; red means we ' +
-    'made it up. A card header shows the average of its lines. <b>Hover a chip for the evidence.</b> ' +
-    'Nic confirming or changing anything takes it straight to Confirmed — so the low end is exactly ' +
-    'the list of things worth putting to him.' +
+    '<b>Confidence.</b> In review mode every line carries a six-cell chip saying <b>how well ' +
+    'sourced it is</b> — not how sure it sounds. Green means a real Longitude crew is on record ' +
+    'doing it; red means we made it up. A card header shows the average of its lines. ' +
+    '<b>Hover a chip for the evidence.</b> Nic confirming or changing anything takes it straight ' +
+    'to Confirmed — so the low end is exactly the list of things worth putting to him.' +
     '<span class="lgs">' +
     CONF_ORDER.slice().reverse().map(k =>
       '<span class="lg">' + confChip(k, CONF[k].why) + '<span>' + CONF[k].label +
@@ -2061,15 +2071,6 @@ themeBtn.addEventListener('click', () => {
   applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
 });
 
-const confBtn = document.getElementById('conf');
-function applyConf(on){
-  document.body.dataset.conf = on ? 'on' : 'off';
-  confBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-  try { localStorage.setItem('c700-conf', on ? 'on' : 'off'); } catch(e){}
-}
-confBtn.addEventListener('click', () => applyConf(document.body.dataset.conf !== 'on'));
-applyConf(true);
-
 const devBtn = document.getElementById('dev');
 function applyDev(on){
   document.body.dataset.dev = on ? 'on' : 'off';
@@ -2080,7 +2081,6 @@ devBtn.addEventListener('click', () => applyDev(document.body.dataset.dev !== 'o
 applyDev(false);
 
 try {
-  const cf = localStorage.getItem('c700-conf'); if (cf === 'off') applyConf(false);
   const d = localStorage.getItem('c700-dev'); if (d === 'on') applyDev(true);
   const t = localStorage.getItem('c700-theme'); if (t) applyTheme(t);
   const r = localStorage.getItem('c700-role');
