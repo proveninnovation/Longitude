@@ -551,6 +551,76 @@
   .sheet button.refchip.active{border-color:var(--both)}
   body[data-dev="on"] .card.ref .idx{min-width:30px}
 
+  /* ---------- two-crew layer ----------
+     Seat colour on the segmented control. Two tablets sitting side by side in
+     "Both" are two identical tablets — the whole point of a seat is that you can
+     tell at a glance which one you picked up. */
+  .seg button[data-role="PF"][aria-pressed="true"]{box-shadow:inset 0 -2px 0 var(--pf);color:var(--pf)}
+  .seg button[data-role="PM"][aria-pressed="true"]{box-shadow:inset 0 -2px 0 var(--pm);color:var(--pm)}
+
+  /* Link status. The dot carries the state, so the label can stay one short word
+     at phone width where the bar is already wrapping. */
+  #link{display:flex;align-items:center;gap:7px}
+  #link .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-faint);flex:0 0 auto;transition:background .2s}
+  #link[data-s="linking"] .dot,#link[data-s="retry"] .dot{background:var(--trig)}
+  #link[data-s="linking"],#link[data-s="retry"]{color:var(--trig);border-color:var(--trig-line)}
+  #link[data-s="linked"] .dot{background:var(--list-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--list-accent) 22%,transparent)}
+  #link[data-s="linked"]{color:var(--list-accent);border-color:var(--list-line)}
+  /* A refusal — seat taken, or room full. Distinct from "off", because the
+     difference between "you never linked" and "you got bumped" is the whole
+     message, and the dialog is shut when it happens. */
+  #link[data-s="warn"] .dot{background:var(--warn)}
+  #link[data-s="warn"]{color:var(--warn);border-color:var(--warn)}
+
+  /* The other seat's position — rides --comm, because it is information arriving
+     from outside this tablet, which is exactly what the teal means elsewhere. */
+  #pos{
+    display:flex;align-items:center;gap:9px;width:100%;margin:0 0 9px;
+    background:var(--comm-bg);border:1px solid var(--comm-line);color:var(--comm);
+    border-radius:9px;padding:7px 11px;min-height:40px;font-size:13px;text-align:left;
+  }
+  #pos .pwho{font-weight:700;letter-spacing:.5px;flex:0 0 auto}
+  #pos .pwhat{text-transform:uppercase;letter-spacing:.4px;color:var(--ink);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #pos .pgo{margin-left:auto;color:var(--ink-faint);font-size:11.5px;flex:0 0 auto}
+  /* An ID selector out-specifies the UA's [hidden]{display:none}, so without this
+     the pill is permanently visible as an empty teal bar — on every load, linked
+     or not. The .hidden property is set, it just stops meaning anything. */
+  #pos[hidden]{display:none}
+
+  /* Link dialog */
+  .lnk{
+    border:1px solid var(--line);border-radius:var(--radius);padding:0;
+    background:var(--panel);color:var(--ink);max-width:460px;width:calc(100% - 28px);
+  }
+  .lnk::backdrop{background:rgba(0,0,0,.55)}
+  .lnkwrap{padding:16px 16px 14px}
+  .lnk h2{margin:0 0 8px;font-size:17px}
+  .lnkp{margin:0 0 13px;font-size:13.5px;line-height:1.45;color:var(--ink-dim)}
+  .lnkf{display:block;margin:0 0 11px}
+  .lnkf span{display:block;font-size:12px;color:var(--ink-faint);margin-bottom:5px;letter-spacing:.3px}
+  .lnkf input{
+    width:100%;font:inherit;font-size:16px;  /* 16px or iOS zooms the page on focus */
+    background:var(--panel-2);color:var(--ink);border:1px solid var(--line);
+    border-radius:9px;padding:10px 12px;min-height:44px;
+  }
+  #lnkRoom{letter-spacing:2px;text-transform:uppercase;font-variant-numeric:tabular-nums}
+  /* .lnkf span is (0,1,1) and sets display:block for the caption — this has to
+     out-specify it or the row stops being a flex container. */
+  .lnkf .lnkrow{display:flex;gap:7px;align-items:stretch;margin:0}
+  .lnkf .lnkrow input{flex:1 1 auto;min-width:0}   /* or the buttons push it off the dialog */
+  .lnkf .lnkrow button{flex:0 0 auto;min-height:44px;white-space:nowrap;font-size:12.5px;padding:8px 10px}
+  .lnkadv{margin:0 0 6px}
+  .lnkadv summary{font-size:12.5px;color:var(--ink-faint);cursor:pointer;padding:4px 0}
+  .lnkhint{margin:0 0 6px;font-size:12px;color:var(--ink-faint);line-height:1.4}
+  .lnkstat{margin:4px 0 12px;font-size:13px;color:var(--ink-dim);min-height:19px}
+  .lnkstat b{color:var(--list-accent)}
+  .lnkstat i{color:var(--warn);font-style:normal}
+  .lnkbtns{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+  .lnkbtns button{min-height:44px;padding:9px 15px}
+  .lnkbtns .prim{background:var(--list-accent);border-color:var(--list-accent);color:#08140e;font-weight:600}
+  #lnkOff{margin-right:auto;color:var(--ink-faint)}
+
 </style>
 </head>
 <body data-role="BOTH">
@@ -562,7 +632,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v4</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v5</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -573,11 +643,21 @@
           <button data-role="PF" aria-pressed="false">PF</button>
           <button data-role="PM" aria-pressed="false">PM</button>
         </div>
+        <!-- Two-tablet link. Inert until a room code is entered: with no code the
+             page never opens a socket and nothing here does anything. -->
+        <button id="link" data-s="off" title="Share checklist ticks with the other seat's tablet">
+          <span class="dot" aria-hidden="true"></span><span class="ltxt">Link</span>
+        </button>
         <button id="reset">Reset</button>
         <button id="theme">Light</button>
         <button id="dev" aria-pressed="false" title="Number every line and show how well sourced it is">Review</button>
       </div>
     </div>
+    <!-- Where the other seat is working. A pointer you tap, never an automatic
+         scroll: yanking the PF's page mid-approach is exactly the wrong thing. -->
+    <button id="pos" hidden>
+      <span class="pwho"></span><span class="pwhat"></span><span class="pgo">tap to follow</span>
+    </button>
   </div>
   <div class="sheet" id="sheet" hidden>
     <div class="wrap"><div class="grid" id="sheetGrid"></div></div>
@@ -652,7 +732,43 @@
   </div>
 </dialog>
 
+<dialog id="lnkdlg" class="lnk" aria-labelledby="lnkTitle">
+  <div class="lnkwrap">
+    <h2 id="lnkTitle">Link the two tablets</h2>
+    <p class="lnkp">Same code on both. <b>Checklist ticks and the live phase cross over.</b>
+    Flow steps, seat, theme and Review stay yours — a flow step is your own prompt, not a
+    shared artefact, and the PF does not want lines striking themselves through while he flies.</p>
+    <label class="lnkf"><span>Room code — this is the only thing gating the room, so
+      keep it random and send it to the other seat rather than agreeing something guessable</span>
+      <span class="lnkrow">
+        <input id="lnkRoom" autocapitalize="characters" autocorrect="off" autocomplete="off"
+               spellcheck="false" enterkeyhint="go" placeholder="ABC-123" maxlength="24">
+        <button type="button" id="lnkNew" title="Generate a new random code">New</button>
+        <button type="button" id="lnkCopy" title="Copy a link that carries this code">Copy link</button>
+      </span></label>
+    <details class="lnkadv">
+      <summary>Relay address</summary>
+      <label class="lnkf"><input id="lnkRelay" autocapitalize="off" autocorrect="off"
+             autocomplete="off" spellcheck="false" placeholder="wss://…"></label>
+      <p class="lnkhint">Only touch this if the Worker deployed somewhere other than the
+      address baked into the page. Clear it to restore the default.</p>
+    </details>
+    <p class="lnkstat" id="lnkStat"></p>
+    <div class="lnkbtns">
+      <button type="button" id="lnkOff">Unlink</button>
+      <button type="button" id="lnkClose">Close</button>
+      <button type="button" id="lnkGo" class="prim">Link</button>
+    </div>
+  </div>
+</dialog>
+
 <script>
+/* The crew layer at the foot of this file replaces this when the page is
+   linked to a second tablet. It is a no-op until then, so an unlinked page
+   behaves exactly as it did before sync existed — which is the point: the
+   EFB must never depend on a relay being reachable. */
+let onTick = () => {};
+
 /* ---------------------------------------------------------------
    Data. Each entry is either a flow (kind:'flow') or a checklist
    (kind:'list'). They alternate. Edit freely — the page is built
@@ -2062,7 +2178,7 @@ PHASES.forEach((p) => {
         '<span class="txt">' + inner + '</span>';
       row.addEventListener('click', () => {
         if (row.dataset.lp === '1') { delete row.dataset.lp; return; }   // a long-press opened G5000
-        row.classList.toggle('done'); tally(card);
+        row.classList.toggle('done'); tally(card); onTick(row, card);
       });
       if (s.g5) attachG5(row, s.g5, p.title);
       body.appendChild(row);
@@ -2097,7 +2213,7 @@ PHASES.forEach((p) => {
         '<span class="who ' + row.dataset.who + '">' + row.dataset.who + '</span>';
       row.addEventListener('click', () => {
         if (row.dataset.lp === '1') { delete row.dataset.lp; return; }   // a long-press opened G5000
-        row.classList.toggle('done'); tally(card);
+        row.classList.toggle('done'); tally(card); onTick(row, card);
       });
       if (g5k) attachG5(row, g5k, p.title);
       body.appendChild(row);
@@ -2283,6 +2399,374 @@ try {
   const r = localStorage.getItem('c700-role');
   if (r) document.querySelector('.seg button[data-role="' + r + '"]').click();
 } catch(e){}
+
+/* ===============================================================
+   THE TWO-CREW LAYER — added 2026-09-15, before the first live run
+   with a tablet in each seat.
+
+   Three things, in order of how much they matter when it goes wrong:
+
+     1. The screen stays awake. A tablet that blanks on downwind is
+        worse than no tablet.
+     2. Ticks survive a reload, a rotate, or the browser being
+        backgrounded to look at something else. They did not before.
+     3. The two tablets can share a flight through a relay.
+
+   (3) is the only part that touches the network and it is INERT until
+   a room code is entered. Everything here is additive, wrapped, and
+   fails soft: an unreachable relay, a blocked wake lock or a full
+   localStorage each degrade to the page exactly as it was. There is no
+   path from this block back into rendering — the page is built and on
+   screen before a line of it runs.
+================================================================*/
+(function crewLayer(){
+'use strict';
+
+/* ---- 1. keep the screen alive ------------------------------- */
+
+let wake = null;
+async function keepAwake(){
+  try {
+    if (!('wakeLock' in navigator) || wake || document.visibilityState !== 'visible') return;
+    wake = await navigator.wakeLock.request('screen');
+    /* The browser drops it on tab-hide and on low battery. Null it so the
+       visibilitychange below can take it again rather than thinking it holds one. */
+    wake.addEventListener('release', () => { wake = null; });
+  } catch(e){ wake = null; }
+}
+keepAwake();
+document.addEventListener('pointerdown', keepAwake, {passive:true});
+
+/* ---- 2. ticks survive a reload ------------------------------ */
+
+const KEY = 'c700-flight';
+const STALE = 14 * 3600 * 1000;      // a page left open overnight is last leg's, not this morning's
+let saveT = null;
+
+function refsDone(sel){
+  return Array.from(document.querySelectorAll(sel), e => e.dataset.ref).filter(Boolean);
+}
+function saveNow(){
+  try {
+    localStorage.setItem(KEY, JSON.stringify(
+      {v:1, at:Date.now(), done:refsDone('.row.done, .item.done')}));
+  } catch(e){}      // private mode, or quota — the flight just won't survive a reload
+}
+function saveState(){ clearTimeout(saveT); saveT = setTimeout(saveNow, 300); }
+
+function mark(ref, on, sel){
+  const el = ref && document.querySelector((sel || '') + '[data-ref="' + ref + '"]');
+  if (!el) return null;
+  el.classList.toggle('done', !!on);
+  const card = el.closest('.card');
+  if (card) tally(card);
+  return el;
+}
+
+try {
+  const s = JSON.parse(localStorage.getItem(KEY) || 'null');
+  if (s && Array.isArray(s.done)) {
+    if (Date.now() - (s.at || 0) > STALE) localStorage.removeItem(KEY);
+    else s.done.forEach(ref => mark(ref, true));
+  }
+} catch(e){}
+
+/* pagehide, not beforeunload — iOS Safari does not reliably fire the latter */
+window.addEventListener('pagehide', saveNow);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') keepAwake(); else saveNow();
+});
+
+/* ---- 3. the relay ------------------------------------------- */
+
+/* Deployed from C:\Code\Proven\LongitudeSync. Overridable at runtime — the
+   Relay field in the Link dialog, or ?relay=wss://… — so a wrong constant
+   is a nuisance on the tablet rather than a trip home. */
+const RELAY = 'wss://longitude-sync.proven-innovation.workers.dev';
+
+const linkBtn = document.getElementById('link');
+const linkTxt = linkBtn.querySelector('.ltxt');
+const dlg     = document.getElementById('lnkdlg');
+const fRoom   = document.getElementById('lnkRoom');
+const fRelay  = document.getElementById('lnkRelay');
+const stat    = document.getElementById('lnkStat');
+const pos     = document.getElementById('pos');
+
+let ws = null, room = '', want = false, backoff = 1000, pingT = null;
+let crew = [], phase = null;
+
+const get = k => { try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } };
+const put = (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch(e){} };
+
+/* The room code IS the security. There is no auth on the relay — the page is in
+   a public repo, so the address is discoverable, and a code anyone would guess
+   ("LONGITUDE") is no gate at all. Six random characters is ~28 bits, which is
+   plenty against an attacker population of nobody.
+
+   No 0/O, no 1/I/L: the code gets read aloud across a cockpit, and a mis-heard
+   character puts you in an empty room with nothing on screen to say why. */
+const ALPHABET = 'ACDEFHJKMNPQRTUVWXY2346789';
+let suggestion = '';
+function newCode(){
+  let out = '';
+  try {
+    const a = new Uint8Array(6);
+    crypto.getRandomValues(a);
+    for (let i = 0; i < 6; i++) out += ALPHABET[a[i] % ALPHABET.length];
+  } catch(e){
+    for (let i = 0; i < 6; i++) out += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
+  }
+  return out.slice(0, 3) + '-' + out.slice(3);
+}
+/* Stable for the session, so opening and closing the dialog doesn't keep
+   offering a different code. */
+const suggest = () => (suggestion || (suggestion = newCode()));
+
+const clean = s => String(s || '').toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 24);
+
+/* ?room=ABC-123 — so a link can carry the code and the second seat never types
+   it. Same mechanism, one less thing to mis-hear. */
+function roomFromUrl(){
+  try { return clean(new URLSearchParams(location.search).get('room')); } catch(e){ return ''; }
+}
+
+function relayBase(){
+  let q = '';
+  try { q = new URLSearchParams(location.search).get('relay') || ''; } catch(e){}
+  if (q) put('c700-relay', q);
+  return (q || get('c700-relay') || RELAY).replace(/\/+$/, '');
+}
+const seat = () => document.body.dataset.role || 'BOTH';
+
+function tx(m){
+  if (ws && ws.readyState === 1) { try { ws.send(JSON.stringify(m)); } catch(e){} }
+}
+
+/* A refusal (seat taken, room full) arrives while the dialog is almost always
+   shut, so the message has to outlive the call — otherwise the only trace is the
+   button quietly going back to "Link". `warn` is what makes it visible without
+   opening anything. */
+let lastMsg = '';
+function setStatus(s, msg){
+  if (msg !== undefined) lastMsg = msg;
+  linkBtn.dataset.s = s;
+  linkTxt.textContent =
+    s === 'linked'  ? (crew.length > 1 ? 'Linked ' + crew.length : 'Linked') :
+    s === 'linking' ? 'Linking'  :
+    s === 'retry'   ? 'Retry'    :
+    s === 'warn'    ? 'Unlinked' : 'Link';
+  if (!dlg.open) return;
+  stat.innerHTML =
+    s === 'linked'  ? 'Linked to <b>' + esc(room) + '</b> — ' +
+                      (crew.length > 1 ? crew.length + ' tablets, seats ' + esc(crew.join(' + '))
+                                       : 'waiting for the other tablet') :
+    s === 'linking' ? 'Connecting to <b>' + esc(room) + '</b>…' :
+    s === 'retry'   ? '<i>Relay unreachable</i> — retrying. The page works unlinked.' :
+    (lastMsg || 'Not linked. Ticks stay on this tablet.');
+}
+
+/* Detach before closing. Otherwise the outgoing socket's own onclose fires
+   asynchronously, after connect() has already built its replacement — and then
+   schedules a retry on top of it, or nulls the new `ws` out from under us. */
+function drop(){
+  if (!ws) return;
+  ws.onopen = ws.onmessage = ws.onerror = ws.onclose = null;
+  try { ws.close(); } catch(e){}
+  ws = null;
+}
+
+function connect(){
+  if (!room || (ws && ws.readyState <= 1)) return;
+  want = true;
+  setStatus('linking');
+  try {
+    ws = new WebSocket(relayBase() + '/r/' + encodeURIComponent(room) + '?seat=' + seat());
+  } catch(e){ ws = null; setStatus('off', '<i>That relay address is not a valid wss:// URL.</i>'); return; }
+
+  ws.onopen = () => {
+    backoff = 1000;
+    setStatus('linked');
+    clearInterval(pingT);
+    pingT = setInterval(() => tx({t:'ping'}), 25000);   // keeps intermediaries from idling us out
+  };
+  ws.onmessage = ev => { try { rx(JSON.parse(ev.data)); } catch(e){} };
+  ws.onclose = ev => {
+    clearInterval(pingT); ws = null; crew = [];
+    /* 4000 another tablet claimed this seat · 4001 room full. Retrying either
+       just ping-pongs two devices against each other, so stop and say so. */
+    if (ev && ev.code === 4000) {
+      want = false;
+      setStatus('warn', '<i>Another tablet took the ' + esc(seat()) + ' seat.</i> ' +
+                        'Pick the other seat, or Link again to take it back.');
+      return;
+    }
+    if (ev && ev.code === 4001) {
+      want = false;
+      setStatus('warn', '<i>That room is full.</i> Someone else is on this code — ' +
+                        'generate a new one and send it to the other seat.');
+      return;
+    }
+    if (!want) { setStatus('off'); return; }
+    setStatus('retry');
+    setTimeout(connect, backoff);
+    backoff = Math.min(backoff * 1.8, 10000);
+  };
+  ws.onerror = () => {};    // onclose always follows; retry lives there
+}
+
+function unlink(){
+  want = false; room = ''; crew = []; put('c700-room', '');
+  clearInterval(pingT);
+  drop();
+  setStatus('off');
+  showPhase(null);
+}
+
+/* Refusals arrive as a FRAME, not as a close code. A hibernatable socket closed
+   from the relay's side leaves this one in CLOSING, so onclose can be arbitrarily
+   late or never — the close-code branch further down is only a backstop. */
+function refused(msg){
+  want = false;
+  clearInterval(pingT);
+  drop();
+  setStatus('warn', msg);
+}
+
+function rx(m){
+  if (!m || !m.t || m.t === 'pong') return;
+
+  if (m.t === 'evicted') {
+    refused('<i>Another tablet took the ' + esc(m.seat || seat()) + ' seat.</i> ' +
+            'Pick the other seat, or Link again to take it back.');
+    return;
+  }
+  if (m.t === 'full') {
+    refused('<i>That room is full</i> (' + (m.max || 4) + ' connections). Someone else is ' +
+            'on this code — generate a new one and send it to the other seat.');
+    return;
+  }
+
+  if (m.t === 'snap') {
+    /* Union on join. Whoever ticked what before the link came up, it counts —
+       the alternative is one tablet silently wiping the other's flight. After
+       this the relay is authoritative and only deltas arrive. */
+    const remote = m.items || {};
+    Object.keys(remote).forEach(ref => mark(ref, true, '.item'));
+    document.querySelectorAll('.item.done').forEach(el => {
+      if (!remote[el.dataset.ref]) tx({t:'tick', ref:el.dataset.ref, v:true});
+    });
+    saveState();
+    showPhase(m.phase || null);
+    return;
+  }
+  if (m.t === 'tick')  { mark(m.ref, m.v, '.item'); saveState(); return; }
+  if (m.t === 'phase') { showPhase(m.v, m.by); return; }
+  if (m.t === 'crew')  { crew = m.seats || []; setStatus('linked'); return; }
+  if (m.t === 'reset') {
+    document.querySelectorAll('.done').forEach(el => el.classList.remove('done'));
+    document.querySelectorAll('.card').forEach(tally);
+    showPhase(null); saveNow();
+    return;
+  }
+}
+
+/* ---- the live phase ----------------------------------------- */
+
+/* links[] is built by the renderer: one entry per checklist, carrying the card
+   and the label the phase menu shows. Reusing it means the pill and the menu can
+   never disagree about what a phase is called. */
+const linkOf = card => links.find(x => x.listCard === card);
+
+function showPhase(label, by){
+  phase = label || null;
+  if (!phase) { pos.hidden = true; return; }
+  pos.querySelector('.pwho').textContent  = (by && by !== 'BOTH') ? by : 'CREW';
+  pos.querySelector('.pwhat').textContent = phase;
+  pos.hidden = false;
+  measure();                       // the pill changes the sticky header's height
+}
+pos.addEventListener('click', () => {
+  const l = links.find(x => x.label === phase);
+  if (!l) return;
+  setActive(l);
+  l.target.scrollIntoView({behavior:'smooth', block:'start'});
+});
+
+/* ---- outbound ----------------------------------------------- */
+
+/* Replaces the no-op declared at the head of this script. */
+onTick = function(row, card){
+  saveState();
+  if (!row.classList.contains('item')) return;    // flow steps are private scratch
+  tx({t:'tick', ref:row.dataset.ref, v:row.classList.contains('done')});
+  const l = linkOf(card);
+  if (l && l.label !== phase) { phase = l.label; tx({t:'phase', v:l.label, by:seat()}); }
+};
+
+/* A second listener on Reset — the original one still does the clearing. */
+document.getElementById('reset').addEventListener('click', () => {
+  showPhase(null); saveNow(); tx({t:'reset'});
+});
+
+/* Seat is per-tablet, never relayed, but the other seat should see what we chose. */
+document.querySelectorAll('.seg button').forEach(b =>
+  b.addEventListener('click', () => tx({t:'seat', v:b.dataset.role})));
+
+/* ---- dialog ------------------------------------------------- */
+
+function openLink(){
+  fRoom.value  = room || get('c700-room') || suggest();
+  fRelay.value = get('c700-relay');
+  fRelay.placeholder = RELAY;
+  dlg.showModal();                     // before setStatus — it no-ops on a closed dialog
+  setStatus(linkBtn.dataset.s);
+  if (!fRoom.value) fRoom.focus();
+}
+linkBtn.addEventListener('click', openLink);
+document.getElementById('lnkClose').addEventListener('click', () => dlg.close());
+document.getElementById('lnkOff').addEventListener('click', () => { unlink(); setStatus('off'); });
+document.getElementById('lnkNew').addEventListener('click', () => {
+  suggestion = newCode();
+  fRoom.value = suggestion;
+});
+
+/* Sends the other seat a link that already carries the code. Falls back to
+   showing the URL, because clipboard writes are refused in plenty of contexts
+   and a silent no-op would look like the button is broken. */
+document.getElementById('lnkCopy').addEventListener('click', async () => {
+  const code = clean(fRoom.value);
+  if (!code) return;
+  const url = location.origin + location.pathname + '?room=' + encodeURIComponent(code);
+  try {
+    await navigator.clipboard.writeText(url);
+    stat.innerHTML = 'Link copied — send it to the other seat.';
+  } catch(e){
+    stat.innerHTML = 'Copy refused here. The link is:<br><b>' + esc(url) + '</b>';
+  }
+});
+
+document.getElementById('lnkGo').addEventListener('click', () => {
+  const code = clean(fRoom.value);
+  if (code.length < 2) { stat.innerHTML = '<i>A room code needs at least two characters.</i>'; return; }
+  put('c700-relay', fRelay.value.trim());
+  clearInterval(pingT); drop();
+  room = code; put('c700-room', room); backoff = 1000;
+  connect();
+});
+fRoom.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('lnkGo').click(); }
+});
+
+/* A ?room= link wins over the saved room — following a link is a deliberate act
+   and should not be overruled by whatever this tablet was in last time. Otherwise
+   rejoin what we were in, which is the case that matters: a tablet reloading
+   mid-flight must come back to the shared state, not a blank one. */
+const fromUrl = roomFromUrl();
+const saved = fromUrl || get('c700-room');
+if (saved) { room = saved; if (fromUrl) put('c700-room', room); connect(); }
+else setStatus('off');
+
+})();
 </script>
 </body>
 </html>
