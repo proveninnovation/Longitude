@@ -213,6 +213,21 @@
   /* lets the last phases scroll to the top, so a jump always lands exactly */
   .tail{height:55vh}
 
+  /* The Link button took the bar to seven controls, which stopped fitting beside
+     the title at tablet-portrait width — the whole bar dropped to a second line and
+     cost 40px of sticky header on every screen, on the axis that has least to spare.
+     The "Role" caption is the cheapest 47px in the row: three buttons reading
+     Both/PF/PM, now seat-coloured, on a page that is entirely about PF and PM. */
+  @media (max-width:900px){
+    .seg .lbl{display:none}
+    .bar{gap:6px}
+    .bar>button{padding:7px 10px}
+    /* Sizes to the current phase name, so one long label is enough to wrap the
+       row again — "Who owns what" alone did, at 155px. Capped and ellipsised;
+       the full name is in the phase menu the button opens. */
+    #jump{min-width:0;max-width:132px}
+    #jump .cur{min-width:0;overflow:hidden;text-overflow:ellipsis}
+  }
   @media (max-width:560px){
     h1{font-size:17px}
     .seg .lbl{display:none}
@@ -632,7 +647,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v5</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v6</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
