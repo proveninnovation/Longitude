@@ -636,6 +636,82 @@
   .lnkbtns .prim{background:var(--list-accent);border-color:var(--list-accent);color:#08140e;font-weight:600}
   #lnkOff{margin-right:auto;color:var(--ink-faint)}
 
+
+  /* ================= ENTRY PADS — added 2026-10-02 ==================
+     Handwritten ATC pads (ATIS · CLR · ARR · HOLD). Everything is .ep-*
+     and built by the entryPads block at the foot of the script; with that
+     block absent or failing, none of this matches anything. */
+  :root{ --ep-ink:#9fe8ff; --ep-dull:#5d6f80; }
+  html[data-theme="light"]{ --ep-ink:#0b4f8f; --ep-dull:#97a6b4; }
+  #epchips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  #epchips:empty{display:none}
+  .ep-chip{display:inline-flex;align-items:center;gap:7px;min-height:32px;padding:3px 10px 3px 8px;
+    border-radius:999px;border:1px solid var(--list-line);background:var(--list-bg);color:var(--list-accent);
+    font-size:12px;font-weight:700;letter-spacing:.3px}
+  .ep-chip .t{color:var(--ink-faint);font-weight:600}
+  .ep-chip .x{color:var(--ink);font-weight:600}
+  .ep-chip canvas{height:22px;display:block}
+  #padbtn{color:var(--pm);border-color:color-mix(in srgb,var(--pm) 45%,var(--line));font-weight:600}
+
+  .ep{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;
+    overscroll-behavior:contain}
+  .ep[hidden]{display:none}
+  .ep-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;
+    background:var(--panel-2);border-bottom:1px solid var(--line)}
+  .ep-tabs{display:flex;gap:4px;flex:1 1 auto;flex-wrap:wrap}
+  .ep-tabs button{font-weight:700;letter-spacing:.06em;min-width:64px}
+  .ep-tabs button[aria-pressed="true"]{background:var(--pm);border-color:var(--pm);color:var(--bg)}
+  .ep-tabs button.lk{color:var(--list-accent);border-color:var(--list-line)}
+  .ep-tabs button.lk[aria-pressed="true"]{color:var(--bg);background:var(--list-accent)}
+  .ep-tools{display:flex;gap:6px;flex-wrap:wrap}
+  .ep-tools button{min-width:48px;min-height:42px;touch-action:manipulation}
+  .ep-tools button[aria-pressed="true"]{background:var(--warn);border-color:var(--warn);color:var(--bg)}
+  .ep-tools .done{background:var(--list-accent);border-color:var(--list-accent);color:#08140e;font-weight:700}
+  .ep-tools .unl{color:var(--list-accent);border-color:var(--list-line);position:relative;overflow:hidden}
+  .ep-tools .unl::after{content:"";position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--list-accent)}
+  .ep-tools .unl.hold::after{width:100%;transition:width .7s linear}
+  .ep-plan{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;
+    border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-dim)}
+  .ep-plan input{font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--line);
+    border-radius:8px;padding:6px 8px;min-height:36px;width:9em;text-transform:uppercase}
+  .ep-plan input.ap{width:4.6em}
+  .ep-plan .st{flex:1 1 220px;color:var(--ink-faint)}
+  .ep-plan .st b{color:var(--ink-dim)}
+  .ep-body{flex:1 1 auto;overflow:auto;padding:10px 12px 40px}
+  .ep-grid{display:grid;gap:7px;grid-auto-rows:minmax(84px,auto)}
+  .ep-f{position:relative;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:9px;
+    background:var(--panel);padding:19px 8px 6px;min-width:0}
+  .ep-f.key{border-color:color-mix(in srgb,var(--pm) 35%,var(--line))}
+  .ep-f.big{min-height:104px}
+  .ep-l{position:absolute;top:4px;left:9px;right:8px;font-size:10.5px;font-weight:700;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+  .ep-ink{position:relative;flex:1 1 auto;min-height:44px}
+  .ep-ink canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;
+    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;cursor:crosshair}
+  .ep-pre{position:absolute;left:2px;top:4px;font-size:21px;font-weight:700;letter-spacing:.04em;
+    color:var(--ep-dull);pointer-events:none;transition:color .12s}
+  .ep-pre.ok{color:var(--ink);text-shadow:0 0 12px color-mix(in srgb,var(--pm) 40%,transparent)}
+  .ep-pre.x,.ep-b.x,.ep-c.c2{text-decoration:line-through;text-decoration-color:var(--warn);
+    text-decoration-thickness:3px;color:var(--ep-dull)}
+  .ep-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:2px 0 4px}
+  .ep-b,.ep-c{min-height:38px;padding:6px 11px;border-radius:8px;font-weight:700;font-size:14px;letter-spacing:.03em;
+    touch-action:manipulation;color:var(--ink-faint);background:transparent;border:1px solid var(--line)}
+  .ep-b.plan{color:var(--ink-dim);border-color:var(--ink-faint);border-style:dashed}
+  .ep-b.sel{color:var(--bg);background:var(--pm);border-color:var(--pm)}
+  .ep-b.sel.x{background:transparent;color:var(--ep-dull);border-color:var(--line)}
+  .ep-c.c1{color:var(--ink);border-color:var(--list-line);background:var(--list-bg);box-shadow:inset 3px 0 0 var(--list-accent)}
+  .ep-more{color:var(--ink-faint);font-size:12px;padding:0 4px}
+  .ep-strip{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px;padding:8px;
+    border:1px dashed var(--line);border-radius:9px}
+  .ep-strip .tag{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--pf);margin-right:4px}
+  .ep.locked .ep-ink canvas{pointer-events:none;cursor:default}
+  .ep.locked .ep-b,.ep.locked .ep-c{pointer-events:none}
+  .ep.locked .ep-grid{opacity:.92}
+  .ep-hint{margin:10px 2px 0;font-size:12px;color:var(--ink-faint);line-height:1.45}
+  @media (max-width:620px){
+    .ep-grid{display:flex;flex-direction:column}
+  }
+  @media print{ .ep,#padbtn,#epchips{display:none !important} }
 </style>
 </head>
 <body data-role="BOTH">
@@ -647,7 +723,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v7</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v8</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -2880,6 +2956,520 @@ const saved = fromUrl || get('c700-room');
 if (saved) { room = saved; if (fromUrl) put('c700-room', room); connect(); }
 else setStatus('off');
 
+})();
+/* ================================================================
+   ENTRY PADS — added 2026-10-02 (branch entry-pads)
+
+   Handwritten ATC pads: ATIS · CLR · ARR · HOLD. Design and evidence in
+   Reference/EFB-Entry-Pad-Design.md and Reference/ATC-Entry-Pads-Australia.md.
+
+   - Field order is the order an Australian controller speaks.
+   - Pre-filled values (from the SimBrief plan) start DULL. Tap one as ATC
+     says it and it goes BRIGHT. Write in a box and its pre-fill strikes
+     itself through: "ATC said something else".
+   - A tap is a pointer that lifts within 8 px and 300 ms. Once a box has
+     ink, a tap in it is ink — that is the decimal point in 129.7.
+   - SID / STAR / runway / transition are BADGES, from VATPAC's vatSys
+     dataset, fetched live for this route and HELD IN MEMORY ONLY — never
+     stored, never published (the dataset carries no licence; Neil,
+     2026-10-02). No dataset → no badges → pre-fill and ink still work.
+   - Ink and pad state persist like ticks (c700-pads, 14 h, cleared by
+     Reset). Nothing here crosses the relay yet.
+
+   Same rule as the crew layer: built after the page is on screen, wrapped,
+   and every failure degrades to the page exactly as it was.
+================================================================*/
+(function entryPads(){
+'use strict';
+try {
+
+const KEY = 'c700-pads', SBKEY = 'c700-simbrief', PENKEY = 'c700-pen';
+const STALE = 14 * 3600 * 1000;
+const AIRSPACE = 'https://raw.githubusercontent.com/vatSys/australia-dataset/master/Airspace.xml';
+const SIMBRIEF = 'https://www.simbrief.com/api/xml.fetcher.php?json=v2&username=';
+const TAP_PX = 8, TAP_MS = 300, PALM_PX = 40, ERASE_PX = 14;
+
+const get = k => { try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } };
+const put = (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch(e){} };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+/* SimBrief and vatSys usually agree on idents (BORE5A); tolerate a stray suffix. */
+const same = (a, b) => { a = norm(a); b = norm(b); return !!a && !!b && (a === b || a.startsWith(b) || b.startsWith(a)); };
+
+/* ---- the pads ------------------------------------------------ */
+/* pre: pre-fill from the plan · badge: option source · chips: tap targets
+   (cyc = dull → heard → not said; grp = one of) · noink: chips only */
+const SPEC = {
+  ATIS: { cols:4, areas:['info time apch apch','rwy rwy rwy sfc','opr opr opr opr','wind vis wx cld','tmp qnh qnh flags'],
+    f:[ {id:'info', l:'Info', big:1, key:1}, {id:'time', l:'Time'}, {id:'apch', l:'Apch — expect', key:1},
+        {id:'rwy', l:'Runway(s)'}, {id:'sfc', l:'Sfc cond'},
+        {id:'opr', l:'Opr info — PROPS · IVA · LAHSO · coord · start approval'},
+        {id:'wind', l:'Wind'}, {id:'vis', l:'Vis'}, {id:'wx', l:'Wx'}, {id:'cld', l:'Cloud'},
+        {id:'tmp', l:'Temp / DP'}, {id:'qnh', l:'QNH', big:1, key:1},
+        {id:'flags', l:'', noink:1, chips:[{id:'qna', t:'Actual QNH N/A'}, {id:'zulu', t:'ZULU — twr closed'}]} ],
+    sum:{ink:['info','qnh']} },
+  CLR: { cols:4, areas:['to via route route','rwy sid sid trans','lvl lvl sq sq','dep dep bay bay'],
+    f:[ {id:'to', l:'To', pre:p => p.arr}, {id:'via', l:'Via', pre:p => p.via},
+        {id:'route', l:'Route — write it if amended', chips:[{id:'fpr', t:'FPR', cyc:1}]},
+        {id:'rwy', l:'Rwy', badge:'depRwy'}, {id:'sid', l:'SID', badge:'sid'}, {id:'trans', l:'Trans', badge:'sidTrans'},
+        {id:'lvl', l:'Level', big:1, key:1, chips:[{id:'via', t:'↑ VIA SID TO', cyc:1}]},
+        {id:'sq', l:'Squawk', big:1, key:1}, {id:'dep', l:'Dep freq'}, {id:'bay', l:'Bay'} ],
+    rb:[['pdc','PDC rcvd'], ['pdcrb','PDC read back'], ['vrb','Voice read back']],
+    set:[['sq','SQ'], ['alt','ALT SEL'], ['fms','SID / RWY in FMS'], ['stby','DEP in STBY']],
+    sum:{badge:'sid', ink:['sq']} },
+  ARR: { cols:4, areas:['star star trans rwy','lvl lvl lvl wr','qnh app app app','cnl cnl cnl spd'],
+    f:[ {id:'star', l:'STAR', badge:'star'}, {id:'trans', l:'Trans', badge:'starTrans'}, {id:'rwy', l:'Rwy', badge:'arrRwy'},
+        {id:'lvl', l:'Level — empty means not cleared down', big:1, key:1, chips:[{id:'via', t:'↓ VIA STAR TO', cyc:1}]},
+        {id:'wr', l:'', noink:1, chips:[{id:'wr', t:'When ready'}]},
+        {id:'qnh', l:'QNH', key:1}, {id:'app', l:'Expect approach · via'},
+        {id:'cnl', l:'Cancel restrictions @', chips:[{id:'lvl', t:'CNL LVL'}, {id:'spd', t:'CNL SPD'}]},
+        {id:'spd', l:'Speed'} ],
+    set:[['alt','ALT SEL'], ['qnh','QNH both'], ['fms','STAR / APP in FMS'], ['brief','Brief']],
+    sum:{badge:'star', ink:['lvl']} },
+  HOLD: { cols:6, areas:['fix inb turn leg lvl efc','notes notes notes notes notes notes'],
+    f:[ {id:'fix', l:'Fix'}, {id:'inb', l:'Inbound'},
+        {id:'turn', l:'Turn', noink:1, chips:[{id:'L', t:'L', grp:'t'}, {id:'R', t:'R', grp:'t'}]},
+        {id:'leg', l:'Leg', pre:() => '1 MIN'}, {id:'lvl', l:'Level', key:1}, {id:'efc', l:'EFC', key:1},
+        {id:'notes', l:'Notes', big:1} ],
+    sum:{ink:['fix','efc']} }
+};
+const NAMES = Object.keys(SPEC);
+
+/* ---- state ---------------------------------------------------- */
+let st = {v:1, at:Date.now(), plan:{}, pads:{}, tab:'CLR'};
+try {
+  const s = JSON.parse(get(KEY) || 'null');
+  if (s && s.v === 1 && Date.now() - (s.at || 0) < STALE) st = Object.assign(st, s);
+} catch(e){}
+let saveT = null;
+function saveNow(){ st.at = Date.now(); put(KEY, JSON.stringify(st)); }
+function save(){ clearTimeout(saveT); saveT = setTimeout(saveNow, 300); }
+window.addEventListener('pagehide', saveNow);
+
+const pad = n => st.pads[n] || (st.pads[n] = {lock:'', f:{}, set:{}, rb:{}});
+const fs = (n, id) => { const p = pad(n); return p.f[id] || (p.f[id] = {s:[], ok:0, sel:null, ch:{}}); };
+const undo = {};                               // per pad, memory only
+const stack = n => undo[n] || (undo[n] = []);
+
+/* Procedures: MEMORY ONLY. Never written to storage. */
+let procs = null, procsKey = '', procsMsg = '';
+
+let pen = get(PENKEY);                         // '' never seen · 'pen' pen only · 'finger' finger ink
+let erasing = false;
+
+/* ---- chrome: PAD button, recall chips, the sheet --------------- */
+const bar = document.querySelector('header .bar');
+const ver = document.getElementById('ver');
+const padBtn = document.createElement('button');
+padBtn.id = 'padbtn'; padBtn.type = 'button'; padBtn.textContent = 'Pads';
+padBtn.title = 'ATIS, clearance, arrival and hold pads — write as ATC speaks';
+bar.insertBefore(padBtn, document.getElementById('link'));
+const chips = document.createElement('span'); chips.id = 'epchips';
+ver.insertAdjacentElement('afterend', chips);
+
+const ep = document.createElement('div');
+ep.className = 'ep'; ep.hidden = true; ep.setAttribute('role', 'dialog'); ep.setAttribute('aria-label', 'Entry pads');
+ep.innerHTML =
+  '<div class="ep-top"><div class="ep-tabs"></div><div class="ep-tools"></div></div>' +
+  '<div class="ep-plan">' +
+    '<input id="epSb" placeholder="SimBrief user" autocapitalize="off" autocorrect="off" spellcheck="false" style="text-transform:none">' +
+    '<button type="button" id="epSbGo">Load plan</button>' +
+    '<input id="epDep" class="ap" placeholder="DEP" maxlength="4" autocorrect="off" spellcheck="false">' +
+    '<span>→</span>' +
+    '<input id="epArr" class="ap" placeholder="ARR" maxlength="4" autocorrect="off" spellcheck="false">' +
+    '<span class="st" id="epSt"></span></div>' +
+  '<div class="ep-body"></div>';
+document.body.appendChild(ep);
+const $ = s => ep.querySelector(s);
+const tabsEl = $('.ep-tabs'), toolsEl = $('.ep-tools'), body = $('.ep-body');
+const fSb = $('#epSb'), fDep = $('#epDep'), fArr = $('#epArr'), stEl = $('#epSt');
+fSb.value = get(SBKEY);
+
+function relayout(){ window.dispatchEvent(new Event('resize')); }   // header height → --hdr
+
+/* ---- open / close ---------------------------------------------- */
+function open(n){
+  if (n) st.tab = n;
+  ep.hidden = false;
+  document.documentElement.style.overflow = 'hidden';
+  render();
+  if (!procs && (st.plan.dep || st.plan.arr)) loadProcs();
+}
+function close(){
+  ep.hidden = true;
+  document.documentElement.style.overflow = '';
+  saveNow(); renderChips();
+}
+padBtn.addEventListener('click', () => open());
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !ep.hidden) close(); });
+/* Safari's own pinch, while the sheet is up */
+document.addEventListener('gesturestart', e => { if (!ep.hidden) e.preventDefault(); });
+
+/* ---- plan: SimBrief, or two airports typed ---------------------- */
+function firstFix(route, sid){
+  for (const t of String(route || '').split(/\s+/)) {
+    if (!t || t === 'DCT' || same(t, sid)) continue;
+    if (/^[A-Z]{2,5}$/.test(t)) return t;      // fixes and navaids are letters only; airways and SIDs carry digits
+  }
+  return '';
+}
+async function loadSimBrief(){
+  const u = fSb.value.trim(); put(SBKEY, u);
+  if (!u) { status('Enter the SimBrief username first.'); return; }
+  status('Fetching the SimBrief plan…');
+  try {
+    const r = await fetch(SIMBRIEF + encodeURIComponent(u), {cache:'no-store'});
+    const d = await r.json();
+    if (!d || !d.origin || !d.destination) throw new Error((d && d.fetch && d.fetch.status) || 'no plan');
+    const g = d.general || {};
+    st.plan = {
+      cs: (d.atc && d.atc.callsign) || '', dep: d.origin.icao_code || '', arr: d.destination.icao_code || '',
+      depRwy: d.origin.plan_rwy || '', arrRwy: d.destination.plan_rwy || '',
+      sid: g.sid_ident || '', sidTrans: g.sid_trans || '', star: g.star_ident || '', starTrans: g.star_trans || '',
+      via: g.sid_trans || firstFix(g.route, g.sid_ident), src: 'SimBrief'
+    };
+    save(); procs = null; render(); loadProcs();
+  } catch(e){ status('SimBrief plan not available — ' + esc(e.message || 'fetch failed') + '. Pads still work by hand.'); }
+}
+function typedPlan(){
+  const dep = norm(fDep.value).slice(0, 4), arr = norm(fArr.value).slice(0, 4);
+  if (dep === (st.plan.dep || '') && arr === (st.plan.arr || '')) return;
+  st.plan = {dep, arr, via:'', src:'typed'}; save(); procs = null; render(); loadProcs();
+}
+$('#epSbGo').addEventListener('click', loadSimBrief);
+fSb.addEventListener('keydown', e => { if (e.key === 'Enter') loadSimBrief(); });
+[fDep, fArr].forEach(f => { f.addEventListener('change', typedPlan);
+  f.addEventListener('keydown', e => { if (e.key === 'Enter') f.blur(); }); });
+
+/* ---- procedures: fetched for THIS route, held in memory --------- */
+async function loadProcs(){
+  const dep = st.plan.dep, arr = st.plan.arr, k = dep + '>' + arr;
+  if (!dep && !arr) return;
+  if (procs && procsKey === k) return;
+  procsKey = k; procsMsg = 'Loading SIDs and STARs…'; status();
+  try {
+    const r = await fetch(AIRSPACE, {cache:'no-store'});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const doc = new DOMParser().parseFromString(await r.text(), 'application/xml');
+    if (procsKey !== k) return;                 // route changed while we fetched
+    const rwys = ap => Array.from(doc.querySelectorAll('Airport[ICAO="' + ap + '"] > Runway'), e => e.getAttribute('Name'));
+    const list = (tag, ap) => Array.from(doc.querySelectorAll(tag + '[Airport="' + ap + '"]'), e => ({
+      n: e.getAttribute('Name'),
+      rw: (e.getAttribute('Runways') || '').split(',').filter(Boolean),
+      tr: Array.from(e.querySelectorAll('Transition'), t => t.getAttribute('Name'))
+    }));
+    procs = { dep:{rw:rwys(dep), p:list('SID', dep)}, arr:{rw:rwys(arr), p:list('STAR', arr)} };
+    procsMsg = '<b>' + procs.dep.p.length + ' SIDs · ' + procs.arr.p.length + ' STARs</b> (VATPAC dataset, this session only)';
+  } catch(e){ procs = null; procsMsg = 'Procedures unavailable — write them in.'; }
+  render();
+}
+function status(msg){
+  const p = st.plan;
+  const route = (p.dep || p.arr)
+    ? '<b>' + esc(p.dep || '····') + (p.depRwy ? ' ' + esc(p.depRwy) : '') + ' → ' + esc(p.arr || '····') +
+      (p.arrRwy ? ' ' + esc(p.arrRwy) : '') + '</b>' + (p.cs ? ' · ' + esc(p.cs) : '') + ' · '
+    : 'No plan — load SimBrief or type the two airports. ';
+  stEl.innerHTML = msg || (route + (procsMsg || ''));
+}
+
+/* ---- badge options -------------------------------------------- */
+function find(arr, name){ return arr && name ? arr.find(x => same(x.n, name)) : null; }
+function opts(n, kind){
+  const p = st.plan;
+  const d = procs && procs.dep, a = procs && procs.arr;
+  const sid  = d && find(d.p, fs('CLR', 'sid').sel || p.sid);
+  const star = a && find(a.p, fs('ARR', 'star').sel || p.star);
+  switch (kind) {
+    case 'depRwy':   return {list: sid && sid.rw.length ? sid.rw : (d ? d.rw : []), plan: p.depRwy};
+    case 'sid':      return {list: d ? d.p.map(x => x.n) : [], plan: p.sid};
+    case 'sidTrans': return {list: sid ? sid.tr : [], plan: p.sidTrans};
+    case 'star':     return {list: a ? a.p.map(x => x.n) : [], plan: p.star};
+    case 'starTrans':return {list: star ? star.tr : [], plan: p.starTrans};
+    case 'arrRwy':   return {list: star && star.rw.length ? star.rw : (a ? a.rw : []), plan: p.arrRwy};
+  }
+  return {list:[], plan:''};
+}
+
+/* ---- render ---------------------------------------------------- */
+let canv = [];
+const ro = ('ResizeObserver' in window) ? new ResizeObserver(es => es.forEach(e => paint(e.target))) : null;
+
+function render(){
+  const n = st.tab, S = SPEC[n], P = pad(n), locked = !!P.lock;
+  ep.classList.toggle('locked', locked);
+  fDep.value = st.plan.dep || ''; fArr.value = st.plan.arr || '';
+  status();
+
+  tabsEl.innerHTML = NAMES.map(k => '<button type="button" data-t="' + k + '" aria-pressed="' + (k === n) + '"' +
+    (pad(k).lock ? ' class="lk"' : '') + '>' + k + (pad(k).lock ? ' ✓' : '') + '</button>').join('');
+
+  toolsEl.innerHTML = locked
+    ? '<button type="button" class="unl" data-a="unlock" title="Press and hold to unlock">Locked ' + esc(P.lock) + ' · hold to edit</button>' +
+      '<button type="button" data-a="close">Close</button>'
+    : '<button type="button" data-a="undo" title="Undo">↶</button>' +
+      '<button type="button" data-a="erase" aria-pressed="' + erasing + '">Erase</button>' +
+      '<button type="button" data-a="clear">Clear</button>' +
+      (pen ? '<button type="button" data-a="pen" title="Ink from the pen only, or from fingers too">' + (pen === 'pen' ? 'Pen only' : 'Finger ink') + '</button>' : '') +
+      '<button type="button" class="done" data-a="done">Done</button>' +
+      '<button type="button" data-a="close">Close</button>';
+
+  if (ro) canv.forEach(c => ro.unobserve(c));
+  canv = [];
+  let h = '<div class="ep-grid" style="grid-template-columns:repeat(' + S.cols + ',minmax(0,1fr));grid-template-areas:' +
+          S.areas.map(a => "'" + a + "'").join(' ') + '">';
+  S.f.forEach(F => {
+    const f = fs(n, F.id), inked = f.s.length > 0;
+    h += '<div class="ep-f' + (F.key ? ' key' : '') + (F.big ? ' big' : '') + '" style="grid-area:' + F.id + '" data-f="' + F.id + '">';
+    if (F.l) h += '<span class="ep-l">' + esc(F.l) + '</span>';
+    if (F.badge) {
+      const o = opts(n, F.badge);
+      let list;
+      if (f.sel) list = [f.sel];
+      else list = o.list.length ? o.list : (o.plan ? [o.plan] : []);
+      if (list.length) {
+        h += '<div class="ep-row">' + list.map(v => {
+          const cls = f.sel ? 'sel' + (inked ? ' x' : '') : (same(v, o.plan) ? 'plan' : '');
+          return '<button type="button" class="ep-b ' + cls + '" data-b="' + esc(v) + '">' + esc(v) + '</button>';
+        }).join('') + (f.sel && o.list.length > 1 ? '<span class="ep-more">tap to change</span>' : '') + '</div>';
+      }
+    }
+    if (F.chips) h += '<div class="ep-row">' + F.chips.map(c =>
+      '<button type="button" class="ep-c c' + (f.ch[c.id] || 0) + '" data-c="' + c.id + '">' + esc(c.t) + '</button>').join('') + '</div>';
+    if (!F.noink) {
+      const pre = F.pre ? F.pre(st.plan) : '';
+      h += '<div class="ep-ink">' + (pre ? '<span class="ep-pre' + (inked ? ' x' : f.ok ? ' ok' : '') + '">' + esc(pre) + '</span>' : '') +
+           '<canvas data-f="' + F.id + '"></canvas></div>';
+    }
+    h += '</div>';
+  });
+  h += '</div>';
+  const strip = (key, tag, items) => items ? '<div class="ep-strip">' + (tag ? '<span class="tag">' + tag + '</span>' : '') +
+    items.map(([id, t]) => '<button type="button" class="ep-c c' + (P[key][id] ? 1 : 0) + '" data-' + key + '="' + id + '">' + esc(t) + '</button>').join('') + '</div>' : '';
+  h += strip('rb', '', S.rb) + strip('set', 'SET', S.set);
+  h += '<p class="ep-hint">Tap a dull value as ATC says it. Write over anything that differs. ' +
+       (locked ? 'Locked — press and hold the Locked button to edit.' : '<b>Done</b> locks the pad and pins it to the header.') + '</p>';
+  body.innerHTML = h;
+
+  body.querySelectorAll('canvas').forEach(c => {
+    canv.push(c); bindInk(c);
+    if (ro) ro.observe(c); else paint(c);
+  });
+}
+
+/* ---- taps: tabs, tools, badges, chips --------------------------- */
+tabsEl.addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b) { st.tab = b.dataset.t; erasing = false; render(); save(); } });
+
+toolsEl.addEventListener('click', e => {
+  const b = e.target.closest('[data-a]'); if (!b) return;
+  const n = st.tab, P = pad(n);
+  switch (b.dataset.a) {
+    case 'close': close(); return;
+    case 'undo': undoOne(n); break;
+    case 'erase': erasing = !erasing; break;
+    case 'clear':
+      stack(n).push({t:'clear', snap: JSON.stringify(P)});
+      st.pads[n] = {lock:'', f:{}, set:{}, rb:{}};
+      break;
+    case 'pen': pen = pen === 'pen' ? 'finger' : 'pen'; put(PENKEY, pen); break;
+    case 'done': {
+      const d = new Date();
+      P.lock = String(d.getUTCHours()).padStart(2, '0') + String(d.getUTCMinutes()).padStart(2, '0') + 'Z';
+      erasing = false; renderChips(); break;
+    }
+    default: return;
+  }
+  render(); save();
+});
+
+/* Unlock is a deliberate press-and-hold, so a bump never reopens a locked pad. */
+let holdT = null;
+toolsEl.addEventListener('pointerdown', e => {
+  const b = e.target.closest('[data-a="unlock"]'); if (!b) return;
+  b.classList.add('hold');
+  holdT = setTimeout(() => { pad(st.tab).lock = ''; holdT = null; render(); renderChips(); save(); }, 700);
+});
+['pointerup', 'pointercancel', 'pointerleave'].forEach(t => toolsEl.addEventListener(t, () => {
+  if (holdT) { clearTimeout(holdT); holdT = null; }
+  const u = toolsEl.querySelector('.unl'); if (u) u.classList.remove('hold');
+}));
+
+body.addEventListener('click', e => {
+  const n = st.tab, P = pad(n);
+  if (P.lock) return;
+  const t = e.target;
+  const fEl = t.closest('[data-f]'), fid = fEl && fEl.dataset.f;
+  const bb = t.closest('[data-b]'), cc = t.closest('[data-c]'), ss = t.closest('[data-set]'), rr = t.closest('[data-rb]');
+  if (bb && fid) {
+    const f = fs(n, fid), v = bb.dataset.b;
+    f.sel = f.sel === v ? null : v;            // tap the chosen one again to see them all
+    /* a new SID or STAR invalidates a transition or runway it does not have */
+    if (n === 'CLR' && fid === 'sid') { reconcile(n, 'trans', 'sidTrans'); reconcile(n, 'rwy', 'depRwy'); }
+    if (n === 'ARR' && fid === 'star') { reconcile(n, 'trans', 'starTrans'); reconcile(n, 'rwy', 'arrRwy'); }
+  } else if (cc && fid) {
+    const F = SPEC[n].f.find(x => x.id === fid), c = F.chips.find(x => x.id === cc.dataset.c), f = fs(n, fid);
+    const v = f.ch[c.id] || 0;
+    if (c.grp) F.chips.forEach(o => { if (o.grp === c.grp) f.ch[o.id] = 0; });
+    f.ch[c.id] = c.cyc ? (v + 1) % 3 : (v ? 0 : 1);
+  } else if (ss) { P.set[ss.dataset.set] = P.set[ss.dataset.set] ? 0 : 1; }
+  else if (rr) { P.rb[rr.dataset.rb] = P.rb[rr.dataset.rb] ? 0 : 1; }
+  else return;
+  render(); save();
+});
+function reconcile(n, fid, kind){
+  const f = fs(n, fid); if (!f.sel) return;
+  const o = opts(n, kind); if (o.list.length && !o.list.some(v => same(v, f.sel))) f.sel = null;
+}
+
+/* ---- ink -------------------------------------------------------- */
+/* Strokes are CSS px ×10 relative to their own box, so a rotate or a resize
+   redraws from the vectors and never scales a bitmap. Pressure 0–255. */
+function inkColor(){ return getComputedStyle(document.documentElement).getPropertyValue('--ep-ink').trim() || '#9fe8ff'; }
+
+function paint(c){
+  const r = c.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+  if (!r.width || !r.height) return;
+  const W = Math.round(r.width * d), H = Math.round(r.height * d);
+  if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+  const x = c.getContext('2d');
+  x.setTransform(d, 0, 0, d, 0, 0); x.clearRect(0, 0, r.width, r.height);
+  x.strokeStyle = x.fillStyle = inkColor(); x.lineCap = x.lineJoin = 'round';
+  fs(st.tab, c.dataset.f).s.forEach(s => drawStroke(x, s, 0.1));
+}
+function wAt(s, i){ return s.w * (s.pen ? 0.55 + (s.p[i * 3 + 2] / 255) * 0.9 : 1); }
+function drawStroke(x, s, k){
+  const p = s.p, n = p.length / 3;
+  if (n === 1) { x.beginPath(); x.arc(p[0] * k, p[1] * k, wAt(s, 0) * 0.6, 0, 7); x.fill(); return; }
+  /* quadratic through the midpoints — smooth without a library */
+  let mx = p[0] * k, my = p[1] * k;
+  for (let i = 1; i < n; i++) {
+    const cx = p[(i - 1) * 3] * k, cy = p[(i - 1) * 3 + 1] * k;
+    const nx = (p[(i - 1) * 3] + p[i * 3]) / 2 * k, ny = (p[(i - 1) * 3 + 1] + p[i * 3 + 1]) / 2 * k;
+    x.beginPath(); x.lineWidth = wAt(s, i - 1); x.moveTo(mx, my);
+    if (i === 1) x.lineTo(nx, ny); else x.quadraticCurveTo(cx, cy, nx, ny);
+    x.stroke(); mx = nx; my = ny;
+  }
+  x.beginPath(); x.lineWidth = wAt(s, n - 1); x.moveTo(mx, my); x.lineTo(p[(n - 1) * 3] * k, p[(n - 1) * 3 + 1] * k); x.stroke();
+}
+
+let act = null;
+function bindInk(c){
+  /* iOS: without these the page scrolls, zooms, or Scribble eats the stroke */
+  c.addEventListener('touchstart', e => e.preventDefault(), {passive:false});
+  c.addEventListener('touchmove', e => e.preventDefault(), {passive:false});
+  c.addEventListener('pointerdown', e => down(e, c));
+  c.addEventListener('pointermove', e => move(e, c));
+  c.addEventListener('pointerup', e => up(e, c));
+  c.addEventListener('pointercancel', e => { if (act && act.id === e.pointerId) { act = null; paint(c); } });
+}
+function pt(e, c){
+  const r = c.getBoundingClientRect();
+  return [Math.round((e.clientX - r.left) * 10), Math.round((e.clientY - r.top) * 10),
+          e.pointerType === 'pen' ? Math.round((e.pressure || 0.5) * 255) : 128];
+}
+function down(e, c){
+  if (pad(st.tab).lock || act) return;               // one inking pointer at a time
+  if (e.pointerType === 'pen' && !pen) { pen = 'pen'; put(PENKEY, pen); }      // shows its toggle on the next render
+  if (e.pointerType === 'touch' && (e.width > PALM_PX || e.height > PALM_PX)) return;   // a palm
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  e.preventDefault();
+  try { c.setPointerCapture(e.pointerId); } catch(_){}
+  const ink = !(e.pointerType === 'touch' && pen === 'pen');   // with a pen about, fingers tap but never ink
+  act = {id:e.pointerId, c, x0:e.clientX, y0:e.clientY, t0:performance.now(), ink, moved:false,
+         s:{w: e.pointerType === 'pen' ? 2.4 : 3.4, pen: e.pointerType === 'pen' ? 1 : 0, p:[]}};
+  if (erasing) { eraseAt(c, pt(e, c)); return; }
+  act.s.p.push(...pt(e, c));
+}
+function move(e, c){
+  if (!act || act.id !== e.pointerId) return;
+  if (Math.hypot(e.clientX - act.x0, e.clientY - act.y0) > TAP_PX) act.moved = true;
+  const evs = (e.getCoalescedEvents && e.getCoalescedEvents().length) ? e.getCoalescedEvents() : [e];
+  if (erasing) { evs.forEach(ev => eraseAt(c, pt(ev, c))); return; }
+  if (!act.ink || !act.moved) return;
+  const x = c.getContext('2d'), d = window.devicePixelRatio || 1, s = act.s;
+  x.setTransform(d, 0, 0, d, 0, 0); x.strokeStyle = inkColor(); x.lineCap = 'round';
+  evs.forEach(ev => {
+    const q = pt(ev, c), n = s.p.length;
+    x.beginPath(); x.lineWidth = s.w * (s.pen ? 0.55 + q[2] / 255 * 0.9 : 1);
+    x.moveTo(s.p[n - 3] / 10, s.p[n - 2] / 10); x.lineTo(q[0] / 10, q[1] / 10); x.stroke();
+    s.p.push(...q);
+  });
+}
+function up(e, c){
+  if (!act || act.id !== e.pointerId) return;
+  const a = act; act = null;
+  const n = st.tab, fid = c.dataset.f, f = fs(n, fid);
+  if (erasing) { render(); save(); return; }
+  const tap = !a.moved && performance.now() - a.t0 < TAP_MS;
+  if (tap && !f.s.length) {
+    /* an untouched box: a tap confirms its pre-fill, and is otherwise nothing */
+    const F = SPEC[n].f.find(x => x.id === fid);
+    if (F.pre && F.pre(st.plan)) { f.ok = f.ok ? 0 : 1; render(); save(); } else paint(c);
+    return;
+  }
+  if (!a.ink) { paint(c); return; }
+  if (tap) a.s.p = a.s.p.slice(0, 3);          // a dot — the decimal point
+  f.s.push(a.s); stack(n).push({t:'add', f:fid});
+  render(); save();                             // re-render: pre-fills and badges strike themselves
+}
+function eraseAt(c, q){
+  const n = st.tab, fid = c.dataset.f, f = fs(n, fid), R = ERASE_PX * 10;
+  for (let i = f.s.length - 1; i >= 0; i--) {
+    const p = f.s[i].p;
+    for (let j = 0; j < p.length; j += 3) {
+      if (Math.abs(p[j] - q[0]) < R && Math.abs(p[j + 1] - q[1]) < R) {
+        stack(n).push({t:'del', f:fid, i, s:f.s[i]}); f.s.splice(i, 1); paint(c); break;
+      }
+    }
+  }
+}
+function undoOne(n){
+  const op = stack(n).pop(); if (!op) return;
+  if (op.t === 'add') fs(n, op.f).s.pop();
+  else if (op.t === 'del') fs(n, op.f).s.splice(op.i, 0, op.s);
+  else if (op.t === 'clear') st.pads[n] = JSON.parse(op.snap);
+}
+
+/* ---- recall chips in the header --------------------------------- */
+function thumb(n, fid){
+  const s = fs(n, fid).s; if (!s.length) return null;
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  s.forEach(t => { for (let j = 0; j < t.p.length; j += 3) {
+    x0 = Math.min(x0, t.p[j]); x1 = Math.max(x1, t.p[j]); y0 = Math.min(y0, t.p[j + 1]); y1 = Math.max(y1, t.p[j + 1]); } });
+  const pad_ = 40, H = 22, k = H / Math.max(200, y1 - y0 + pad_ * 2);
+  const W = Math.min(90, Math.max(12, (x1 - x0 + pad_ * 2) * k)), d = window.devicePixelRatio || 1;
+  const c = document.createElement('canvas'); c.width = Math.round(W * d); c.height = Math.round(H * d); c.style.width = W + 'px';
+  const x = c.getContext('2d'); x.setTransform(d * k, 0, 0, d * k, d * k * (pad_ - x0), d * k * (pad_ - y0));
+  x.strokeStyle = x.fillStyle = inkColor(); x.lineCap = x.lineJoin = 'round';
+  s.forEach(t => drawStroke(x, Object.assign({}, t, {w: Math.max(1.2, t.w * 0.45) / k}), 1));
+  return c;
+}
+function renderChips(){
+  chips.innerHTML = '';
+  NAMES.forEach(n => {
+    const P = pad(n); if (!P.lock) return;
+    const S = SPEC[n].sum, b = document.createElement('button');
+    b.type = 'button'; b.className = 'ep-chip'; b.title = 'Open the ' + n + ' pad — locked ' + P.lock;
+    /* No timestamp here — it costs header width; it is on the pad's Locked button. */
+    b.innerHTML = '<span>' + n + ' ✓</span>';
+    if (S.badge) { const v = fs(n, S.badge).sel; if (v) b.insertAdjacentHTML('beforeend', '<span class="x">' + esc(v) + '</span>'); }
+    (S.ink || []).forEach(id => { const c = thumb(n, id); if (c) b.appendChild(c); });
+    b.addEventListener('click', () => open(n));
+    chips.appendChild(b);
+  });
+  relayout();
+}
+
+/* ---- Reset is a new flight: pads go, the plan and username stay --- */
+document.getElementById('reset').addEventListener('click', () => {
+  st.pads = {}; Object.keys(undo).forEach(k => delete undo[k]);
+  saveNow(); renderChips(); if (!ep.hidden) render();
+});
+
+renderChips();
+/* Prefetch for an already-planned route, so the first badge tap is instant. */
+if (st.plan.dep || st.plan.arr) setTimeout(loadProcs, 2500);
+
+} catch(e){ try { console.warn('entry pads disabled:', e); } catch(_){} }
 })();
 </script>
 </body>
