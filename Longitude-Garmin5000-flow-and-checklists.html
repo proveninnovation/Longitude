@@ -729,7 +729,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v10</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v11</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -2992,7 +2992,10 @@ try {
 const KEY = 'c700-pads', SBKEY = 'c700-simbrief', PENKEY = 'c700-pen';
 const STALE = 14 * 3600 * 1000;
 const AIRSPACE = 'https://raw.githubusercontent.com/vatSys/australia-dataset/master/Airspace.xml';
-const SIMBRIEF = 'https://www.simbrief.com/api/xml.fetcher.php?json=v2&username=';
+/* Pilot ID (all digits) or username. The Pilot ID is the safer of the two: Nic's
+   Navigraph login name is not his SimBrief username, and SimBrief says only
+   "Unknown UserID" when it is wrong. Account Settings in SimBrief shows both. */
+const SIMBRIEF = 'https://www.simbrief.com/api/xml.fetcher.php?json=v2&';
 const TAP_PX = 8, TAP_MS = 300, PALM_PX = 40, ERASE_PX = 14;
 
 const get = k => { try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } };
@@ -3078,7 +3081,7 @@ ep.className = 'ep'; ep.hidden = true; ep.setAttribute('role', 'dialog'); ep.set
 ep.innerHTML =
   '<div class="ep-top"><div class="ep-tabs"></div><div class="ep-tools"></div></div>' +
   '<div class="ep-plan">' +
-    '<input id="epSb" placeholder="SimBrief user" autocapitalize="off" autocorrect="off" spellcheck="false" style="text-transform:none">' +
+    '<input id="epSb" placeholder="SimBrief Pilot ID" autocapitalize="off" autocorrect="off" spellcheck="false" style="text-transform:none">' +
     '<button type="button" id="epSbGo">Load plan</button>' +
     '<input id="epDep" class="ap" placeholder="DEP" maxlength="4" autocorrect="off" spellcheck="false">' +
     '<span>→</span>' +
@@ -3121,12 +3124,19 @@ function firstFix(route, sid){
 }
 async function loadSimBrief(){
   const u = fSb.value.trim(); put(SBKEY, u);
-  if (!u) { status('Enter the SimBrief username first.'); return; }
-  status('Fetching the SimBrief plan…');
+  if (!u) { status('Enter the SimBrief Pilot ID (or username) first.'); return; }
+  sbMsg = ''; status('Fetching the SimBrief plan…');
   try {
-    const r = await fetch(SIMBRIEF + encodeURIComponent(u), {cache:'no-store'});
+    const r = await fetch(SIMBRIEF + (/^\d+$/.test(u) ? 'userid=' : 'username=') + encodeURIComponent(u), {cache:'no-store'});
     const d = await r.json();
-    if (!d || !d.origin || !d.destination) throw new Error((d && d.fetch && d.fetch.status) || 'no plan');
+    if (!d || !d.origin || !d.destination) {
+      const why = String((d && d.fetch && d.fetch.status) || '');
+      throw new Error(/unknown user/i.test(why)
+        ? 'SimBrief does not know that username. Use the Pilot ID instead (digits, from SimBrief Account Settings)'
+        : /no flight plan/i.test(why)
+        ? 'No plan generated on that account yet. Generate the OFP in SimBrief, then Load plan'
+        : (why.replace(/^Error:\s*/, '') || 'no plan'));
+    }
     const g = d.general || {};
     setPlan({
       cs: (d.atc && d.atc.callsign) || '', dep: d.origin.icao_code || '', arr: d.destination.icao_code || '',
@@ -3134,12 +3144,13 @@ async function loadSimBrief(){
       sid: g.sid_ident || '', sidTrans: g.sid_trans || '', star: g.star_ident || '', starTrans: g.star_trans || '',
       via: g.sid_trans || firstFix(g.route, g.sid_ident), src: 'SimBrief'
     });
-  } catch(e){ status('SimBrief plan not available — ' + esc(e.message || 'fetch failed') + '. Pads still work by hand.'); }
+  } catch(e){ sbMsg = 'SimBrief: ' + esc(e.message || 'fetch failed') + '. Pads still work by hand.'; status(); }
 }
 /* A new route over pads that still hold the last leg: offer to clear them, so
    a forgotten Reset at the turn can't leave leg 1's clearance looking current.
    Pads only — checklist ticks are Reset's business. */
 let staleFrom = '';
+let sbMsg = '';          // a SimBrief failure stays on screen until the next Load, not the next render
 function hasContent(){
   return NAMES.some(n => { const P = st.pads[n]; if (!P) return false;
     if (P.lock || Object.values(P.set || {}).some(Boolean) || Object.values(P.rb || {}).some(Boolean)) return true;
@@ -3194,7 +3205,8 @@ function status(msg){
     ? '<b>' + esc(p.dep || '····') + (p.depRwy ? ' ' + esc(p.depRwy) : '') + ' → ' + esc(p.arr || '····') +
       (p.arrRwy ? ' ' + esc(p.arrRwy) : '') + '</b>' + (p.cs ? ' · ' + esc(p.cs) : '') + ' · '
     : 'No plan — load SimBrief or type the two airports. ';
-  stEl.innerHTML = (msg || (route + (procsMsg || ''))) + (staleFrom
+  stEl.innerHTML = (msg || (route + (procsMsg || ''))) +
+    (sbMsg && !msg ? '<br><b style="color:var(--warn)">' + sbMsg + '</b>' : '') + (staleFrom
     ? '<br><b style="color:var(--pf)">New route — the pads still hold ' + esc(staleFrom) + '.</b> ' +
       '<button type="button" data-stale="clear">Clear pads</button> <button type="button" data-stale="keep">Keep</button>'
     : '');
