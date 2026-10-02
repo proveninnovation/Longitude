@@ -131,6 +131,7 @@
   .scrim{position:fixed;inset:0;z-index:15;background:rgba(0,0,0,.25)}
 
   /* ---------- review mode (line numbers) ---------- */
+  .devrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
   #dev[aria-pressed="true"]{color:var(--both);border-color:var(--both)}
   .ix{display:none;font-size:11.5px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
   body[data-dev="on"] .ix{display:inline-block}
@@ -593,6 +594,26 @@
   #link[data-s="warn"] .dot{background:var(--warn)}
   #link[data-s="warn"]{color:var(--warn);border-color:var(--warn)}
 
+  /* Seat + link menu. The button wears the seat colour and repeats the link dot,
+     so neither state needs the menu open to be read. */
+  .crew{position:relative;display:flex}
+  #crewbtn{display:flex;align-items:center;gap:8px;font-weight:600}
+  #crewbtn .car{font-size:10px;color:var(--ink-faint);transition:transform .15s}
+  #crewbtn[aria-expanded="true"] .car{transform:rotate(180deg)}
+  #crewbtn[data-role="PF"]{color:var(--pf);border-color:color-mix(in srgb,var(--pf) 45%,var(--line))}
+  #crewbtn[data-role="PM"]{color:var(--pm);border-color:color-mix(in srgb,var(--pm) 45%,var(--line))}
+  #crewbtn .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-faint);flex:0 0 auto;transition:background .2s}
+  #crewbtn[data-s="linking"] .dot,#crewbtn[data-s="retry"] .dot{background:var(--trig)}
+  #crewbtn[data-s="linked"] .dot{background:var(--list-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--list-accent) 22%,transparent)}
+  #crewbtn[data-s="warn"] .dot{background:var(--warn)}
+  .crewpop{position:absolute;right:0;top:calc(100% + 6px);z-index:31;width:260px;max-width:calc(100vw - 32px);
+    display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--panel);
+    border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 28px rgba(0,0,0,.35)}
+  .crewpop[hidden]{display:none}
+  .crewpop .cp-lbl{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
+  .crewpop .seg button{flex:1;min-height:44px}
+  .crewpop #link{min-height:44px;justify-content:flex-start}
+
   /* The other seat's position — rides --comm, because it is information arriving
      from outside this tablet, which is exactly what the teal means elsewhere. */
   #pos{
@@ -649,14 +670,36 @@
      block absent or failing, none of this matches anything. */
   :root{ --ep-ink:#9fe8ff; --ep-dull:#5d6f80; }
   html[data-theme="light"]{ --ep-ink:#0b4f8f; --ep-dull:#97a6b4; }
-  #epchips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-  #epchips:empty{display:none}
+  /* Locked-pad chips: their own row under the title line, so they never push the
+     controls around. One row, scrolling sideways rather than wrapping. The caret
+     beside Pads hides it, to win the header height back. */
+  #epchips{display:flex;gap:6px;flex-wrap:nowrap;align-items:center;overflow-x:auto;
+    margin:-2px 0 9px;scrollbar-width:none}
+  #epchips::-webkit-scrollbar{display:none}
+  #epchips:empty,#epchips.off{display:none}
+  .ep-chip{flex:0 0 auto}
+  .padgrp{display:flex}
+  .padgrp #padbtn:not(:last-child){border-top-right-radius:0;border-bottom-right-radius:0}
+  #epcaret{border-top-left-radius:0;border-bottom-left-radius:0;border-left:0;padding:7px 8px;
+    color:var(--list-accent);font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px}
+  #epcaret[hidden]{display:none}
+  #epcaret .car{font-size:10px;color:var(--ink-faint);transition:transform .15s}
+  #epcaret[aria-expanded="true"] .car{transform:rotate(180deg)}
   .ep-chip{display:inline-flex;align-items:center;gap:7px;min-height:32px;padding:3px 10px 3px 8px;
     border-radius:999px;border:1px solid var(--list-line);background:var(--list-bg);color:var(--list-accent);
     font-size:12px;font-weight:700;letter-spacing:.3px}
   .ep-chip .t{color:var(--ink-faint);font-weight:600}
   .ep-chip .x{color:var(--ink);font-weight:600}
   .ep-chip canvas{height:22px;display:block}
+  /* The filed callsign, as SimBrief has it — what VATSIM puts on the controller's
+     scope. Rides --comm: it is the cockpit's identity outside the cockpit.
+     Absent (not empty) until a SimBrief plan supplies one. */
+  .ep-cs{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:2px 12px;
+    border-radius:8px;border:1px solid var(--comm-line);background:var(--comm-bg);color:var(--comm);
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:20px;font-weight:700;
+    letter-spacing:.08em;white-space:nowrap;flex:0 0 auto;line-height:1}
+  .ep-cs[hidden]{display:none}
+  .ep-top .ep-cs{order:-1}
   #padbtn{color:var(--pm);border-color:color-mix(in srgb,var(--pm) 45%,var(--line));font-weight:600}
 
   .ep{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;
@@ -717,7 +760,7 @@
   @media (max-width:620px){
     .ep-grid{display:flex;flex-direction:column}
   }
-  @media print{ .ep,#padbtn,#epchips{display:none !important} }
+  @media print{ .ep,.padgrp,#epchips,.ep-cs,.devrow{display:none !important} }
 </style>
 </head>
 <body data-role="BOTH">
@@ -729,25 +772,36 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v13</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v14</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
         </button>
-        <div class="seg" role="group" aria-label="Role">
-          <span class="lbl">Role</span>
-          <button data-role="BOTH" aria-pressed="true">Both</button>
-          <button data-role="PF" aria-pressed="false">PF</button>
-          <button data-role="PM" aria-pressed="false">PM</button>
+        <!-- Seat and link: both chosen once a flight, so one button carries both
+             states (seat label + link dot) and the controls live in its menu.
+             The .seg and #link inside are the originals; their code is unchanged. -->
+        <div class="crew">
+          <button id="crewbtn" type="button" aria-expanded="false" aria-haspopup="true"
+                  title="Seat, and the link to the other seat's tablet">
+            <span class="cseat">Both</span><span class="dot" aria-hidden="true"></span><span class="car">▼</span>
+          </button>
+          <div class="crewpop" id="crewpop" hidden>
+            <div class="cp-lbl">Seat</div>
+            <div class="seg" role="group" aria-label="Role">
+              <button data-role="BOTH" aria-pressed="true">Both</button>
+              <button data-role="PF" aria-pressed="false">PF</button>
+              <button data-role="PM" aria-pressed="false">PM</button>
+            </div>
+            <div class="cp-lbl">Link</div>
+            <!-- Two-tablet link. Inert until a room code is entered: with no code the
+                 page never opens a socket and nothing here does anything. -->
+            <button id="link" data-s="off" title="Share checklist ticks with the other seat's tablet">
+              <span class="dot" aria-hidden="true"></span><span class="ltxt">Link</span>
+            </button>
+          </div>
         </div>
-        <!-- Two-tablet link. Inert until a room code is entered: with no code the
-             page never opens a socket and nothing here does anything. -->
-        <button id="link" data-s="off" title="Share checklist ticks with the other seat's tablet">
-          <span class="dot" aria-hidden="true"></span><span class="ltxt">Link</span>
-        </button>
         <button id="reset">Reset</button>
         <button id="theme">Light</button>
-        <button id="dev" aria-pressed="false" title="Number every line and show how well sourced it is">Review</button>
       </div>
     </div>
     <!-- Where the other seat is working. A pointer you tap, never an automatic
@@ -786,6 +840,10 @@
 </main>
 
 <footer class="wrap">
+  <!-- Review is editorial, outside the immersion zone, so it lives down here
+       rather than in the header. -->
+  <p class="devrow"><button id="dev" aria-pressed="false" title="Number every line and show how well sourced it is">Review</button>
+  <span>Numbers every line and shows its sourcing — for reporting changes.</span></p>
   <p><b>Provenance.</b> Checklists: Cessna Citation Longitude Model 700 Operators Guide,
   Section XVII. Sim technique and FMA states: JayDee's MSFS checklist v1.32.3. Crew mechanics:
   Alpha Jet Charter and AeroJet CE-525 operator SOPs, and the CitationMax Innsbruck video —
@@ -802,7 +860,7 @@
   header to open it, tap any line to tick it off. The phase menu jumps to the flow that
   precedes each checklist and shows where you are; <b>Reset</b> clears the ticks and folds
   everything away again.</p>
-  <p><b>Review</b> (top right) is the editorial view — it numbers every line so changes can be
+  <p><b>Review</b> (the button at the top of this footer) is the editorial view — it numbers every line so changes can be
   named precisely, and puts the sourcing on show. Flow steps
   are <b>13.1, 13.2…</b> and checklist items <b>13.a, 13.b…</b>, both keyed to the phase number.
   “Swap 13.2 and 13.6, drop 12.d” is enough to act on. Parallel bands and reference cards carry no
@@ -2540,6 +2598,27 @@ document.querySelectorAll('.seg button').forEach(b => {
   });
 });
 
+/* Seat + link menu. The seat label follows body[data-role]; the link dot is
+   copied from #link, whose state the two-crew layer owns. */
+const crewBtn = document.getElementById('crewbtn'), crewPop = document.getElementById('crewpop');
+function crewOpen(on){
+  crewPop.hidden = !on; crewBtn.setAttribute('aria-expanded', on ? 'true' : 'false');
+}
+crewBtn.addEventListener('click', e => { e.stopPropagation(); crewOpen(crewPop.hidden); });
+document.addEventListener('click', e => { if (!crewPop.hidden && !e.target.closest('.crew')) crewOpen(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') crewOpen(false); });
+document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+  crewBtn.dataset.role = b.dataset.role;
+  crewBtn.querySelector('.cseat').textContent = b.textContent;
+  crewOpen(false);
+}));
+document.getElementById('link').addEventListener('click', () => crewOpen(false));
+try {
+  const lb = document.getElementById('link');
+  const syncDot = () => { crewBtn.dataset.s = lb.dataset.s || 'off'; };
+  new MutationObserver(syncDot).observe(lb, {attributes:true, attributeFilter:['data-s']}); syncDot();
+} catch(e){}
+
 const themeBtn = document.getElementById('theme');
 function applyTheme(t){
   document.documentElement.dataset.theme = t;
@@ -2720,7 +2799,7 @@ function setStatus(s, msg){
     s === 'linked'  ? (crew.length > 1 ? 'Linked ' + crew.length : 'Linked') :
     s === 'linking' ? 'Linking'  :
     s === 'retry'   ? 'Retry'    :
-    s === 'warn'    ? 'Unlinked' : 'Link';
+    s === 'warn'    ? 'Unlinked' : 'Link the other tablet…';
   if (!dlg.open) return;
   stat.innerHTML =
     s === 'linked'  ? 'Linked to <b>' + esc(room) + '</b> — ' +
@@ -3042,9 +3121,28 @@ const ver = document.getElementById('ver');
 const padBtn = document.createElement('button');
 padBtn.id = 'padbtn'; padBtn.type = 'button'; padBtn.textContent = 'Pads';
 padBtn.title = 'ATIS, clearance, arrival and hold pads — write as ATC speaks';
-bar.insertBefore(padBtn, document.getElementById('link'));
-const chips = document.createElement('span'); chips.id = 'epchips';
-ver.insertAdjacentElement('afterend', chips);
+const padGrp = document.createElement('span'); padGrp.className = 'padgrp';
+const caret = document.createElement('button');
+caret.id = 'epcaret'; caret.type = 'button'; caret.hidden = true;
+caret.title = 'Show or hide the locked pads under the title';
+padGrp.append(padBtn, caret);
+bar.insertBefore(padGrp, bar.querySelector('.crew'));
+const chips = document.createElement('div'); chips.id = 'epchips';
+document.querySelector('header .titlebar').insertAdjacentElement('afterend', chips);
+/* Expanded on every load, and re-expanded whenever a pad newly locks: a
+   collapse is for now, never a setting that hides a fresh clearance. */
+let chipSeen = null;                      // locked pad names at the last render
+function chipsShown(on){
+  chips.classList.toggle('off', !on); caret.setAttribute('aria-expanded', on ? 'true' : 'false');
+  relayout();
+}
+caret.addEventListener('click', () => chipsShown(chips.classList.contains('off')));
+caret.setAttribute('aria-expanded', 'true');
+try { localStorage.removeItem('c700-chips'); } catch(e){}   // retired key
+const csHdr = document.createElement('button');
+csHdr.type = 'button'; csHdr.className = 'ep-cs'; csHdr.hidden = true;
+csHdr.title = 'Callsign filed in SimBrief — what VATSIM shows ATC. Tap for the clearance pad';
+ver.insertAdjacentElement('beforebegin', csHdr);
 
 const ep = document.createElement('div');
 ep.className = 'ep'; ep.hidden = true; ep.setAttribute('role', 'dialog'); ep.setAttribute('aria-label', 'Entry pads');
@@ -3063,6 +3161,18 @@ const $ = s => ep.querySelector(s);
 const tabsEl = $('.ep-tabs'), toolsEl = $('.ep-tools'), body = $('.ep-body');
 const fSb = $('#epSb'), fDep = $('#epDep'), fArr = $('#epArr'), stEl = $('#epSt');
 fSb.value = get(SBKEY);
+const csPad = document.createElement('span'); csPad.className = 'ep-cs'; csPad.hidden = true;
+$('.ep-top').prepend(csPad);
+/* Both copies, so the callsign stays in view with the Pads sheet over the header. */
+function renderCs(){
+  const cs = (st.plan.cs || '').trim().toUpperCase();
+  [csHdr, csPad].forEach(e => {
+    e.hidden = !cs;
+    e.textContent = cs;
+  });
+  relayout();
+}
+csHdr.addEventListener('click', () => open('CLR'));
 
 function relayout(){ window.dispatchEvent(new Event('resize')); }   // header height → --hdr
 
@@ -3130,7 +3240,7 @@ function setPlan(np){
   const prev = st.plan || {}, was = (prev.dep || '') + '>' + (prev.arr || '');
   if (was !== (np.dep || '') + '>' + (np.arr || '') && (prev.dep || prev.arr) && hasContent())
     staleFrom = (prev.dep || '····') + ' → ' + (prev.arr || '····');
-  st.plan = np; save(); procs = null; render(); loadProcs();
+  st.plan = np; save(); procs = null; render(); renderCs(); loadProcs();
 }
 stEl.addEventListener('click', e => {
   const b = e.target.closest('[data-stale]'); if (!b) return;
@@ -3446,7 +3556,7 @@ function thumb(n, fid){
   s.forEach(t => { for (let j = 0; j < t.p.length; j += 3) {
     x0 = Math.min(x0, t.p[j]); x1 = Math.max(x1, t.p[j]); y0 = Math.min(y0, t.p[j + 1]); y1 = Math.max(y1, t.p[j + 1]); } });
   const pad_ = 40, H = 22, k = H / Math.max(200, y1 - y0 + pad_ * 2);
-  const W = Math.min(90, Math.max(12, (x1 - x0 + pad_ * 2) * k)), d = window.devicePixelRatio || 1;
+  const W = Math.min(52, Math.max(12, (x1 - x0 + pad_ * 2) * k)), d = window.devicePixelRatio || 1;
   const c = document.createElement('canvas'); c.width = Math.round(W * d); c.height = Math.round(H * d); c.style.width = W + 'px';
   const x = c.getContext('2d'); x.setTransform(d * k, 0, 0, d * k, d * k * (pad_ - x0), d * k * (pad_ - y0));
   x.strokeStyle = x.fillStyle = inkColor(); x.lineCap = x.lineJoin = 'round';
@@ -3466,6 +3576,11 @@ function renderChips(){
     b.addEventListener('click', () => open(n));
     chips.appendChild(b);
   });
+  const locked = NAMES.filter(n => pad(n).lock);
+  if (chipSeen && locked.some(n => !chipSeen.includes(n))) chipsShown(true);
+  chipSeen = locked;
+  caret.hidden = !chips.children.length;
+  caret.innerHTML = chips.children.length + '<span class="car">▼</span>';
   relayout();
 }
 
@@ -3475,7 +3590,7 @@ document.getElementById('reset').addEventListener('click', () => {
   saveNow(); renderChips(); if (!ep.hidden) render();
 });
 
-renderChips();
+renderChips(); renderCs();
 /* Prefetch for an already-planned route, so the first badge tap is instant. */
 if (st.plan.dep || st.plan.arr) setTimeout(loadProcs, 2500);
 
