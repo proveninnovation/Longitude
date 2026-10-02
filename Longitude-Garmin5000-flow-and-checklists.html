@@ -13,6 +13,12 @@
      asks the host for /favicon.ico and takes a 404 on every load. -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23161d25'/%3E%3Cpath d='M16 4l2.4 9.1 9.1 2.4-9.1 2.4L16 27l-2.4-9.1L4.5 15.5l9.1-2.4z' fill='%236ee7a8'/%3E%3C/svg%3E">
 <meta name="theme-color" content="#0f1419">
+<!-- Installable app (added v10): the manifest is what lets Chrome offer "Install app" rather
+     than a shortcut, and it opens FULLSCREEN — no tabs, no address bar. The page's one exception
+     to being a single file: Chrome will not install from an inlined manifest. Published beside
+     the page by publish-efb.ps1; locally the link resolves but nothing installs from file://. -->
+<link rel="manifest" href="efb-app/longitude-efb.webmanifest">
+<link rel="apple-touch-icon" href="efb-app/icon-192.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -723,7 +729,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v9</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v10</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
