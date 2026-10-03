@@ -753,11 +753,10 @@
   .ep-plan .st{flex:1 1 220px;color:var(--ink-faint)}
   .ep-plan .st b{color:var(--ink-dim)}
   .ep-body{flex:1 1 auto;overflow:auto;padding:10px 12px 14px;display:flex;flex-direction:column}
-  .ep-grid{display:grid;gap:7px;grid-auto-rows:minmax(84px,auto);flex:1 1 0;min-height:0;align-content:space-between}
-  /* flex-basis 0 and min-height 0 give the grid a definite height to share out:
-     otherwise its minimum is measured with every row at the 220 px cap, and the sheet
-     scrolls. A screen too short for the rows' own minimums still scrolls — the grid
-     overflows into .ep-body, which is the scroller. */
+  .ep-grid{display:grid;gap:7px;grid-auto-rows:minmax(84px,auto);flex:1 0 auto;align-content:space-evenly}
+  /* flex-grow gives the grid the sheet's spare height and space-evenly spends it as
+     equal gaps: above the first row, between rows, and above the strips (Neil, v21).
+     Rows keep minmax(84px, auto). */
   .ep-grid > .ep-f{min-height:84px}
   .ep-foot{margin-top:auto;padding-top:10px}
   .ep-f{position:relative;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:9px;
@@ -807,7 +806,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v20</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v21</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -3441,11 +3440,12 @@ function render(){
 
   if (ro) canv.forEach(c => ro.unobserve(c));
   canv = [];
-  /* Rows grow to fill the sheet (to 220 px), then spread evenly — room to write
-     and room for a resting hand, instead of a block at the top over an empty
-     bottom half (v20). The strips sit at the foot. */
-  let h = '<div class="ep-grid" style="grid-template-columns:repeat(' + S.cols + ',minmax(0,1fr));grid-template-rows:repeat(' +
-          S.areas.length + ',minmax(auto,220px));grid-template-areas:' + S.areas.map(a => "'" + a + "'").join(' ') + '">';
+  /* Rows keep their own height; the sheet's spare height goes BETWEEN them, and the
+     strips sit at the foot — room for a resting hand instead of a block at the top
+     over an empty bottom half (v21; v20 grew the boxes instead, and Neil preferred
+     the original heights). */
+  let h = '<div class="ep-grid" style="grid-template-columns:repeat(' + S.cols + ',minmax(0,1fr));grid-template-areas:' +
+          S.areas.map(a => "'" + a + "'").join(' ') + '">';
   S.f.forEach(F => {
     const f = fs(n, F.id), inked = f.s.length > 0;
     h += '<div class="ep-f' + (F.key ? ' key' : '') + (F.big ? ' big' : '') + '" style="grid-area:' + F.id + '" data-f="' + F.id + '">';
