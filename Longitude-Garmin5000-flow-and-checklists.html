@@ -691,6 +691,7 @@
     font-size:12px;font-weight:700;letter-spacing:.3px}
   .ep-chip .t{color:var(--ink-faint);font-weight:600}
   .ep-chip .x{color:var(--ink);font-weight:600}
+  .ep-chip .sep{color:var(--ink-faint);font-weight:700;margin:0 -2px}
   .ep-chip canvas{height:22px;display:block}
   /* Tap folds, hold opens: no callout or selection on the hold, and a bar fills
      along the bottom like the pad's own Locked button. */
@@ -724,9 +725,10 @@
   .ep-tools button{min-width:48px;min-height:42px;touch-action:manipulation}
   .ep-tools button[aria-pressed="true"]{background:var(--warn);border-color:var(--warn);color:var(--bg)}
   .ep-tools .done{background:var(--list-accent);border-color:var(--list-accent);color:#08140e;font-weight:700}
-  .ep-tools .unl{color:var(--list-accent);border-color:var(--list-line);position:relative;overflow:hidden}
-  .ep-tools .unl::after{content:"";position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--list-accent)}
-  .ep-tools .unl.hold::after{width:100%;transition:width .7s linear}
+  /* A label, not a button: unlocking is a second tap on the pad's own tab (v17). A
+     press-and-hold here raised the tablet's copy/paste prompt before 0.7 s was up. */
+  .ep-tools .unl{display:inline-flex;align-items:center;min-height:42px;padding:0 12px;border-radius:8px;
+    border:1px solid var(--list-line);color:var(--list-accent);font-size:13px;font-weight:600}
   .ep-plan{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;
     border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-dim)}
   .ep-plan input{font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--line);
@@ -780,7 +782,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v16</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v17</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -3270,10 +3272,15 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && !ep.hidden
 document.addEventListener('gesturestart', e => { if (!ep.hidden) e.preventDefault(); });
 
 /* ---- plan: SimBrief, or two airports typed ---------------------- */
+/* The first fix of the route, for CLR's Via. Navaids and most fixes are letters
+   only, but a waypoint can carry a digit (MA2NI, on YBMA→YBCS; v17 — it used to be
+   skipped, so RILVO showed instead). What is left out is an airway (J64, Q11) and a
+   SID or STAR (GROOK2, AVL2A). */
 function firstFix(route, sid){
   for (const t of String(route || '').split(/\s+/)) {
     if (!t || t === 'DCT' || same(t, sid)) continue;
-    if (/^[A-Z]{2,5}$/.test(t)) return t;      // fixes and navaids are letters only; airways and SIDs carry digits
+    if (/^[A-Z]{2,5}$/.test(t)) return t;
+    if (/^[A-Z0-9]{5}$/.test(t) && !/^[A-Z]{1,2}\d+[A-Z]?$/.test(t) && !/^[A-Z]{3,5}\d[A-Z]?$/.test(t)) return t;
   }
   return '';
 }
@@ -3405,7 +3412,7 @@ function render(){
     (pad(k).lock ? ' class="lk"' : '') + '>' + k + (pad(k).lock ? ' ✓' : '') + '</button>').join('');
 
   toolsEl.innerHTML = locked
-    ? '<button type="button" class="unl" data-a="unlock" title="Press and hold to unlock">Locked ' + esc(P.lock) + ' · hold to edit</button>' +
+    ? '<span class="unl">Locked ' + esc(P.lock) + ' · tap ' + n + ' ✓ to edit</span>' +
       '<button type="button" data-a="close">Close</button>'
     : '<button type="button" data-a="undo" title="Undo">↶</button>' +
       '<button type="button" data-a="erase" aria-pressed="' + erasing + '">Erase</button>' +
@@ -3448,7 +3455,7 @@ function render(){
     items.map(([id, t]) => '<button type="button" class="ep-c c' + (P[key][id] ? 1 : 0) + '" data-' + key + '="' + id + '">' + esc(t) + '</button>').join('') + '</div>' : '';
   h += strip('rb', '', S.rb) + strip('set', 'SET', S.set);
   h += '<p class="ep-hint">Tap a dull value as ATC says it. Write over anything that differs. ' +
-       (locked ? 'Locked — press and hold the Locked button to edit.' : '<b>Done</b> locks the pad and pins it to the header.') + '</p>';
+       (locked ? 'Locked — tap the <b>' + n + ' ✓</b> tab again to edit.' : '<b>Done</b> locks the pad and pins it to the header.') + '</p>';
   body.innerHTML = h;
 
   body.querySelectorAll('canvas').forEach(c => {
@@ -3458,7 +3465,14 @@ function render(){
 }
 
 /* ---- taps: tabs, tools, badges, chips --------------------------- */
-tabsEl.addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b) { st.tab = b.dataset.t; erasing = false; render(); save(); } });
+/* A tap on another tab shows that pad. A second tap on the tab of the pad already
+   showing, when it is locked, unlocks it — two deliberate taps on the same spot,
+   which a bump does not produce. Replaced a press-and-hold (v17). */
+tabsEl.addEventListener('click', e => {
+  const b = e.target.closest('[data-t]'); if (!b) return;
+  if (b.dataset.t === st.tab && pad(st.tab).lock) { chg(st.tab + '|lock', ''); renderChips(); }
+  st.tab = b.dataset.t; erasing = false; render(); save();
+});
 
 toolsEl.addEventListener('click', e => {
   const b = e.target.closest('[data-a]'); if (!b) return;
@@ -3481,18 +3495,6 @@ toolsEl.addEventListener('click', e => {
   }
   render(); save();
 });
-
-/* Unlock is a deliberate press-and-hold, so a bump never reopens a locked pad. */
-let holdT = null;
-toolsEl.addEventListener('pointerdown', e => {
-  const b = e.target.closest('[data-a="unlock"]'); if (!b) return;
-  b.classList.add('hold');
-  holdT = setTimeout(() => { chg(st.tab + '|lock', ''); holdT = null; render(); renderChips(); save(); }, 700);
-});
-['pointerup', 'pointercancel', 'pointerleave'].forEach(t => toolsEl.addEventListener(t, () => {
-  if (holdT) { clearTimeout(holdT); holdT = null; }
-  const u = toolsEl.querySelector('.unl'); if (u) u.classList.remove('hold');
-}));
 
 body.addEventListener('click', e => {
   const n = st.tab, P = pad(n);
@@ -3818,9 +3820,15 @@ function renderChips(){
     /* No timestamp here — it costs header width; it is on the pad's Locked button. */
     b.innerHTML = '<span>' + n + (col ? '' : ' ✓') + '</span>';
     if (!col) {
-      if (S.badge) { const v = fs(n, S.badge).sel; if (v) b.insertAdjacentHTML('beforeend', '<span class="x">' + esc(v) + '</span>'); }
+      /* Parts are dot-separated, so ATIS Info K and QNH 1011 read "K · 1011", not "K1011". */
+      const parts = [];
+      if (S.badge) { const v = fs(n, S.badge).sel; if (v) { const x = document.createElement('span'); x.className = 'x'; x.textContent = v; parts.push(x); } }
       if (S.fill) fill = {b, n, id: S.ink[0]};
-      else (S.ink || []).forEach(id => { const c = thumb(n, id); if (c) b.appendChild(c); });
+      else (S.ink || []).forEach(id => { const c = thumb(n, id); if (c) parts.push(c); });
+      parts.forEach((p, i) => {
+        if (i) { const d = document.createElement('span'); d.className = 'sep'; d.textContent = '·'; b.appendChild(d); }
+        b.appendChild(p);
+      });
     }
     chipHold(b, n);
     chips.appendChild(b);
