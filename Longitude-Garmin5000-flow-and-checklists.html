@@ -591,7 +591,8 @@
   /* A refusal — seat taken, or room full. Distinct from "off", because the
      difference between "you never linked" and "you got bumped" is the whole
      message, and the dialog is shut when it happens. */
-  #link[data-s="warn"] .dot{background:var(--warn)}
+  #link[data-s="warn"] .dot,#link[data-s="dup"] .dot{background:var(--warn)}
+  #link[data-s="dup"]{color:var(--warn);border-color:var(--warn)}
   #link[data-s="warn"]{color:var(--warn);border-color:var(--warn)}
 
   /* Seat + link menu. The button wears the seat colour and repeats the link dot,
@@ -605,7 +606,7 @@
   #crewbtn .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-faint);flex:0 0 auto;transition:background .2s}
   #crewbtn[data-s="linking"] .dot,#crewbtn[data-s="retry"] .dot{background:var(--trig)}
   #crewbtn[data-s="linked"] .dot{background:var(--list-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--list-accent) 22%,transparent)}
-  #crewbtn[data-s="warn"] .dot{background:var(--warn)}
+  #crewbtn[data-s="warn"] .dot,#crewbtn[data-s="dup"] .dot{background:var(--warn)}
   .crewpop{position:absolute;right:0;top:calc(100% + 6px);z-index:31;width:260px;max-width:calc(100vw - 32px);
     display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--panel);
     border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 28px rgba(0,0,0,.35)}
@@ -779,7 +780,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v15</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v16</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -2698,10 +2699,15 @@ let saveT = null;
 function refsDone(sel){
   return Array.from(document.querySelectorAll(sel), e => e.dataset.ref).filter(Boolean);
 }
+/* seen: the room, and the relay's reset count ('*' in gen) this tablet last
+   saw there. A tablet that rejoins and finds the count moved slept through a
+   Reset, so its ticks are last leg's — dropped, not unioned back onto both
+   screens (found in the live test of 2026-10-03). */
+let seen = null;
 function saveNow(){
   try {
     localStorage.setItem(KEY, JSON.stringify(
-      {v:1, at:Date.now(), done:refsDone('.row.done, .item.done')}));
+      {v:1, at:Date.now(), done:refsDone('.row.done, .item.done'), seen}));
   } catch(e){}      // private mode, or quota — the flight just won't survive a reload
 }
 function saveState(){ clearTimeout(saveT); saveT = setTimeout(saveNow, 300); }
@@ -2719,7 +2725,7 @@ try {
   const s = JSON.parse(localStorage.getItem(KEY) || 'null');
   if (s && Array.isArray(s.done)) {
     if (Date.now() - (s.at || 0) > STALE) localStorage.removeItem(KEY);
-    else s.done.forEach(ref => mark(ref, true));
+    else { s.done.forEach(ref => mark(ref, true)); seen = s.seen || null; }
   }
 } catch(e){}
 
@@ -2790,6 +2796,16 @@ function relayBase(){
 }
 const seat = () => document.body.dataset.role || 'BOTH';
 
+/* This tablet, as the relay knows it: replaces only its own old socket on a
+   reconnect. Kept indefinitely; two windows on one device share it. */
+let tabId = get('c700-tab');
+if (!/^[a-z0-9]{6,16}$/.test(tabId)) {
+  tabId = '';
+  try { const a = new Uint8Array(10); crypto.getRandomValues(a); a.forEach(b => tabId += (b % 36).toString(36)); }
+  catch(e){ tabId = Math.random().toString(36).slice(2, 12); }
+  put('c700-tab', tabId);
+}
+
 function tx(m){
   if (ws && ws.readyState === 1) { try { ws.send(JSON.stringify(m)); } catch(e){} }
 }
@@ -2805,10 +2821,16 @@ window.efbLink = { send: tx, on: fn => subs.push(fn), room: () => room };
    button quietly going back to "Link". `warn` is what makes it visible without
    opening anything. */
 let lastMsg = '';
+/* Both tablets on the same named seat. Harmless to the link since 2026-10-03,
+   but the split of duties is not, so it is shown rather than prevented — a
+   seat swap between legs passes through it for a moment. */
+const dupSeat = () => seat() !== 'BOTH' && crew.filter(x => x === seat()).length > 1;
 function setStatus(s, msg){
   if (msg !== undefined) lastMsg = msg;
-  linkBtn.dataset.s = s;
+  if (s === 'dup') s = 'linked';
+  linkBtn.dataset.s = (s === 'linked' && dupSeat()) ? 'dup' : s;
   linkTxt.textContent =
+    s === 'linked' && dupSeat() ? 'Both on ' + seat() :
     s === 'linked'  ? (crew.length > 1 ? 'Linked ' + crew.length : 'Linked') :
     s === 'linking' ? 'Linking'  :
     s === 'retry'   ? 'Retry'    :
@@ -2817,7 +2839,8 @@ function setStatus(s, msg){
   stat.innerHTML =
     s === 'linked'  ? 'Linked to <b>' + esc(room) + '</b> — ' +
                       (crew.length > 1 ? crew.length + ' tablets, seats ' + esc(crew.join(' + '))
-                                       : 'waiting for the other tablet') :
+                                       : 'waiting for the other tablet') +
+                      (dupSeat() ? '<br><i>Both tablets are on ' + esc(seat()) + '.</i> One of you pick the other seat.' : '') :
     s === 'linking' ? 'Connecting to <b>' + esc(room) + '</b>…' :
     s === 'retry'   ? '<i>Relay unreachable</i> — retrying. The page works unlinked.' :
     (lastMsg || 'Not linked. Ticks stay on this tablet.');
@@ -2838,7 +2861,7 @@ function connect(){
   want = true;
   setStatus('linking');
   try {
-    ws = new WebSocket(relayBase() + '/r/' + encodeURIComponent(room) + '?seat=' + seat());
+    ws = new WebSocket(relayBase() + '/r/' + encodeURIComponent(room) + '?seat=' + seat() + '&tab=' + tabId);
   } catch(e){ ws = null; setStatus('off', '<i>That relay address is not a valid wss:// URL.</i>'); return; }
 
   ws.onopen = () => {
@@ -2894,8 +2917,10 @@ function rx(m){
   if (!m || !m.t || m.t === 'pong') return;
 
   if (m.t === 'evicted') {
-    refused('<i>Another tablet took the ' + esc(m.seat || seat()) + ' seat.</i> ' +
-            'Pick the other seat, or Link again to take it back.');
+    refused(m.why === 'tab'
+      ? '<i>The EFB is linked in another window on this device.</i> Close one, or Link again here to take it back.'
+      : '<i>Another tablet took the ' + esc(m.seat || seat()) + ' seat.</i> ' +
+        'Pick the other seat, or Link again to take it back.');
     return;
   }
   if (m.t === 'full') {
@@ -2909,7 +2934,16 @@ function rx(m){
   if (m.t === 'snap') {
     /* Union on join. Whoever ticked what before the link came up, it counts —
        the alternative is one tablet silently wiping the other's flight. After
-       this the relay is authoritative and only deltas arrive. */
+       this the relay is authoritative and only deltas arrive.
+
+       Except across a Reset this tablet missed: then its ticks are last leg's,
+       and it takes the room's flight as it stands (see `seen`). */
+    const resets = (m.gen && typeof m.gen['*'] === 'number') ? m.gen['*'] : null;
+    if (resets !== null && seen && seen.room === room && typeof seen.resets === 'number' && seen.resets !== resets) {
+      document.querySelectorAll('.done').forEach(el => el.classList.remove('done'));
+      document.querySelectorAll('.card').forEach(tally);
+    }
+    if (resets !== null) seen = {room, resets};
     const remote = m.items || {};
     Object.keys(remote).forEach(ref => mark(ref, true, '.item'));
     document.querySelectorAll('.item.done').forEach(el => {
@@ -2922,7 +2956,9 @@ function rx(m){
   if (m.t === 'tick')  { mark(m.ref, m.v, '.item'); saveState(); return; }
   if (m.t === 'phase') { showPhase(m.v, m.by); return; }
   if (m.t === 'crew')  { crew = m.seats || []; setStatus('linked'); return; }
+  if (m.t === 'padgen') { if (m.gen && typeof m.gen['*'] === 'number') { seen = {room, resets: m.gen['*']}; saveState(); } return; }
   if (m.t === 'reset') {
+    if (m.gen && typeof m.gen['*'] === 'number') seen = {room, resets: m.gen['*']};
     document.querySelectorAll('.done').forEach(el => el.classList.remove('done'));
     document.querySelectorAll('.card').forEach(tally);
     showPhase(null); saveNow();
@@ -2959,8 +2995,18 @@ onTick = function(row, card){
   saveState();
   if (!row.classList.contains('item')) return;    // flow steps are private scratch
   tx({t:'tick', ref:row.dataset.ref, v:row.classList.contains('done')});
+  /* Only a tick moves the shared phase. Unticking a stray tick in an old
+     checklist used to announce that phase to the other seat (live test,
+     2026-10-03). */
+  if (!row.classList.contains('done')) return;
   const l = linkOf(card);
-  if (l && l.label !== phase) { phase = l.label; tx({t:'phase', v:l.label, by:seat()}); }
+  /* The pill is the crew's phase, so the tablet that moved it shows it too —
+     it used to keep showing the other seat's older phase (live test, 2026-10-03).
+     Only while linked: unlinked, there is no crew phase to show. */
+  if (l && l.label !== phase) {
+    phase = l.label; tx({t:'phase', v:l.label, by:seat()});
+    if (ws && ws.readyState === 1) showPhase(l.label, seat());
+  }
 };
 
 /* A second listener on Reset — the original one still does the clearing. */
