@@ -724,6 +724,16 @@
   .ep-tools{display:flex;gap:6px;flex-wrap:wrap}
   .ep-tools button{min-width:48px;min-height:42px;touch-action:manipulation}
   .ep-tools button[aria-pressed="true"]{background:var(--warn);border-color:var(--warn);color:var(--bg)}
+  .ep-split{position:relative;display:flex}
+  .ep-split > [data-a="clear"]{border-top-right-radius:0;border-bottom-right-radius:0}
+  .ep-split > .more{border-top-left-radius:0;border-bottom-left-radius:0;border-left:0;min-width:40px;padding:0 10px}
+  .ep-tools .ep-split > .more.on{background:var(--warn);border-color:var(--warn);color:var(--bg);font-weight:700}
+  .ep-menu{position:absolute;top:100%;right:0;margin-top:5px;z-index:5;display:flex;flex-direction:column;gap:5px;
+    padding:6px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;
+    box-shadow:0 8px 24px rgba(0,0,0,.35)}
+  .ep-menu button{min-width:150px;justify-content:flex-start;text-align:left}
+  /* Pen only is the normal state once a pen is seen — not an alarm, unlike Erase. */
+  .ep-menu [data-a="pen"][aria-pressed="true"]{background:transparent;color:var(--list-accent);border-color:var(--list-line)}
   .ep-tools .done{background:var(--list-accent);border-color:var(--list-accent);color:#08140e;font-weight:700}
   /* A label, not a button: unlocking is a second tap on the pad's own tab (v17). A
      press-and-hold here raised the tablet's copy/paste prompt before 0.7 s was up. */
@@ -785,7 +795,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v18</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v19</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -3414,15 +3424,7 @@ function render(){
   tabsEl.innerHTML = NAMES.map(k => '<button type="button" data-t="' + k + '" aria-pressed="' + (k === n) + '"' +
     (pad(k).lock ? ' class="lk"' : '') + '>' + k + (pad(k).lock ? ' ✓' : '') + '</button>').join('');
 
-  toolsEl.innerHTML = locked
-    ? '<span class="unl">Locked ' + esc(P.lock) + ' · tap ' + n + ' ✓ to edit</span>' +
-      '<button type="button" data-a="close">Close</button>'
-    : '<button type="button" data-a="undo" title="Undo">↶</button>' +
-      '<button type="button" data-a="erase" aria-pressed="' + erasing + '">Erase</button>' +
-      '<button type="button" data-a="clear">Clear</button>' +
-      (pen ? '<button type="button" data-a="pen" title="Ink from the pen only, or from fingers too">' + (pen === 'pen' ? 'Pen only' : 'Finger ink') + '</button>' : '') +
-      '<button type="button" class="done" data-a="done">Done</button>' +
-      '<button type="button" data-a="close">Close</button>';
+  renderTools();
 
   if (ro) canv.forEach(c => ro.unobserve(c));
   canv = [];
@@ -3473,6 +3475,38 @@ function render(){
   });
 }
 
+/* The toolbar on its own, so opening the Clear menu never rebuilds the canvases.
+   Clear is one tap; Erase and the pen setting sit in a menu behind its ▾ (v19).
+   Erase is a mode, so while it is on the ▾ says so in --warn. */
+let menuOpen = false;
+function renderTools(){
+  const n = st.tab, P = pad(n);
+  if (P.lock) menuOpen = false;
+  toolsEl.innerHTML = P.lock
+    ? '<span class="unl">Locked ' + esc(P.lock) + ' · tap ' + n + ' ✓ to edit</span>' +
+      '<button type="button" data-a="close">Close</button>'
+    : '<button type="button" data-a="undo" title="Undo">↶</button>' +
+      '<span class="ep-split"><button type="button" data-a="clear" title="Empty this pad (↶ undoes it)">Clear</button>' +
+        '<button type="button" class="more' + (erasing ? ' on' : '') + '" data-a="more" aria-haspopup="true" aria-expanded="' + menuOpen + '" title="Erase, pen">' +
+          (erasing ? 'Erase ' : '') + '▾</button>' +
+        (menuOpen ? '<div class="ep-menu" role="menu">' +
+          '<button type="button" data-a="erase" aria-pressed="' + erasing + '" title="Strokes the pen passes over are removed whole">Erase' + (erasing ? ' — on' : '') + '</button>' +
+          (pen ? '<button type="button" data-a="pen" aria-pressed="' + (pen === 'pen') + '" title="Ink from the pen only, or from fingers too">Pen only' + (pen === 'pen' ? ' ✓' : '') + '</button>' : '') +
+        '</div>' : '') +
+      '</span>' +
+      '<button type="button" class="done" data-a="done">Done</button>' +
+      '<button type="button" data-a="close">Close</button>';
+}
+/* A tap anywhere else shuts the menu. It removes the menu rather than redrawing
+   the toolbar: a redraw on pointerdown would swap out the button being tapped
+   (Done, say) before its click lands. */
+document.addEventListener('pointerdown', e => {
+  if (!menuOpen || e.target.closest('.ep-split')) return;
+  menuOpen = false;
+  const m = toolsEl.querySelector('.ep-menu'); if (m) m.remove();
+  const b = toolsEl.querySelector('.more'); if (b) b.setAttribute('aria-expanded', 'false');
+}, true);
+
 /* ---- taps: tabs, tools, badges, chips --------------------------- */
 /* A tap on another tab shows that pad. A second tap on the tab of the pad already
    showing, when it is locked, unlocks it — two deliberate taps on the same spot,
@@ -3487,14 +3521,16 @@ toolsEl.addEventListener('click', e => {
   const b = e.target.closest('[data-a]'); if (!b) return;
   const n = st.tab, P = pad(n);
   switch (b.dataset.a) {
-    case 'close': close(); return;
+    case 'close': menuOpen = false; close(); return;
+    case 'more': menuOpen = !menuOpen; renderTools(); return;
     case 'undo': undoOne(n); break;
-    case 'erase': erasing = !erasing; break;
+    case 'erase': erasing = !erasing; menuOpen = false; renderTools(); return;
     case 'clear':
+      menuOpen = false;
       stack(n).push({t:'clear', snap: JSON.stringify(P)});
       clearPads([n]);
       break;
-    case 'pen': pen = pen === 'pen' ? 'finger' : 'pen'; put(PENKEY, pen); break;
+    case 'pen': pen = pen === 'pen' ? 'finger' : 'pen'; put(PENKEY, pen); menuOpen = false; renderTools(); return;
     case 'done': {
       const d = new Date();
       chg(n + '|lock', String(d.getUTCHours()).padStart(2, '0') + String(d.getUTCMinutes()).padStart(2, '0') + 'Z');
