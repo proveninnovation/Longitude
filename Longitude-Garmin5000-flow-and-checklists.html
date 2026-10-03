@@ -693,6 +693,8 @@
   .ep-chip .x{color:var(--ink);font-weight:600}
   .ep-chip .sep{color:var(--ink-faint);font-weight:700;margin:0 -2px}
   .ep-chip canvas{height:22px;display:block}
+  /* Nothing in a chip shrinks: a thumbnail drawn W px wide is shown W px wide, never squeezed. */
+  .ep-chip > *{flex-shrink:0}
   /* Tap folds, hold opens: no callout or selection on the hold, and a bar fills
      along the bottom like the pad's own Locked button. */
   .ep-chip{position:relative;overflow:hidden;touch-action:pan-x;-webkit-touch-callout:none;
@@ -714,6 +716,10 @@
   .ep{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;
     overscroll-behavior:contain}
   .ep[hidden]{display:none}
+  /* A resting hand is a long-press. Nothing on a pad is worth copying, so nothing
+     but the typing fields can be selected or raise the OS copy/paste prompt (v20). */
+  .ep{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  .ep input{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
   .ep-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;
     background:var(--panel-2);border-bottom:1px solid var(--line)}
   .ep-tabs{display:flex;gap:4px;flex:1 1 auto;flex-wrap:wrap}
@@ -746,8 +752,14 @@
   .ep-plan input.ap{width:4.6em}
   .ep-plan .st{flex:1 1 220px;color:var(--ink-faint)}
   .ep-plan .st b{color:var(--ink-dim)}
-  .ep-body{flex:1 1 auto;overflow:auto;padding:10px 12px 40px}
-  .ep-grid{display:grid;gap:7px;grid-auto-rows:minmax(84px,auto)}
+  .ep-body{flex:1 1 auto;overflow:auto;padding:10px 12px 14px;display:flex;flex-direction:column}
+  .ep-grid{display:grid;gap:7px;grid-auto-rows:minmax(84px,auto);flex:1 1 0;min-height:0;align-content:space-between}
+  /* flex-basis 0 and min-height 0 give the grid a definite height to share out:
+     otherwise its minimum is measured with every row at the 220 px cap, and the sheet
+     scrolls. A screen too short for the rows' own minimums still scrolls — the grid
+     overflows into .ep-body, which is the scroller. */
+  .ep-grid > .ep-f{min-height:84px}
+  .ep-foot{margin-top:auto;padding-top:10px}
   .ep-f{position:relative;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:9px;
     background:var(--panel);padding:19px 8px 6px;min-width:0}
   .ep-f.key{border-color:color-mix(in srgb,var(--pm) 35%,var(--line))}
@@ -795,7 +807,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v19</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v20</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -3247,6 +3259,7 @@ ep.innerHTML =
     '<span class="st" id="epSt"></span></div>' +
   '<div class="ep-body"></div>';
 document.body.appendChild(ep);
+ep.addEventListener('contextmenu', e => { if (!e.target.closest('input')) e.preventDefault(); });
 const $ = s => ep.querySelector(s);
 const tabsEl = $('.ep-tabs'), toolsEl = $('.ep-tools'), body = $('.ep-body');
 const fSb = $('#epSb'), fDep = $('#epDep'), fArr = $('#epArr'), stEl = $('#epSt');
@@ -3428,8 +3441,11 @@ function render(){
 
   if (ro) canv.forEach(c => ro.unobserve(c));
   canv = [];
-  let h = '<div class="ep-grid" style="grid-template-columns:repeat(' + S.cols + ',minmax(0,1fr));grid-template-areas:' +
-          S.areas.map(a => "'" + a + "'").join(' ') + '">';
+  /* Rows grow to fill the sheet (to 220 px), then spread evenly — room to write
+     and room for a resting hand, instead of a block at the top over an empty
+     bottom half (v20). The strips sit at the foot. */
+  let h = '<div class="ep-grid" style="grid-template-columns:repeat(' + S.cols + ',minmax(0,1fr));grid-template-rows:repeat(' +
+          S.areas.length + ',minmax(auto,220px));grid-template-areas:' + S.areas.map(a => "'" + a + "'").join(' ') + '">';
   S.f.forEach(F => {
     const f = fs(n, F.id), inked = f.s.length > 0;
     h += '<div class="ep-f' + (F.key ? ' key' : '') + (F.big ? ' big' : '') + '" style="grid-area:' + F.id + '" data-f="' + F.id + '">';
@@ -3464,9 +3480,9 @@ function render(){
   h += '</div>';
   const strip = (key, tag, items) => items ? '<div class="ep-strip">' + (tag ? '<span class="tag">' + tag + '</span>' : '') +
     items.map(([id, t]) => '<button type="button" class="ep-c c' + (P[key][id] ? 1 : 0) + '" data-' + key + '="' + id + '">' + esc(t) + '</button>').join('') + '</div>' : '';
-  h += strip('rb', '', S.rb) + strip('set', 'SET', S.set);
+  h += '<div class="ep-foot">' + strip('rb', '', S.rb) + strip('set', 'SET', S.set);
   h += '<p class="ep-hint">Tap a dull value as ATC says it. Write over anything that differs. ' +
-       (locked ? 'Locked — tap the <b>' + n + ' ✓</b> tab again to edit.' : '<b>Done</b> locks the pad and pins it to the header.') + '</p>';
+       (locked ? 'Locked — tap the <b>' + n + ' ✓</b> tab again to edit.' : '<b>Done</b> locks the pad and pins it to the header.') + '</p></div>';
   body.innerHTML = h;
 
   body.querySelectorAll('canvas').forEach(c => {
@@ -3570,7 +3586,14 @@ function reconcile(n, fid, kind){
 
 /* ---- ink -------------------------------------------------------- */
 /* Strokes are CSS px ×10 relative to their own box, so a rotate or a resize
-   redraws from the vectors and never scales a bitmap. Pressure 0–255. */
+   redraws from the vectors and never scales a bitmap. Pressure 0–255.
+
+   Each stroke also records the box it was written in (bw × bh, CSS px). Drawn
+   in a SMALLER box — the other tablet, or this one rotated, since boxes stretch
+   to the screen (v20) — it shrinks uniformly to fit, so a squawk written low in
+   a tall box is never cut off. In a larger box it stays at its written size.
+   Strokes from before v20 carry no box and draw 1:1. */
+const fitK = (s, r) => (s.bw && s.bh) ? Math.min(1, r.width / s.bw, r.height / s.bh) : 1;
 function inkColor(){ return getComputedStyle(document.documentElement).getPropertyValue('--ep-ink').trim() || '#9fe8ff'; }
 
 function paint(c){
@@ -3581,7 +3604,7 @@ function paint(c){
   const x = c.getContext('2d');
   x.setTransform(d, 0, 0, d, 0, 0); x.clearRect(0, 0, r.width, r.height);
   x.strokeStyle = x.fillStyle = inkColor(); x.lineCap = x.lineJoin = 'round';
-  fs(st.tab, c.dataset.f).s.forEach(s => drawStroke(x, s, 0.1));
+  fs(st.tab, c.dataset.f).s.forEach(s => drawStroke(x, s, 0.1 * fitK(s, r)));
 }
 function wAt(s, i){ return s.w * (s.pen ? 0.55 + (s.p[i * 3 + 2] / 255) * 0.9 : 1); }
 function drawStroke(x, s, k){
@@ -3622,8 +3645,10 @@ function down(e, c){
   e.preventDefault();
   try { c.setPointerCapture(e.pointerId); } catch(_){}
   const ink = !(e.pointerType === 'touch' && pen === 'pen');   // with a pen about, fingers tap but never ink
+  const box = c.getBoundingClientRect();
   act = {id:e.pointerId, c, x0:e.clientX, y0:e.clientY, t0:performance.now(), ink, moved:false,
-         s:{w: e.pointerType === 'pen' ? 2.4 : 3.4, pen: e.pointerType === 'pen' ? 1 : 0, p:[]}};
+         s:{w: e.pointerType === 'pen' ? 2.4 : 3.4, pen: e.pointerType === 'pen' ? 1 : 0, p:[],
+            bw: Math.round(box.width), bh: Math.round(box.height)}};
   if (erasing) { eraseAt(c, pt(e, c)); return; }
   act.s.p.push(...pt(e, c));
 }
@@ -3661,11 +3686,11 @@ function up(e, c){
   render(); save();                             // re-render: pre-fills and badges strike themselves
 }
 function eraseAt(c, q){
-  const n = st.tab, fid = c.dataset.f, f = fs(n, fid), R = ERASE_PX * 10;
+  const n = st.tab, fid = c.dataset.f, f = fs(n, fid), R = ERASE_PX * 10, r = c.getBoundingClientRect();
   for (let i = f.s.length - 1; i >= 0; i--) {
-    const p = f.s[i].p;
+    const p = f.s[i].p, k = fitK(f.s[i], r);              // hit-test where it is drawn
     for (let j = 0; j < p.length; j += 3) {
-      if (Math.abs(p[j] - q[0]) < R && Math.abs(p[j + 1] - q[1]) < R) {
+      if (Math.abs(p[j] * k - q[0]) < R && Math.abs(p[j + 1] * k - q[1]) < R) {
         const t = f.s[i]; stack(n).push({t:'del', f:fid, s:t}); chg(fk(n, fid, 's|' + t.id), null); paint(c); break;
       }
     }
@@ -3691,7 +3716,7 @@ function settle(c){ if (dirty) render(); else paint(c); }
 const L = window.efbLink || null;
 let outbox = null, dirty = false, syncing = null;
 const fk = (n, fid, k) => n + '|f|' + fid + '|' + k;
-const wire = t => ({w:t.w, pen:t.pen, p:t.p});
+const wire = t => { const o = {w:t.w, pen:t.pen, p:t.p}; if (t.bw && t.bh) { o.bw = t.bw; o.bh = t.bh; } return o; };
 function flush(){ const k = outbox; outbox = null; if (L && k && Object.keys(k).length) L.send({t:'pad', k}); }
 function tx(k, v){
   if (!L) return;
