@@ -665,7 +665,7 @@
 
 
   /* ================= ENTRY PADS — added 2026-10-02 ==================
-     Handwritten ATC pads (ATIS · CLR · ARR · HOLD). Everything is .ep-*
+     Handwritten ATC pads (ATIS · CLR · ARR · HOLD · OTHER). Everything is .ep-*
      and built by the entryPads block at the foot of the script; with that
      block absent or failing, none of this matches anything. */
   :root{ --ep-ink:#9fe8ff; --ep-dull:#5d6f80; }
@@ -691,6 +691,13 @@
   .ep-chip .t{color:var(--ink-faint);font-weight:600}
   .ep-chip .x{color:var(--ink);font-weight:600}
   .ep-chip canvas{height:22px;display:block}
+  /* Tap folds, hold opens: no callout or selection on the hold, and a bar fills
+     along the bottom like the pad's own Locked button. */
+  .ep-chip{position:relative;overflow:hidden;touch-action:pan-x;-webkit-touch-callout:none;
+    -webkit-user-select:none;user-select:none}
+  .ep-chip::after{content:"";position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--list-accent)}
+  .ep-chip.hold::after{width:100%;transition:width .7s linear}
+  .ep-chip.col{padding:3px 10px;color:var(--ink-dim)}
   /* The filed callsign, as SimBrief has it — what VATSIM puts on the controller's
      scope. Rides --comm: it is the cockpit's identity outside the cockpit.
      Absent (not empty) until a SimBrief plan supplies one. */
@@ -772,7 +779,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v14</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v15</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -2787,6 +2794,12 @@ function tx(m){
   if (ws && ws.readyState === 1) { try { ws.send(JSON.stringify(m)); } catch(e){} }
 }
 
+/* The entry pads ride this socket rather than opening their own (2026-10-03).
+   They see every frame after the refusals are dealt with, and send through tx —
+   which, like everything here, is a no-op until a room is joined. */
+const subs = [];
+window.efbLink = { send: tx, on: fn => subs.push(fn), room: () => room };
+
 /* A refusal (seat taken, room full) arrives while the dialog is almost always
    shut, so the message has to outlive the call — otherwise the only trace is the
    button quietly going back to "Link". `warn` is what makes it visible without
@@ -2890,6 +2903,8 @@ function rx(m){
             'on this code — generate a new one and send it to the other seat.');
     return;
   }
+
+  subs.forEach(fn => { try { fn(m); } catch(e){} });
 
   if (m.t === 'snap') {
     /* Union on join. Whoever ticked what before the link came up, it counts —
@@ -3015,7 +3030,7 @@ else setStatus('off');
 /* ================================================================
    ENTRY PADS — added 2026-10-02 (branch entry-pads)
 
-   Handwritten ATC pads: ATIS · CLR · ARR · HOLD. Design and evidence in
+   Handwritten ATC pads: ATIS · CLR · ARR · HOLD · OTHER. Design and evidence in
    Reference/EFB-Entry-Pad-Design.md and Reference/ATC-Entry-Pads-Australia.md.
 
    - Field order is the order an Australian controller speaks.
@@ -3029,7 +3044,11 @@ else setStatus('off');
      stored, never published (the dataset carries no licence; Neil,
      2026-10-02). No dataset → no badges → pre-fill and ink still work.
    - Ink and pad state persist like ticks (c700-pads, 14 h, cleared by
-     Reset). Nothing here crosses the relay yet.
+     Reset).
+   - Linked, the pads and the plan cross the relay (2026-10-03) as a flat
+     key → value map: one key per stroke, toggle and lock. Each key is
+     last-writer-wins on its own, so both seats can ink the same box and
+     both keep their strokes. See "the link" below.
 
    Same rule as the crew layer: built after the page is on screen, wrapped,
    and every failure degrades to the page exactly as it was.
@@ -3089,7 +3108,12 @@ const SPEC = {
         {id:'turn', l:'Turn', noink:1, chips:[{id:'L', t:'L', grp:'t'}, {id:'R', t:'R', grp:'t'}]},
         {id:'leg', l:'Leg', pre:() => '1 MIN'}, {id:'lvl', l:'Level', key:1}, {id:'efc', l:'EFC', key:1},
         {id:'notes', l:'Notes', big:1} ],
-    sum:{ink:['fix','efc']} }
+    sum:{ink:['fix','efc']} },
+  /* Anything the other four have no box for. One full-width line; its chip
+     thumbnail takes whatever width the row has left (sum.fill). */
+  OTHER: { cols:1, areas:['line'],
+    f:[ {id:'line', l:'', key:1} ],
+    sum:{ink:['line'], fill:1} }
 };
 const NAMES = Object.keys(SPEC);
 
@@ -3104,6 +3128,11 @@ function saveNow(){ st.at = Date.now(); put(KEY, JSON.stringify(st)); }
 function save(){ clearTimeout(saveT); saveT = setTimeout(saveNow, 300); }
 window.addEventListener('pagehide', saveNow);
 
+/* Every stroke carries an id, which is its key on the link. Strokes saved
+   before 2026-10-03 have none, so they get one now. */
+const rid = () => Math.random().toString(36).slice(2, 9);
+Object.values(st.pads || {}).forEach(P => Object.values((P && P.f) || {}).forEach(f =>
+  (f.s || []).forEach(t => { if (!t.id) t.id = rid(); })));
 const pad = n => st.pads[n] || (st.pads[n] = {lock:'', f:{}, set:{}, rb:{}});
 const fs = (n, id) => { const p = pad(n); return p.f[id] || (p.f[id] = {s:[], ok:0, sel:null, ch:{}}); };
 const undo = {};                               // per pad, memory only
@@ -3120,7 +3149,7 @@ const bar = document.querySelector('header .bar');
 const ver = document.getElementById('ver');
 const padBtn = document.createElement('button');
 padBtn.id = 'padbtn'; padBtn.type = 'button'; padBtn.textContent = 'Pads';
-padBtn.title = 'ATIS, clearance, arrival and hold pads — write as ATC speaks';
+padBtn.title = 'ATIS, clearance, arrival, hold and other pads — write as ATC speaks';
 const padGrp = document.createElement('span'); padGrp.className = 'padgrp';
 const caret = document.createElement('button');
 caret.id = 'epcaret'; caret.type = 'button'; caret.hidden = true;
@@ -3136,7 +3165,7 @@ function chipsShown(on){
   chips.classList.toggle('off', !on); caret.setAttribute('aria-expanded', on ? 'true' : 'false');
   relayout();
 }
-caret.addEventListener('click', () => chipsShown(chips.classList.contains('off')));
+caret.addEventListener('click', () => { chipsShown(chips.classList.contains('off')); renderChips(); });
 caret.setAttribute('aria-expanded', 'true');
 try { localStorage.removeItem('c700-chips'); } catch(e){}   // retired key
 const csHdr = document.createElement('button');
@@ -3236,15 +3265,20 @@ function hasContent(){
     if (P.lock || Object.values(P.set || {}).some(Boolean) || Object.values(P.rb || {}).some(Boolean)) return true;
     return Object.values(P.f || {}).some(f => f.s.length || f.ok || f.sel || Object.values(f.ch || {}).some(Boolean)); });
 }
-function setPlan(np){
+/* fromPeer: the other seat loaded it. It is not offered the clear — the
+   tablet that changed the route was, and its answer reaches both. */
+function setPlan(np, fromPeer){
   const prev = st.plan || {}, was = (prev.dep || '') + '>' + (prev.arr || '');
-  if (was !== (np.dep || '') + '>' + (np.arr || '') && (prev.dep || prev.arr) && hasContent())
+  if (!fromPeer && was !== (np.dep || '') + '>' + (np.arr || '') && (prev.dep || prev.arr) && hasContent())
     staleFrom = (prev.dep || '····') + ' → ' + (prev.arr || '····');
-  st.plan = np; save(); procs = null; render(); renderCs(); loadProcs();
+  st.plan = np; save(); procs = null;
+  if (act) dirty = true; else render();
+  renderCs(); loadProcs();
+  if (!fromPeer) chg('~plan', np);
 }
 stEl.addEventListener('click', e => {
   const b = e.target.closest('[data-stale]'); if (!b) return;
-  if (b.dataset.stale === 'clear') { st.pads = {}; Object.keys(undo).forEach(k => delete undo[k]); saveNow(); renderChips(); }
+  if (b.dataset.stale === 'clear') { clearPads(NAMES); Object.keys(undo).forEach(k => delete undo[k]); saveNow(); renderChips(); }
   staleFrom = ''; render();
 });
 function typedPlan(){
@@ -3315,6 +3349,7 @@ let canv = [];
 const ro = ('ResizeObserver' in window) ? new ResizeObserver(es => es.forEach(e => paint(e.target))) : null;
 
 function render(){
+  dirty = false;
   const n = st.tab, S = SPEC[n], P = pad(n), locked = !!P.lock;
   ep.classList.toggle('locked', locked);
   fDep.value = st.plan.dep || ''; fArr.value = st.plan.arr || '';
@@ -3388,12 +3423,12 @@ toolsEl.addEventListener('click', e => {
     case 'erase': erasing = !erasing; break;
     case 'clear':
       stack(n).push({t:'clear', snap: JSON.stringify(P)});
-      st.pads[n] = {lock:'', f:{}, set:{}, rb:{}};
+      clearPads([n]);
       break;
     case 'pen': pen = pen === 'pen' ? 'finger' : 'pen'; put(PENKEY, pen); break;
     case 'done': {
       const d = new Date();
-      P.lock = String(d.getUTCHours()).padStart(2, '0') + String(d.getUTCMinutes()).padStart(2, '0') + 'Z';
+      chg(n + '|lock', String(d.getUTCHours()).padStart(2, '0') + String(d.getUTCMinutes()).padStart(2, '0') + 'Z');
       erasing = false; renderChips(); break;
     }
     default: return;
@@ -3406,7 +3441,7 @@ let holdT = null;
 toolsEl.addEventListener('pointerdown', e => {
   const b = e.target.closest('[data-a="unlock"]'); if (!b) return;
   b.classList.add('hold');
-  holdT = setTimeout(() => { pad(st.tab).lock = ''; holdT = null; render(); renderChips(); save(); }, 700);
+  holdT = setTimeout(() => { chg(st.tab + '|lock', ''); holdT = null; render(); renderChips(); save(); }, 700);
 });
 ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => toolsEl.addEventListener(t, () => {
   if (holdT) { clearTimeout(holdT); holdT = null; }
@@ -3421,23 +3456,23 @@ body.addEventListener('click', e => {
   const bb = t.closest('[data-b]'), cc = t.closest('[data-c]'), ss = t.closest('[data-set]'), rr = t.closest('[data-rb]');
   if (bb && fid) {
     const f = fs(n, fid), v = bb.dataset.b;
-    f.sel = f.sel === v ? null : v;            // tap the chosen one again to see them all
+    chg(fk(n, fid, 'sel'), f.sel === v ? null : v);   // tap the chosen one again to see them all
     /* a new SID or STAR invalidates a transition or runway it does not have */
     if (n === 'CLR' && fid === 'sid') { reconcile(n, 'trans', 'sidTrans'); reconcile(n, 'rwy', 'depRwy'); }
     if (n === 'ARR' && fid === 'star') { reconcile(n, 'trans', 'starTrans'); reconcile(n, 'rwy', 'arrRwy'); }
   } else if (cc && fid) {
     const F = SPEC[n].f.find(x => x.id === fid), c = F.chips.find(x => x.id === cc.dataset.c), f = fs(n, fid);
     const v = f.ch[c.id] || 0;
-    if (c.grp) F.chips.forEach(o => { if (o.grp === c.grp) f.ch[o.id] = 0; });
-    f.ch[c.id] = c.cyc ? (v + 1) % 3 : (v ? 0 : 1);
-  } else if (ss) { P.set[ss.dataset.set] = P.set[ss.dataset.set] ? 0 : 1; }
-  else if (rr) { P.rb[rr.dataset.rb] = P.rb[rr.dataset.rb] ? 0 : 1; }
+    if (c.grp) F.chips.forEach(o => { if (o.grp === c.grp && o.id !== c.id && f.ch[o.id]) chg(fk(n, fid, 'ch|' + o.id), 0); });
+    chg(fk(n, fid, 'ch|' + c.id), c.cyc ? (v + 1) % 3 : (v ? 0 : 1));
+  } else if (ss) { chg(n + '|set|' + ss.dataset.set, P.set[ss.dataset.set] ? 0 : 1); }
+  else if (rr) { chg(n + '|rb|' + rr.dataset.rb, P.rb[rr.dataset.rb] ? 0 : 1); }
   else return;
   render(); save();
 });
 function reconcile(n, fid, kind){
   const f = fs(n, fid); if (!f.sel) return;
-  const o = opts(n, kind); if (o.list.length && !o.list.some(v => same(v, f.sel))) f.sel = null;
+  const o = opts(n, kind); if (o.list.length && !o.list.some(v => same(v, f.sel))) chg(fk(n, fid, 'sel'), null);
 }
 
 /* ---- ink -------------------------------------------------------- */
@@ -3479,7 +3514,7 @@ function bindInk(c){
   c.addEventListener('pointerdown', e => down(e, c));
   c.addEventListener('pointermove', e => move(e, c));
   c.addEventListener('pointerup', e => up(e, c));
-  c.addEventListener('pointercancel', e => { if (act && act.id === e.pointerId) { act = null; paint(c); } });
+  c.addEventListener('pointercancel', e => { if (act && act.id === e.pointerId) { act = null; settle(c); } });
 }
 function pt(e, c){
   const r = c.getBoundingClientRect();
@@ -3523,12 +3558,13 @@ function up(e, c){
   if (tap && !f.s.length) {
     /* an untouched box: a tap confirms its pre-fill, and is otherwise nothing */
     const F = SPEC[n].f.find(x => x.id === fid);
-    if (F.pre && F.pre(st.plan)) { f.ok = f.ok ? 0 : 1; render(); save(); } else paint(c);
+    if (F.pre && F.pre(st.plan)) { chg(fk(n, fid, 'ok'), f.ok ? 0 : 1); render(); save(); } else settle(c);
     return;
   }
-  if (!a.ink) { paint(c); return; }
+  if (!a.ink) { settle(c); return; }
   if (tap) a.s.p = a.s.p.slice(0, 3);          // a dot — the decimal point
-  f.s.push(a.s); stack(n).push({t:'add', f:fid});
+  const id = rid();
+  chg(fk(n, fid, 's|' + id), a.s); stack(n).push({t:'add', f:fid, id});
   render(); save();                             // re-render: pre-fills and badges strike themselves
 }
 function eraseAt(c, q){
@@ -3537,45 +3573,219 @@ function eraseAt(c, q){
     const p = f.s[i].p;
     for (let j = 0; j < p.length; j += 3) {
       if (Math.abs(p[j] - q[0]) < R && Math.abs(p[j + 1] - q[1]) < R) {
-        stack(n).push({t:'del', f:fid, i, s:f.s[i]}); f.s.splice(i, 1); paint(c); break;
+        const t = f.s[i]; stack(n).push({t:'del', f:fid, s:t}); chg(fk(n, fid, 's|' + t.id), null); paint(c); break;
       }
     }
   }
 }
+/* Undo is this tablet's own history. It names strokes by id, so undoing my
+   stroke never takes back one the other seat drew since. */
 function undoOne(n){
   const op = stack(n).pop(); if (!op) return;
-  if (op.t === 'add') fs(n, op.f).s.pop();
-  else if (op.t === 'del') fs(n, op.f).s.splice(op.i, 0, op.s);
-  else if (op.t === 'clear') st.pads[n] = JSON.parse(op.snap);
+  if (op.t === 'add') chg(fk(n, op.f, 's|' + op.id), null);
+  else if (op.t === 'del') chg(fk(n, op.f, 's|' + op.s.id), op.s);
+  else if (op.t === 'clear') { st.pads[n] = JSON.parse(op.snap); Object.entries(flat(n)).forEach(([k, v]) => tx(k, v)); }
 }
+/* A render the other seat asked for while this one was mid-stroke waits for
+   the pen to lift: rebuilding the canvases would drop the stroke. */
+function settle(c){ if (dirty) render(); else paint(c); }
+
+/* ---- the link: pads and plan ride the crew layer's socket --------
+   Keys:  CLR|lock · CLR|set|sq · CLR|rb|pdc · CLR|f|sq|ok · CLR|f|sid|sel
+          CLR|f|lvl|ch|via · CLR|f|sq|s|<stroke id> · ~plan
+   A falsy value is sent as null and deletes the key. "~" keys survive the
+   relay's reset. Unlinked, tx is a no-op and the pads are exactly as before. */
+const L = window.efbLink || null;
+let outbox = null, dirty = false, syncing = null;
+const fk = (n, fid, k) => n + '|f|' + fid + '|' + k;
+const wire = t => ({w:t.w, pen:t.pen, p:t.p});
+function flush(){ const k = outbox; outbox = null; if (L && k && Object.keys(k).length) L.send({t:'pad', k}); }
+function tx(k, v){
+  if (!L) return;
+  if (!outbox) { outbox = {}; Promise.resolve().then(flush); }   // one frame per gesture
+  outbox[k] = (v && v.p) ? wire(v) : (v || null);
+}
+function txNow(m){ flush(); if (L) L.send(m); }
+
+/* Apply one key to the local state. Unknown pads and shapes are ignored, so a
+   newer page's keys cannot break an older one. */
+function apply(key, v){
+  const a = key.split('|'), n = a[0];
+  if (!SPEC[n]) return;
+  const P = pad(n);
+  if (a[1] === 'lock' && a.length === 2) P.lock = v || '';
+  else if ((a[1] === 'set' || a[1] === 'rb') && a.length === 3) P[a[1]][a[2]] = v ? 1 : 0;
+  else if (a[1] === 'f' && a.length >= 4) {
+    const f = fs(n, a[2]);
+    if (a[3] === 'ok' && a.length === 4) f.ok = v ? 1 : 0;
+    else if (a[3] === 'sel' && a.length === 4) f.sel = v || null;
+    else if (a[3] === 'ch' && a.length === 5) f.ch[a[4]] = +v || 0;
+    else if (a[3] === 's' && a.length === 5) {
+      const i = f.s.findIndex(t => t.id === a[4]);
+      if (v && Array.isArray(v.p)) { const t = Object.assign(wire(v), {id:a[4]}); if (i < 0) f.s.push(t); else f.s[i] = t; }
+      else if (i >= 0) f.s.splice(i, 1);
+    }
+  }
+}
+/* Every local change goes through here: state now, the other seat next. */
+function chg(key, v){ if (!v) v = null; if (key !== '~plan') apply(key, v); tx(key, v); }
+function clearPads(names, fromPeer){
+  names.forEach(n => { st.pads[n] = {lock:'', f:{}, set:{}, rb:{}}; });
+  if (!fromPeer) txNow({t:'padclr', p: names.map(n => n + '|')});
+}
+/* A pad as keys — for the union on join, and for undoing a Clear. */
+function flat(n){
+  const P = st.pads[n], o = {}; if (!P) return o;
+  if (P.lock) o[n + '|lock'] = P.lock;
+  ['set', 'rb'].forEach(g => Object.entries(P[g] || {}).forEach(([id, v]) => { if (v) o[n + '|' + g + '|' + id] = 1; }));
+  Object.entries(P.f || {}).forEach(([fid, f]) => {
+    if (f.ok) o[fk(n, fid, 'ok')] = 1;
+    if (f.sel) o[fk(n, fid, 'sel')] = f.sel;
+    Object.entries(f.ch || {}).forEach(([c, v]) => { if (v) o[fk(n, fid, 'ch|' + c)] = v; });
+    (f.s || []).forEach(t => { o[fk(n, fid, 's|' + t.id)] = wire(t); });
+  });
+  return o;
+}
+function after(){
+  save(); renderChips();
+  if (ep.hidden) return;
+  if (act) dirty = true; else render();
+}
+/* Union on join, the same rule as ticks: the room's keys land here, then
+   whatever only this tablet holds is pushed. A stroke erased on the other seat
+   while this one was offline therefore comes back — as a tick does.
+
+   A CLEAR does not come back. st.gen remembers, per room, the clear count this
+   tablet last saw for each pad ('*' = resets). A pad whose count moved while we
+   were away is dropped on join rather than pushed — otherwise a tablet asleep
+   through the turn would put leg 1's clearance back on both screens. */
+function genSeen(g){ if (g && typeof g === 'object' && L.room) st.gen = {room: L.room(), g: Object.assign({}, g)}; save(); }
+function dropMissed(g){
+  if (!g || typeof g !== 'object' || !L.room || !st.gen || st.gen.room !== L.room()) return;
+  const was = st.gen.g || {};
+  NAMES.forEach(n => {
+    if ((was['*'] || 0) !== (g['*'] || 0) || (was[n] || 0) !== (g[n] || 0)) { st.pads[n] = {lock:'', f:{}, set:{}, rb:{}}; delete undo[n]; }
+  });
+}
+function union(){
+  const seen = syncing || {}; syncing = null;
+  const mine = {};
+  NAMES.forEach(n => Object.assign(mine, flat(n)));
+  if (st.plan && (st.plan.dep || st.plan.arr)) mine['~plan'] = st.plan;
+  let k = {}, size = 0;
+  Object.entries(mine).forEach(([key, v]) => {
+    if (seen[key]) return;
+    const len = key.length + JSON.stringify(v).length;
+    if (size && size + len > 200000) { L.send({t:'pad', k}); k = {}; size = 0; }
+    k[key] = v; size += len;
+  });
+  if (size) L.send({t:'pad', k});
+}
+if (L) L.on(m => {
+  if (m.t === 'snap') { syncing = {}; dropMissed(m.gen); genSeen(m.gen); after(); return; }
+  if (m.t === 'padgen') { genSeen(m.gen); return; }
+  if (m.t === 'pad' && m.k && typeof m.k === 'object') {
+    Object.entries(m.k).forEach(([key, v]) => {
+      if (syncing) syncing[key] = 1;
+      if (key === '~plan') { if (v && typeof v === 'object') setPlan(v, true); }
+      else apply(key, v);
+    });
+    after(); return;
+  }
+  if (m.t === 'padsync') { union(); return; }
+  if (m.t === 'padclr' && Array.isArray(m.p)) {
+    const ns = m.p.map(x => String(x).replace(/\|$/, '')).filter(n => SPEC[n]);
+    clearPads(ns, true); ns.forEach(n => delete undo[n]); genSeen(m.gen); after(); return;
+  }
+  if (m.t === 'reset') {
+    st.pads = {}; staleFrom = ''; Object.keys(undo).forEach(k => delete undo[k]);
+    genSeen(m.gen); saveNow(); after();
+  }
+});
 
 /* ---- recall chips in the header --------------------------------- */
-function thumb(n, fid){
+/* fitW: shrink the whole line to fit that width (OTHER) rather than show the
+   first 52 px of it at full height. */
+function thumb(n, fid, fitW){
   const s = fs(n, fid).s; if (!s.length) return null;
   let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
   s.forEach(t => { for (let j = 0; j < t.p.length; j += 3) {
     x0 = Math.min(x0, t.p[j]); x1 = Math.max(x1, t.p[j]); y0 = Math.min(y0, t.p[j + 1]); y1 = Math.max(y1, t.p[j + 1]); } });
-  const pad_ = 40, H = 22, k = H / Math.max(200, y1 - y0 + pad_ * 2);
-  const W = Math.min(52, Math.max(12, (x1 - x0 + pad_ * 2) * k)), d = window.devicePixelRatio || 1;
+  const pad_ = 40, H = 22, wU = x1 - x0 + pad_ * 2, hU = y1 - y0 + pad_ * 2;
+  let k = H / Math.max(200, hU), oy = 0;
+  if (fitW && wU * k > fitW) { k = fitW / wU; oy = (H - hU * k) / 2; }
+  const W = fitW ? Math.max(12, Math.min(fitW, wU * k)) : Math.min(52, Math.max(12, wU * k)), d = window.devicePixelRatio || 1;
   const c = document.createElement('canvas'); c.width = Math.round(W * d); c.height = Math.round(H * d); c.style.width = W + 'px';
-  const x = c.getContext('2d'); x.setTransform(d * k, 0, 0, d * k, d * k * (pad_ - x0), d * k * (pad_ - y0));
+  const x = c.getContext('2d'); x.setTransform(d * k, 0, 0, d * k, d * k * (pad_ - x0), d * (oy + k * (pad_ - y0)));
   x.strokeStyle = x.fillStyle = inkColor(); x.lineCap = x.lineJoin = 'round';
   s.forEach(t => drawStroke(x, Object.assign({}, t, {w: Math.max(1.2, t.w * 0.45) / k}), 1));
   return c;
 }
+/* A tap folds a chip to its name and back — this tablet only, never stored,
+   so every load starts unfolded. A hold opens the pad. A change to what the
+   chip shows (lock, SID/STAR, key ink) unfolds it again, on both tablets,
+   because each one sees the change arrive. */
+const chipCol = new Set(), chipSig = {};
+let chipKey = '', chipHoldT = null;
+function sig(n){
+  const P = pad(n), S = SPEC[n].sum;
+  return [P.lock, S.badge ? fs(n, S.badge).sel || '' : '',
+          (S.ink || []).map(id => fs(n, id).s.map(t => t.id).join(',')).join('/')].join('#');
+}
+function chipHold(b, n){
+  let fired = false;
+  b.addEventListener('pointerdown', () => {
+    fired = false; clearTimeout(chipHoldT); b.classList.add('hold');
+    chipHoldT = setTimeout(() => { chipHoldT = null; fired = true; b.classList.remove('hold'); open(n); }, 700);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => b.addEventListener(t, () => {
+    if (chipHoldT) { clearTimeout(chipHoldT); chipHoldT = null; }
+    b.classList.remove('hold');
+  }));
+  b.addEventListener('click', () => {
+    if (fired) { fired = false; return; }
+    if (chipCol.has(n)) chipCol.delete(n); else chipCol.add(n);
+    renderChips();
+  });
+  b.addEventListener('contextmenu', e => e.preventDefault());
+}
 function renderChips(){
+  NAMES.forEach(n => {
+    if (!pad(n).lock) { delete chipSig[n]; chipCol.delete(n); return; }
+    const g = sig(n);
+    if (chipSig[n] !== undefined && chipSig[n] !== g) chipCol.delete(n);
+    chipSig[n] = g;
+  });
+  /* Remote edits re-render often; rebuild only when a chip would look different,
+     so a hold in progress is not cut off by an unrelated stroke. */
+  const key = JSON.stringify([chipSig, [...chipCol], chips.clientWidth, document.documentElement.dataset.theme || '']);
+  if (key === chipKey) return;
+  chipKey = key;
+  if (chipHoldT) { clearTimeout(chipHoldT); chipHoldT = null; }
   chips.innerHTML = '';
+  let fill = null;
   NAMES.forEach(n => {
     const P = pad(n); if (!P.lock) return;
-    const S = SPEC[n].sum, b = document.createElement('button');
-    b.type = 'button'; b.className = 'ep-chip'; b.title = 'Open the ' + n + ' pad — locked ' + P.lock;
+    const S = SPEC[n].sum, col = chipCol.has(n), b = document.createElement('button');
+    b.type = 'button'; b.className = 'ep-chip' + (col ? ' col' : '');
+    b.title = 'Tap to fold or unfold · hold to open the ' + n + ' pad — locked ' + P.lock;
     /* No timestamp here — it costs header width; it is on the pad's Locked button. */
-    b.innerHTML = '<span>' + n + ' ✓</span>';
-    if (S.badge) { const v = fs(n, S.badge).sel; if (v) b.insertAdjacentHTML('beforeend', '<span class="x">' + esc(v) + '</span>'); }
-    (S.ink || []).forEach(id => { const c = thumb(n, id); if (c) b.appendChild(c); });
-    b.addEventListener('click', () => open(n));
+    b.innerHTML = '<span>' + n + (col ? '' : ' ✓') + '</span>';
+    if (!col) {
+      if (S.badge) { const v = fs(n, S.badge).sel; if (v) b.insertAdjacentHTML('beforeend', '<span class="x">' + esc(v) + '</span>'); }
+      if (S.fill) fill = {b, n, id: S.ink[0]};
+      else (S.ink || []).forEach(id => { const c = thumb(n, id); if (c) b.appendChild(c); });
+    }
+    chipHold(b, n);
     chips.appendChild(b);
   });
+  /* OTHER's line takes the row's leftover width, measured once the rest are in. */
+  if (fill) {
+    const kids = Array.from(chips.children), gap = 6;
+    const used = kids.reduce((w, k) => w + k.offsetWidth, 0) + gap * (kids.length - 1);
+    const room = chips.clientWidth - used - 7 - 2;           // the chip's own gap and border
+    const c = thumb(fill.n, fill.id, Math.max(52, room)); if (c) fill.b.appendChild(c);
+  }
   const locked = NAMES.filter(n => pad(n).lock);
   if (chipSeen && locked.some(n => !chipSeen.includes(n))) chipsShown(true);
   chipSeen = locked;
@@ -3590,6 +3800,9 @@ document.getElementById('reset').addEventListener('click', () => {
   saveNow(); renderChips(); if (!ep.hidden) render();
 });
 
+/* OTHER fills to the row's width, so the chips follow it. */
+if ('ResizeObserver' in window) { let w = 0;
+  new ResizeObserver(() => { if (chips.clientWidth !== w) { w = chips.clientWidth; renderChips(); } }).observe(chips); }
 renderChips(); renderCs();
 /* Prefetch for an already-planned route, so the first badge tap is instant. */
 if (st.plan.dep || st.plan.arr) setTimeout(loadProcs, 2500);
