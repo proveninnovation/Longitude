@@ -816,6 +816,30 @@
   .vf-list tr.hit td{color:var(--comm)}
   .vf-list .x{color:var(--ink-faint);font-size:12px}
   @media print{ .vf{display:none !important} }
+
+  /* ---- Route check (rc-*) — its own block, mounted under the VATSIM panel */
+  .rc{padding:4px 12px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-dim)}
+  .rc[hidden]{display:none}
+  .rc-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-height:38px}
+  .rc-tag{font-size:10.5px;font-weight:700;letter-spacing:.1em;color:var(--ink-faint)}
+  .rc-sum{flex:1 1 200px;color:var(--ink-faint);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rc-sum b{color:var(--ink-dim)}
+  .rc-tog{min-height:36px;touch-action:manipulation}
+  .rc-body{max-height:42vh;overflow:auto;padding:4px 0 8px}
+  .rc-route{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--ink-faint);
+    margin:0 0 6px;word-break:break-word}
+  .rc-list{column-width:150px;column-gap:14px}
+  .rc-grp{break-inside:avoid;margin:0 0 6px}
+  .rc-via{font-size:10.5px;font-weight:700;letter-spacing:.08em;color:var(--ink-faint);padding:2px 0;
+    border-bottom:1px solid var(--line)}
+  .rc-via.pr{color:var(--pm)}
+  .rc-fx{display:block;width:100%;text-align:left;background:none;border:0;border-radius:6px;padding:4px 6px;
+    font:700 16px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.04em;color:var(--ink);
+    touch-action:manipulation;cursor:pointer}
+  .rc-fx.ok{color:var(--ink-faint);text-decoration:line-through;text-decoration-color:var(--list-accent);
+    text-decoration-thickness:2px}
+  .rc-fx .n{font:400 11px/1 system-ui,sans-serif;color:var(--ink-faint);margin-right:6px;display:inline-block;width:1.6em;text-align:right}
+  @media print{ .rc{display:none !important} }
 </style>
 </head>
 <body data-role="BOTH">
@@ -827,7 +851,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v22</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v23</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -3346,11 +3370,17 @@ async function loadSimBrief(){
         : (why.replace(/^Error:\s*/, '') || 'no plan'));
     }
     const g = d.general || {};
+    /* The navlog, cut to what the route check shows: [ident, via, sid/star 0|1].
+       TOC and TOD are SimBrief's markers, not fixes in the GTC. json=v2 gives an
+       array; v1 nested it under .fix. */
+    const nl = Array.isArray(d.navlog) ? d.navlog : ((d.navlog && d.navlog.fix) || []);
+    const fx = [].concat(nl).filter(f => f && f.ident && !/^(TOC|TOD)$/.test(f.ident))
+      .map(f => [String(f.ident), String(f.via_airway || ''), f.is_sid_star === '1' ? 1 : 0]);
     setPlan({
       cs: (d.atc && d.atc.callsign) || '', dep: d.origin.icao_code || '', arr: d.destination.icao_code || '',
       depRwy: d.origin.plan_rwy || '', arrRwy: d.destination.plan_rwy || '',
       sid: g.sid_ident || '', sidTrans: g.sid_trans || '', star: g.star_ident || '', starTrans: g.star_trans || '',
-      via: g.sid_trans || firstFix(g.route, g.sid_ident), src: 'SimBrief'
+      via: g.sid_trans || firstFix(g.route, g.sid_ident), route: g.route || '', fx, src: 'SimBrief'
     });
   } catch(e){ sbMsg = 'SimBrief: ' + esc(e.message || 'fetch failed') + '. Pads still work by hand.'; status(); }
 }
@@ -4225,6 +4255,86 @@ document.addEventListener('visibilitychange', kick);
 onPlan(window.efbPlan ? window.efbPlan() : null);
 
 } catch(e){ try { console.warn('VATSIM frequencies disabled:', e); } catch(_){} }
+})();
+/* ================================================================
+   ROUTE CHECK — added 2026-10-04
+
+   The SimBrief plan's fixes, in order and grouped by airway or procedure,
+   so the PM can read them down against the GTC flight plan page. Tap a fix
+   to strike it as checked.
+
+   - Collapsed on every load (Neil: "collapsed on the PADs page for now").
+   - The fixes ride in the plan (plan.fx), so they arrive on the other
+     tablet with it. The strikes are this tablet's, memory only, and clear
+     when the route changes.
+   - A typed plan has no fixes, and the block hides. So does a plan loaded
+     before this version, until Load plan is pressed again.
+   - Self-contained: mounts itself under the VATSIM panel (or the plan row)
+     in mount(). If it throws, the page is as it was.
+================================================================*/
+(function routeCheck(){
+'use strict';
+try {
+
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const el = document.createElement('div');
+el.className = 'rc'; el.hidden = true;
+let plan = null, open = false, key = '', done = new Set();
+
+function mount(){
+  const after = document.querySelector('.ep .vf') || document.querySelector('.ep .ep-plan');
+  if (!after) return false;
+  after.insertAdjacentElement('afterend', el); return true;
+}
+
+/* Runs of the same airway become one group, headed the way the GTC heads
+   them. A run is a procedure if any of its fixes is flagged SID/STAR:
+   SimBrief leaves the flag off a procedure's last fix (GAUDE on GAUD7A). */
+function groups(fx){
+  const out = [];
+  fx.forEach((f, i) => {
+    const [id, via, pr] = f, last = out[out.length - 1];
+    if (last && last.via === via) { last.fx.push([id, i]); last.pr = last.pr || pr; }
+    else out.push({via, pr, fx: [[id, i]]});
+  });
+  return out;
+}
+function paint(){
+  const fx = (plan && Array.isArray(plan.fx)) ? plan.fx : [];
+  el.hidden = !fx.length;
+  if (!fx.length) return;
+  const n = fx.length, ok = done.size;
+  let h = '<div class="rc-head"><span class="rc-tag">ROUTE</span>' +
+    '<span class="rc-sum"><b>' + esc(plan.dep || '') + ' → ' + esc(plan.arr || '') + '</b> · ' + n + ' fixes' +
+      (ok ? ' · <b>' + ok + ' checked</b>' : '') + ' · ' + esc(fx.slice(0, 4).map(f => f[0]).join(' ')) + ' …</span>' +
+    '<button type="button" class="rc-tog" aria-expanded="' + open + '">Route check ' + (open ? '▴' : '▾') + '</button></div>';
+  if (open) {
+    h += '<div class="rc-body">' + (plan.route ? '<div class="rc-route">' + esc(plan.route) + '</div>' : '') +
+      '<div class="rc-list">' + groups(fx).map(g =>
+        '<div class="rc-grp"><div class="rc-via' + (g.pr ? ' pr' : '') + '">' +
+          esc(g.pr ? g.via : (g.via && g.via !== 'DCT' ? 'Airway ' + g.via : 'Direct')) + '</div>' +
+        g.fx.map(([id, i]) => '<button type="button" class="rc-fx' + (done.has(i) ? ' ok' : '') + '" data-i="' + i + '">' +
+          '<span class="n">' + (i + 1) + '</span>' + esc(id) + '</button>').join('') +
+        '</div>').join('') + '</div></div>';
+  }
+  el.innerHTML = h;
+}
+el.addEventListener('click', e => {
+  if (e.target.closest('.rc-tog')) { open = !open; paint(); return; }
+  const b = e.target.closest('.rc-fx'); if (!b) return;
+  const i = +b.dataset.i; done.has(i) ? done.delete(i) : done.add(i); paint();
+});
+function onPlan(p){
+  plan = p || null;
+  const k = plan && Array.isArray(plan.fx) ? plan.fx.map(f => f[0]).join(' ') : '';
+  if (k !== key) { key = k; done = new Set(); }     // a new route starts unchecked
+  paint();
+}
+window.addEventListener('efb-plan', e => onPlan(e.detail));
+if (!mount()) return;
+onPlan(window.efbPlan ? window.efbPlan() : null);
+
+} catch(e){ try { console.warn('route check disabled:', e); } catch(_){} }
 })();
 </script>
 </body>
