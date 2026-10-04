@@ -795,6 +795,27 @@
     .ep-grid{display:flex;flex-direction:column}
   }
   @media print{ .ep,.padgrp,#epchips,.ep-cs,.devrow{display:none !important} }
+
+  /* ---- VATSIM frequencies (vf-*) — its own block, mounted under the pads' plan row */
+  .vf{padding:7px 12px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-dim)}
+  .vf[hidden]{display:none}
+  .vf-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-height:38px}
+  .vf-tag{font-size:10.5px;font-weight:700;letter-spacing:.1em;color:var(--ink-faint)}
+  .vf-call{display:inline-flex;align-items:baseline;gap:8px;padding:3px 12px;border-radius:8px;
+    border:1px solid var(--comm-line);background:var(--comm-bg);color:var(--comm)}
+  .vf-call b{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:22px;letter-spacing:.04em}
+  .vf-call span{font-weight:600}
+  .vf-why{flex:1 1 200px;color:var(--ink-faint);font-size:12px}
+  .vf-why.warn{color:var(--warn)}
+  .vf-more{min-height:36px;touch-action:manipulation}
+  .vf-list{width:100%;border-collapse:collapse;margin:6px 0 2px;font-size:13px}
+  .vf-list td{padding:4px 8px 4px 0;border-top:1px solid var(--line);white-space:nowrap}
+  .vf-list td.f{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:700;color:var(--ink);font-size:15px}
+  .vf-list td.w{white-space:normal;width:100%}
+  .vf-list td.d{text-align:right;color:var(--ink-faint)}
+  .vf-list tr.hit td{color:var(--comm)}
+  .vf-list .x{color:var(--ink-faint);font-size:12px}
+  @media print{ .vf{display:none !important} }
 </style>
 </head>
 <body data-role="BOTH">
@@ -806,7 +827,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v21</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v22</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -3353,7 +3374,12 @@ function setPlan(np, fromPeer){
   if (act) dirty = true; else render();
   renderCs(); loadProcs();
   if (!fromPeer) chg('~plan', np);
+  announcePlan();
 }
+/* Other blocks (the VATSIM frequency panel) follow the plan without reaching into
+   this one: an event on each change, and a getter for the plan already stored. */
+function announcePlan(){ try { window.dispatchEvent(new CustomEvent('efb-plan', {detail: st.plan})); } catch(e){} }
+window.efbPlan = () => st.plan;
 stEl.addEventListener('click', e => {
   const b = e.target.closest('[data-stale]'); if (!b) return;
   if (b.dataset.stale === 'clear') { clearPads(NAMES); Object.keys(undo).forEach(k => delete undo[k]); saveNow(); renderChips(); }
@@ -3932,6 +3958,273 @@ renderChips(); renderCs();
 if (st.plan.dep || st.plan.arr) setTimeout(loadProcs, 2500);
 
 } catch(e){ try { console.warn('entry pads disabled:', e); } catch(_){} }
+})();
+/* ================================================================
+   VATSIM FREQUENCIES — added 2026-10-04
+
+   "Who do I call first?", from where the aeroplane actually is on the
+   network, plus the five nearest frequencies. Logic, sources and known gaps
+   in Vatsim/VATSIM-Data-Reference.md; Vatsim/Find-StartupFrequency.mjs is
+   the same resolver as a command-line tool.
+
+   - The trigger is a plan with a callsign (SimBrief). Until that callsign is
+     connected the panel says it is waiting and polls. The planned departure
+     is not used: it means nothing until the aeroplane is on the network.
+   - Sector frequencies come from VATSpy, so a controller extending a sector
+     (VATPAC: "Extending SNO 124.0, BLA 132.2…") resolves to the SECTOR's
+     frequency, not the controller's primary. Its transceivers are what show
+     it is working that frequency here (125.7 is Isa and a JFK approach).
+   - Each tablet fetches for itself. Nothing is stored and nothing crosses
+     the link. Polls only while the panel is on screen.
+   - Self-contained: it mounts itself under the pads' plan row and can be
+     moved by changing mount(). If it throws, the page is as it was.
+================================================================*/
+(function vatsimFreqs(){
+'use strict';
+try {
+
+const SRC = {
+  data: 'https://data.vatsim.net/v3/vatsim-data.json',
+  tx: 'https://data.vatsim.net/v3/transceivers-data.json',
+  spy: 'https://raw.githubusercontent.com/vatsimnetwork/vatspy-data-project/master/VATSpy.dat',
+  bounds: 'https://raw.githubusercontent.com/vatsimnetwork/vatspy-data-project/master/Boundaries.geojson'
+};
+const POLL_WAIT = 15000, POLL_LIVE = 30000;   // the feed itself refreshes every 15 s
+const REACH_NM = 300, LIST_NM = 600, LIST_N = 5;
+const FAC = {1:'Radio', 2:'Delivery', 3:'Ground', 4:'Tower', 5:'Approach', 6:'Centre'};
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---- geometry and small helpers ------------------------------------ */
+const nm = (la1, lo1, la2, lo2) => {
+  const r = Math.PI / 180, a = Math.sin((la2 - la1) * r / 2) ** 2 +
+    Math.cos(la1 * r) * Math.cos(la2 * r) * Math.sin((lo2 - lo1) * r / 2) ** 2;
+  return 3440.065 * 2 * Math.asin(Math.sqrt(a));
+};
+const mhz = hz => (Math.round(hz / 1000) / 1000).toFixed(3);               // '124.000'
+const fq = f => parseFloat(f).toFixed(3);
+const show = f => fq(f).replace(/0{1,2}$/, '');                             // 124.0 · 118.55 · 126.525
+const same = (a, b) => !!a && !!b && Math.abs(parseFloat(a) - parseFloat(b)) < 0.0025;
+const token = cs => String(cs).split('_')[0].toUpperCase();
+function inRing(x, y, ring){
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/* ---- static data: VATSpy, once a session, memory only --------------- */
+let spy = null, spyP = null;
+function parseSpy(text){
+  const out = {airports: [], firs: []}; let sect = null;
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || line[0] === ';') continue;
+    const m = line.match(/^\[(.+)\]$/); if (m) { sect = m[1]; continue; }
+    const f = line.split('|');
+    if (sect === 'Airports') out.airports.push({icao: f[0], name: f[1], lat: +f[2], lon: +f[3], prefix: f[4], pseudo: f[6] === '1'});
+    else if (sect === 'FIRs') {
+      /* VATPAC rows carry the sector's frequency and, after '*', its parent's:
+         "Brisbane (Arafura) 133.7* (125.7)" */
+      const q = f[1].match(/(\d{3}\.\d{1,3})(\*)?(?:\s*\((\d{3}\.\d{1,3})\))?/);
+      out.firs.push({icao: f[0], name: f[1], prefix: (f[2] || '').toUpperCase(), boundary: f[3] || f[0], freq: q && q[1], parent: q && q[3]});
+    }
+  }
+  return out;
+}
+function loadSpy(){
+  return spyP || (spyP = Promise.all([
+    fetch(SRC.spy).then(r => { if (!r.ok) throw new Error('VATSpy ' + r.status); return r.text(); }),
+    fetch(SRC.bounds).then(r => { if (!r.ok) throw new Error('boundaries ' + r.status); return r.json(); })
+  ]).then(([t, b]) => {
+    spy = parseSpy(t);
+    /* A bounding box per polygon, so a lookup tests a handful, not 1,200. */
+    spy.bounds = b.features.map(f => {
+      const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+      let x0 = 180, x1 = -180, y0 = 90, y1 = -90;
+      polys.forEach(p => p[0].forEach(([x, y]) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }));
+      return {id: f.properties.id, oceanic: f.properties.oceanic === '1', polys, box: [x0, x1, y0, y1]};
+    });
+    return spy;
+  }).catch(e => { spyP = null; throw e; }));
+}
+
+/* ---- the resolver ---------------------------------------------------- */
+function resolve(p, data, txBy){
+  const pos = {lat: p.latitude, lon: p.longitude};
+  const ctls = data.controllers.filter(c => c.facility > 0 && c.frequency !== '199.998');
+  const txOf = c => txBy.get(c.callsign) || [];
+  const nearOn = (c, f) => txOf(c).filter(t => same(mhz(t.frequency), f))
+    .reduce((m, t) => Math.min(m, nm(pos.lat, pos.lon, t.latDeg, t.lonDeg)), Infinity);
+
+  /* Sitting at an airport: the airport layer applies. Airborne: it doesn't. */
+  let apt = null;
+  if (p.groundspeed < 50) {
+    let best = Infinity;
+    spy.airports.forEach(a => { if (a.pseudo) return; const d = nm(pos.lat, pos.lon, a.lat, a.lon); if (d < best) { best = d; apt = a; } });
+    if (best > 5) apt = null;
+  }
+  let first = null;
+  if (apt) {
+    const toks = new Set([apt.icao]);
+    spy.airports.filter(a => a.icao === apt.icao && a.prefix).forEach(a => toks.add(a.prefix.toUpperCase()));
+    if (apt.icao[0] === 'Y') toks.add(apt.icao.slice(2));     // VATPAC: YBMA → MA_TWR (inferred)
+    const here = ctls.filter(c => toks.has(token(c.callsign)) && c.facility >= 2 && c.facility <= 5)
+                     .sort((a, b) => a.facility - b.facility);  // startup: DEL → GND → TWR → APP
+    if (here.length) {
+      const c = here[0];
+      first = {f: c.frequency, name: apt.name.split('/')[0] + ' ' + FAC[c.facility],
+               why: c.callsign + (c.facility > 2 ? ' — top-down, nothing lower online' : '')};
+    }
+  }
+
+  /* Sector layer: the VATSpy polygon(s) holding the point. Oceanic ranks last —
+     several cross the dateline and over-claim. */
+  const hits = spy.bounds.filter(b => { const [x0, x1, y0, y1] = b.box;
+      return pos.lon >= x0 && pos.lon <= x1 && pos.lat >= y0 && pos.lat <= y1 &&
+        b.polys.some(rings => rings.reduce((acc, r) => acc !== inRing(pos.lon, pos.lat, r), false)); })
+    .sort((a, b) => a.oceanic - b.oceanic);
+  const sectors = [];
+  hits.forEach(h => spy.firs.forEach(f => { if (f.boundary === h.id) sectors.push(f); }));
+  const parentOf = f => spy.firs.find(x => same(x.freq, f) && !x.parent) || spy.firs.find(x => same(x.freq, f));
+  const centre = s => s.name.replace(/\s*\d{3}\.\d.*$/, '').replace(/^(.+?)\s*\((.+)\)$/, '$1 Centre · $2');
+  function bySector(s, trail){
+    if (!s || trail.includes(s.icao)) return null;
+    trail = trail.concat(s.icao);
+    const own = ctls.find(c => c.facility === 6 && token(c.callsign) === s.prefix);
+    if (own) return {f: own.frequency, name: centre(s), why: own.callsign};
+    if (s.freq) {
+      const ext = ctls.filter(c => c.facility >= 5 && nearOn(c, s.freq) <= REACH_NM);
+      if (ext.length) return {f: s.freq, name: centre(s), why: ext[0].callsign + ' extending ' + (s.prefix.split('-')[1] || s.prefix)};
+    }
+    return s.parent ? bySector(parentOf(s.parent), trail) : null;
+  }
+  let sec = null;
+  for (const s of sectors) { sec = bySector(s, []); if (sec) break; }
+  first = first || sec || {f: '122.800', name: 'UNICOM', why: 'no ATC covering this position', unicom: true};
+
+  /* Nearest frequencies: every controller frequency (primary or extension) and
+     ATIS, ranked by the nearest transceiver carrying it. Guard and UNICOM are noise. */
+  const rows = [];
+  ctls.concat(data.atis || []).forEach(c => {
+    const per = new Map();
+    txOf(c).forEach(t => { const f = mhz(t.frequency);
+      if (same(f, '121.5') || same(f, '122.8')) return;
+      const d = nm(pos.lat, pos.lon, t.latDeg, t.lonDeg);
+      if (!per.has(f) || per.get(f) > d) per.set(f, d); });
+    /* Labels for extensions, from the controller's own info lines first
+       ("Extending SNO 124.0, …", "ISA:125.7"), then from VATSpy. */
+    const said = {};
+    String((c.text_atis || []).join(' ')).replace(/\b([A-Z]{3})[\s:]+(1\d\d\.\d{1,3})\b/g, (_, n, f) => { said[fq(f)] = n; });
+    per.forEach((d, f) => {
+      if (d > LIST_NM) return;
+      const isAtis = /_ATIS$/.test(c.callsign);
+      let lab = '';
+      if (!isAtis && !same(f, c.frequency)) {
+        const v = said[f] || (spy.firs.find(x => same(x.freq, f) && x.prefix.split('-')[0] === token(c.callsign).split('-')[0]) || {}).prefix;
+        lab = v ? 'ext ' + String(v).split('-').pop() : 'ext';
+      }
+      rows.push({f, d, cs: c.callsign, lab, atis: isAtis ? (c.atis_code || '') : null});
+    });
+  });
+  rows.sort((a, b) => a.d - b.d);
+  return {first, list: rows.slice(0, LIST_N), apt: apt && apt.icao, sectors: sectors.map(s => s.icao)};
+}
+
+/* ---- panel ------------------------------------------------------------ */
+const el = document.createElement('div');
+el.className = 'vf'; el.hidden = true;
+let open = false;
+function mount(){
+  /* For now: under the Pads sheet's plan row. Moving the panel means changing this. */
+  const row = document.querySelector('.ep .ep-plan');
+  if (!row) return false;
+  row.insertAdjacentElement('afterend', el); return true;
+}
+el.addEventListener('click', e => { if (e.target.closest('.vf-more')) { open = !open; paint(); } });
+
+let cs = '', state = 'idle', ans = null, msg = '', feedAt = '', timer = null, busy = false;
+function visible(){ return !!el.offsetParent && document.visibilityState === 'visible'; }
+function paint(){
+  el.hidden = !cs;
+  if (!cs) return;
+  const age = feedAt ? Math.max(0, Math.round((Date.now() - Date.parse(feedAt)) / 1000)) : null;
+  let h = '<div class="vf-row"><span class="vf-tag">VATSIM</span>';
+  if (state === 'live' && ans) {
+    const a = ans.first;
+    h += '<span class="vf-call" title="First contact: who to call from where ' + esc(cs) + ' is now">' +
+         '<b>' + esc(a.unicom ? '122.8' : show(a.f)) + '</b><span>' + esc(a.name) + '</span></span>' +
+         '<span class="vf-why">' + esc(a.why) + (age != null ? ' · ' + age + ' s ago' : '') + (msg ? ' · ' + esc(msg) : '') + '</span>' +
+         '<button type="button" class="vf-more" aria-expanded="' + open + '">Nearest ' + (open ? '▴' : '▾') + '</button>';
+  } else if (state === 'wait') {
+    h += '<span class="vf-why">Waiting for <b>' + esc(cs) + '</b> to connect — checking every 15 s' +
+         (msg ? ' · ' + esc(msg) : '') + '</span>';
+  } else {
+    h += '<span class="vf-why' + (state === 'err' ? ' warn' : '') + '">' + esc(msg || 'Checking the network…') + '</span>';
+  }
+  h += '</div>';
+  if (state === 'live' && ans && open) {
+    h += '<table class="vf-list">' + (ans.list.length ? ans.list.map(r =>
+      '<tr' + (same(r.f, ans.first.f) ? ' class="hit"' : '') + '><td class="f">' + esc(show(r.f)) + '</td>' +
+      '<td class="w">' + esc(r.cs) + (r.lab ? ' <span class="x">' + esc(r.lab) + '</span>' : '') +
+        (r.atis != null ? ' <span class="x">' + (r.atis ? 'info ' + esc(r.atis) : '') + '</span>' : '') + '</td>' +
+      '<td class="d">' + Math.round(r.d) + ' nm</td></tr>').join('')
+      : '<tr><td class="w">No ATC within ' + LIST_NM + ' nm.</td></tr>') + '</table>';
+  }
+  el.innerHTML = h;
+}
+
+async function tick(force){
+  clearTimeout(timer); timer = null;
+  if (!cs) return;
+  if (!force && !visible()) return;               // resumed when the panel is shown
+  if (busy) return; busy = true;
+  try {
+    await loadSpy();
+    const [data, tx] = await Promise.all([
+      fetch(SRC.data, {cache: 'no-store'}).then(r => { if (!r.ok) throw new Error('feed ' + r.status); return r.json(); }),
+      fetch(SRC.tx, {cache: 'no-store'}).then(r => { if (!r.ok) throw new Error('transceivers ' + r.status); return r.json(); })
+    ]);
+    feedAt = data.general && data.general.update_timestamp;
+    const p = data.pilots.find(x => x.callsign === cs);
+    if (!p) {
+      const pf = data.prefiles.find(x => x.callsign === cs);
+      state = 'wait'; ans = null;
+      msg = pf ? 'plan filed (' + (pf.flight_plan.departure || '?') + ' → ' + (pf.flight_plan.arrival || '?') + ')' : 'no plan filed under that callsign yet';
+    } else {
+      ans = resolve(p, data, new Map(tx.map(t => [t.callsign, t.transceivers || []])));
+      state = 'live'; msg = '';
+    }
+  } catch(e){
+    msg = (ans ? 'last update failed — ' : 'VATSIM data unavailable — ') + (e.message || 'fetch failed') + ', retrying';
+    if (!ans) state = 'err';
+  } finally { busy = false; }
+  paint();
+  timer = setTimeout(tick, state === 'live' ? POLL_LIVE : POLL_WAIT);
+}
+
+/* A plan with a callsign starts a new first contact; the same callsign
+   re-loaded starts it again (the turn). Typed airports carry none. */
+function onPlan(plan){
+  const n = String((plan && plan.cs) || '').trim().toUpperCase();
+  if (!n) { cs = ''; state = 'idle'; ans = null; clearTimeout(timer); paint(); return; }
+  cs = n; state = 'idle'; ans = null; msg = ''; open = false;
+  paint(); tick();                                 // on screen now (Load plan), or when the sheet opens
+}
+window.addEventListener('efb-plan', e => onPlan(e.detail));
+
+if (!mount()) return;
+/* Poll only while the panel is on screen: kick a fresh read when the sheet
+   opens or the tablet wakes, if the last one has gone stale. */
+let lastShown = false;
+const kick = () => { const v = visible(); if (v && !lastShown && cs && !busy) tick(true); lastShown = v; };
+const sheet = el.closest('.ep');
+if (sheet) new MutationObserver(kick).observe(sheet, {attributes: true, attributeFilter: ['hidden']});
+document.addEventListener('visibilitychange', kick);
+onPlan(window.efbPlan ? window.efbPlan() : null);
+
+} catch(e){ try { console.warn('VATSIM frequencies disabled:', e); } catch(_){} }
 })();
 </script>
 </body>
