@@ -855,7 +855,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v27</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v28</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -2868,7 +2868,7 @@ function tx(m){
    They see every frame after the refusals are dealt with, and send through tx —
    which, like everything here, is a no-op until a room is joined. */
 const subs = [];
-window.efbLink = { send: tx, on: fn => subs.push(fn), room: () => room };
+window.efbLink = { send: tx, on: fn => subs.push(fn), room: () => room, relay: relayBase };   // relay: the chart tabs' broker is on the same host
 
 /* A refusal (seat taken, room full) arrives while the dialog is almost always
    shut, so the message has to outlive the call — otherwise the only trace is the
@@ -3198,7 +3198,7 @@ const SPEC = {
     f:[ {id:'star', l:'STAR', badge:'star'}, {id:'trans', l:'Trans', badge:'starTrans'}, {id:'rwy', l:'Rwy', badge:'arrRwy'},
         {id:'lvl', l:'Level — empty means not cleared down', big:1, key:1, chips:[{id:'via', t:'↓ VIA STAR TO', cyc:1}]},
         {id:'wr', l:'', noink:1, chips:[{id:'wr', t:'When ready'}]},
-        {id:'qnh', l:'QNH', key:1}, {id:'app', l:'Expect approach · via'},
+        {id:'qnh', l:'QNH', key:1}, {id:'app', l:'Expect approach · via', badge:'app'},
         {id:'cnl', l:'Cancel restrictions @', chips:[{id:'lvl', t:'CNL LVL'}, {id:'spd', t:'CNL SPD'}]},
         {id:'spd', l:'Speed'} ],
     set:[['alt','ALT SEL'], ['qnh','QNH both'], ['fms','STAR / APP in FMS'], ['brief','Brief']],
@@ -3225,7 +3225,19 @@ try {
 } catch(e){}
 let saveT = null;
 function saveNow(){ st.at = Date.now(); put(KEY, JSON.stringify(st)); }
-function save(){ clearTimeout(saveT); saveT = setTimeout(saveNow, 300); }
+function save(){ clearTimeout(saveT); saveT = setTimeout(saveNow, 300); padsChanged(); }
+/* For the chart tabs (D4): every pad change, local or from the other seat, passes
+   through save(), so one event here is enough. Coalesced to one per task. */
+let pcT = 0;
+function padsChanged(){ if (pcT) return; pcT = setTimeout(() => { pcT = 0; try { window.dispatchEvent(new Event('efb-pads')); } catch(e){} }, 0); }
+/* What the chart tabs may see and do. Read-only views, plus one write: a chart picked
+   by hand for a badge, which goes through chg() like any pad edit. */
+window.efbPads = {
+  snap: () => ({ plan: st.plan, f: (n, id) => { const f = fs(n, id); return {sel: f.sel, chart: f.chart || null, struck: f.s.length > 0}; } }),
+  setChart: (n, id, v) => { chg(fk(n, id, 'chart'), v || null); save(); if (!ep.hidden && !act) render(); }
+};
+/* Broker data arrived (approach options for the app badge): show it if the sheet is up. */
+window.addEventListener('efb-charts', () => { if (!ep.hidden) { if (act) dirty = true; else render(); } });
 window.addEventListener('pagehide', saveNow);
 
 /* Every stroke carries an id, which is its key on the link. Strokes saved
@@ -3235,6 +3247,8 @@ Object.values(st.pads || {}).forEach(P => Object.values((P && P.f) || {}).forEac
   (f.s || []).forEach(t => { if (!t.id) t.id = rid(); })));
 const pad = n => st.pads[n] || (st.pads[n] = {lock:'', f:{}, set:{}, rb:{}});
 const fs = (n, id) => { const p = pad(n); return p.f[id] || (p.f[id] = {s:[], ok:0, sel:null, ch:{}}); };
+/* f.chart: a chart chosen by hand for this badge (D4) — 'c/BCSSR07' or 'sup/s26-h69#3'.
+   It crosses the link, so both tablets show the same chart; it goes when sel changes. */
 const undo = {};                               // per pad, memory only
 const stack = n => undo[n] || (undo[n] = []);
 
@@ -3459,6 +3473,12 @@ function opts(n, kind){
     case 'star':     return {list: a ? a.p.map(x => x.n) : [], plan: p.star};
     case 'starTrans':return {list: star ? star.tr : [], plan: p.starTrans};
     case 'arrRwy':   return {list: star && star.rw.length ? star.rw : (a ? a.rw : []), plan: p.arrRwy};
+    /* D3: the approach charts for the chosen runway, from the chart broker. With no
+       chart key or no relay this is empty and the box is ink only, as before. */
+    case 'app': {
+      const C = window.efbCharts;
+      return {list: C ? C.approaches(p.arr, fs('ARR', 'rwy').sel || p.arrRwy) : [], plan: ''};
+    }
   }
   return {list:[], plan:''};
 }
@@ -3630,7 +3650,7 @@ body.addEventListener('click', e => {
     /* None: ATC gave no STAR (vectors, a visual) or no SID. One clean clear. A
        transition belongs to its procedure and goes with it; the runway stays. */
     picking = null;
-    chg(fk(n, fid, 'sel'), null);
+    chg(fk(n, fid, 'sel'), null); chg(fk(n, fid, 'chart'), null);
     if (n === 'CLR' && fid === 'sid')  chg(fk(n, 'trans', 'sel'), null);
     if (n === 'ARR' && fid === 'star') chg(fk(n, 'trans', 'sel'), null);
   } else if (bb && fid) {
@@ -3642,10 +3662,11 @@ body.addEventListener('click', e => {
     }
     picking = null;
     if (v === f.sel) { render(); return; }          // the chosen one again: keep it
-    chg(fk(n, fid, 'sel'), v);
+    chg(fk(n, fid, 'sel'), v); if (f.chart) chg(fk(n, fid, 'chart'), null);
     /* a new SID or STAR invalidates a transition or runway it does not have */
     if (n === 'CLR' && fid === 'sid') { reconcile(n, 'trans', 'sidTrans'); reconcile(n, 'rwy', 'depRwy'); }
     if (n === 'ARR' && fid === 'star') { reconcile(n, 'trans', 'starTrans'); reconcile(n, 'rwy', 'arrRwy'); }
+    if (n === 'ARR' && (fid === 'star' || fid === 'rwy')) reconcile(n, 'app', 'app');   // an approach to the old runway goes
   } else if (cc && fid) {
     const F = SPEC[n].f.find(x => x.id === fid), c = F.chips.find(x => x.id === cc.dataset.c), f = fs(n, fid);
     const v = f.ch[c.id] || 0;
@@ -3658,7 +3679,8 @@ body.addEventListener('click', e => {
 });
 function reconcile(n, fid, kind){
   const f = fs(n, fid); if (!f.sel) return;
-  const o = opts(n, kind); if (o.list.length && !o.list.some(v => same(v, f.sel))) chg(fk(n, fid, 'sel'), null);
+  const o = opts(n, kind);
+  if (o.list.length && !o.list.some(v => same(v, f.sel))) { chg(fk(n, fid, 'sel'), null); if (f.chart) chg(fk(n, fid, 'chart'), null); }
 }
 
 /* ---- ink -------------------------------------------------------- */
@@ -3815,6 +3837,7 @@ function apply(key, v){
     const f = fs(n, a[2]);
     if (a[3] === 'ok' && a.length === 4) f.ok = v ? 1 : 0;
     else if (a[3] === 'sel' && a.length === 4) f.sel = v || null;
+    else if (a[3] === 'chart' && a.length === 4) f.chart = v || null;
     else if (a[3] === 'ch' && a.length === 5) f.ch[a[4]] = +v || 0;
     else if (a[3] === 's' && a.length === 5) {
       const i = f.s.findIndex(t => t.id === a[4]);
@@ -3837,6 +3860,7 @@ function flat(n){
   Object.entries(P.f || {}).forEach(([fid, f]) => {
     if (f.ok) o[fk(n, fid, 'ok')] = 1;
     if (f.sel) o[fk(n, fid, 'sel')] = f.sel;
+    if (f.chart) o[fk(n, fid, 'chart')] = f.chart;
     Object.entries(f.ch || {}).forEach(([c, v]) => { if (v) o[fk(n, fid, 'ch|' + c)] = v; });
     (f.s || []).forEach(t => { o[fk(n, fid, 's|' + t.id)] = wire(t); });
   });
@@ -4357,6 +4381,497 @@ if (!mount()) return;
 onPlan(window.efbPlan ? window.efbPlan() : null);
 
 } catch(e){ try { console.warn('route check disabled:', e); } catch(_){} }
+})();
+/* ================================================================
+   CHART TABS — added 2026-10-05 (D4). Design: Reference/DAP-Charts.md.
+
+   Airservices DAP charts, shown inside the EFB, in footer tabs
+   EFB · DEP · SID · STAR · IAP · DEST that follow the plan and the pads.
+
+   - The tabs are DERIVED, never synced: every tab is a function of the
+     plan and the pad badges, which already cross the link. One pilot works
+     the pad and both tablets grow the same tabs. Which tab is open, and
+     each chart's zoom, pan and page, belong to this tablet.
+   - A chart picked by hand for a badge is a pad key (CLR|f|sid|chart), so
+     it reaches the other tablet; where the broker's rules had not matched
+     the name it is also remembered on the relay (/x/l), for next time.
+   - The bytes come through the relay's chart broker, with the chart key in
+     a header. No key, no relay, or a refused key: no tabs at all, and the
+     page is exactly as it was. The key is typed once per tablet, on the
+     Pads sheet, and kept in c700-chartkey.
+   - PDF.js is published beside the page in efb-app/ and fetched the first
+     time a chart opens. It is imported through a blob: URL, so it loads
+     whatever MIME type the server gives .mjs.
+   - Nothing is stored but the view state (sessionStorage). Charts are
+     displayed unaltered: no inversion in dark mode.
+================================================================*/
+(function chartTabs(){ try {
+const L = window.efbLink, P = window.efbPads;
+if (!L || !P || !L.relay) return;
+const KEYK = 'c700-chartkey', VIEWK = 'c700-chartview';
+const get = k => { try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } };
+const put = (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch(e){} };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const BAR_H = 48;
+const base = () => String(L.relay() || '').replace(/^ws(s?):/, 'http$1:').replace(/\/+$/, '');
+const REF_RE = /^(?:[cp]\/[A-Z]{5}\d{2}|sup\/[a-z]\d{2}-[a-z]\d{1,3}#\d{1,3})$/;
+
+/* The key is bound to the relay origin it was typed for (security review, 2026-10-05):
+   ?relay= can point the page at any host, and persists, so a crafted link must never
+   carry the key away. Stored as {o: origin, k: key}; sent only to that origin. */
+const origin = () => { try { return new URL(base()).origin; } catch(e){ return ''; } };
+let bound = (() => { const raw = get(KEYK); try { const j = JSON.parse(raw); if (j && j.k) return j; } catch(e){}
+  return raw ? {o: origin(), k: raw.trim()} : {o: '', k: ''}; })();
+let key = bound.o && bound.o === origin() ? bound.k : '', keyState = bound.k && !key ? 'other' : '';
+const data = {};            // ICAO → {q, resp, busy, err}
+const docs = {};            // doc key (ref without #page) → Promise<PDFDocumentProxy>
+const wraps = {};           // ref → {wrap, canvas, W0, H0, pages, drawn}
+let view = {};              // ref → {s, x, y, page}
+try { view = JSON.parse(sessionStorage.getItem(VIEWK) || '{}') || {}; } catch(e){ view = {}; }
+let active = 'EFB';
+const sub = {};             // tab id → ref chosen inside it (DEP/DEST pages, a SUP being browsed)
+let listFor = null;         // tab id whose chart list is open
+let order = [];             // refs, most recently shown last (canvas budget)
+
+/* ---- styles: self-contained, so a throw above leaves the page untouched ---- */
+const css = document.createElement('style');
+css.textContent = `
+  #ctabs{position:fixed;left:0;right:0;bottom:0;z-index:90;height:${BAR_H}px;box-sizing:border-box;display:flex;gap:5px;
+    align-items:stretch;padding:4px 6px;background:var(--panel);border-top:1px solid var(--line);overflow-x:auto;
+    -webkit-user-select:none;user-select:none}
+  #ctabs button{flex:0 0 auto;min-width:60px;padding:1px 11px;border-radius:8px;border:1px solid var(--line);background:transparent;
+    color:var(--ink);font-weight:700;font-size:14px;letter-spacing:.03em;display:flex;flex-direction:column;justify-content:center;
+    line-height:1.12;touch-action:manipulation}
+  #ctabs button small{font-size:9.5px;letter-spacing:.12em;color:var(--ink-faint)}
+  #ctabs button[aria-pressed="true"]{background:var(--pm);border-color:var(--pm);color:var(--bg)}
+  #ctabs button[aria-pressed="true"] small{color:var(--bg);opacity:.8}
+  #ctabs button.q{border-color:var(--warn);border-style:dashed}
+  #ctabs button.p small::after{content:" ⁺"}
+  #cview{position:fixed;left:0;right:0;top:0;bottom:${BAR_H}px;z-index:85;background:var(--bg);display:flex;flex-direction:column}
+  #cview[hidden]{display:none}
+  .cv-h{flex:0 0 auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:5px 8px;border-bottom:1px solid var(--line);
+    font-size:13px;color:var(--ink-dim);-webkit-user-select:none;user-select:none}
+  .cv-h b{color:var(--ink);font-size:15px;letter-spacing:.03em}
+  .cv-h .t{color:var(--ink)}
+  .cv-h .n{color:var(--warn)}
+  .cv-h .sp{flex:1 1 auto}
+  .cv-h button{min-height:34px;padding:3px 10px;border-radius:7px;border:1px solid var(--line);background:transparent;color:var(--ink);
+    font-weight:600;font-size:13px;touch-action:manipulation}
+  .cv-h button.on{background:var(--pm);border-color:var(--pm);color:var(--bg)}
+  .cv-s{position:relative;flex:1 1 auto;overflow:hidden;touch-action:none;background:var(--panel-2)}
+  .cv-w{position:absolute;left:0;top:0;transform-origin:0 0;box-shadow:0 1px 8px rgba(0,0,0,.35);background:#fff}
+  .cv-w canvas{display:block}
+  .cv-m{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;
+    color:var(--ink-dim);font-size:15px;line-height:1.5}
+  .cv-l{position:absolute;inset:0;overflow:auto;background:var(--bg);padding:8px 10px 20px;z-index:2}
+  .cv-l h4{margin:12px 2px 6px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
+  .cv-l button{display:block;width:100%;text-align:left;margin:0 0 5px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);
+    background:var(--panel);color:var(--ink);font-size:14px;touch-action:manipulation}
+  .cv-l button.cur{border-color:var(--pm);box-shadow:inset 3px 0 0 var(--pm)}
+  .cv-l button small{color:var(--ink-faint);margin-left:6px}
+  .cv-l .note{color:var(--ink-dim);font-size:13px;margin:4px 2px 10px;line-height:1.45}
+  #epCk{width:7.5em;text-transform:none}
+  #epCk.ok{border-color:var(--list-accent)}
+  #epCk.bad{border-color:var(--warn)}
+  body.ct-on{padding-bottom:${BAR_H}px}
+  body.ct-on .ep{bottom:${BAR_H}px}
+`;
+document.head.appendChild(css);
+
+const bar = document.createElement('nav');
+bar.id = 'ctabs'; bar.hidden = true; bar.setAttribute('aria-label', 'Chart tabs');
+const cv = document.createElement('div');
+cv.id = 'cview'; cv.hidden = true; cv.setAttribute('role', 'dialog'); cv.setAttribute('aria-label', 'Chart');
+cv.innerHTML = '<div class="cv-h"></div><div class="cv-s"></div>';
+document.body.appendChild(cv); document.body.appendChild(bar);
+const head = cv.querySelector('.cv-h'), stage = cv.querySelector('.cv-s');
+
+/* ---- the chart key, on the Pads sheet beside the SimBrief Pilot ID ---- */
+const plan = document.querySelector('.ep-plan');
+const ki = document.createElement('input');
+ki.id = 'epCk'; ki.type = 'password'; ki.placeholder = 'Chart key'; ki.autocomplete = 'off';
+ki.setAttribute('autocapitalize', 'off'); ki.spellcheck = false; ki.value = bound.k;
+ki.title = 'Chart key — typed once on this tablet. Ask Neil.';
+if (plan) plan.insertBefore(ki, plan.querySelector('#epDep'));
+ki.addEventListener('keydown', e => { if (e.key === 'Enter') ki.blur(); });
+ki.addEventListener('change', () => {
+  key = ki.value.trim(); bound = {o: origin(), k: key}; put(KEYK, key ? JSON.stringify(bound) : ''); keyState = '';
+  Object.keys(data).forEach(k => delete data[k]); Object.keys(docs).forEach(k => delete docs[k]);
+  fetchAll();
+});
+function keyMark(){
+  ki.classList.toggle('ok', keyState === 'ok'); ki.classList.toggle('bad', keyState === 'bad');
+  ki.classList.toggle('bad', keyState === 'bad' || keyState === 'other');
+  ki.title = keyState === 'bad' ? 'Chart key refused — check it with Neil'
+    : keyState === 'other' ? 'This key was typed for another relay — type it again to use it with this one'
+    : keyState === 'ok' ? 'Chart key accepted' : 'Chart key — typed once on this tablet. Ask Neil.';
+}
+
+/* ---- the broker ---- */
+function api(path, init){
+  init = init || {};
+  if (!key || origin() !== bound.o) return Promise.reject(new Error('The chart key belongs to another relay.'));
+  return fetch(base() + path, Object.assign({}, init, {headers: Object.assign({'X-Chart-Key': key}, init.headers || {}), cache: 'no-store'}));
+}
+function learn(b){
+  return api('/x/l', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(b)})
+    .then(r => { if (data[b.icao]) data[b.icao].q = null; refresh(); }).catch(() => {});
+}
+
+/* which aerodromes, and which names to match there */
+function wants(){
+  const s = P.snap(), p = s.plan || {}, q = {};
+  if (p.dep) q[p.dep] = [];
+  if (p.arr) q[p.arr] = q[p.arr] || [];
+  const sid = s.f('CLR', 'sid').sel, star = s.f('ARR', 'star').sel;
+  if (p.dep && sid) q[p.dep].push('sid:' + sid);
+  if (p.arr && star) q[p.arr].push('star:' + star);
+  return q;
+}
+let fT = 0;
+function refresh(){ clearTimeout(fT); fT = setTimeout(fetchAll, 200); }
+async function fetchAll(){
+  if (!key) { if (keyState !== 'other') keyState = ''; keyMark(); paint(); return; }
+  const q = wants();
+  let changed = false;
+  for (const [icao, qs] of Object.entries(q)) {
+    if (!/^Y[A-Z]{3}$/.test(icao)) continue;              // the DAP is Australian aerodromes only
+    const qq = qs.join(','), d = data[icao] || (data[icao] = {});
+    if (d.q === qq && (d.resp || d.busy)) continue;
+    d.q = qq; d.busy = true;
+    try {
+      const r = await api('/x/a/' + icao + (qq ? '?q=' + encodeURIComponent(qq) : ''));
+      if (r.status === 404) { keyState = 'bad'; d.resp = null; }
+      else if (!r.ok) throw new Error('HTTP ' + r.status);
+      else { const j = await r.json(); if (d.q === qq) { d.resp = j; d.err = ''; keyState = 'ok'; changed = true; } }
+    } catch(e) { d.err = String(e && e.message || e); }
+    d.busy = false;
+  }
+  keyMark();
+  if (changed) { try { window.dispatchEvent(new Event('efb-charts')); } catch(e){} }
+  paint();
+}
+
+/* ---- the chart lists ---- */
+function charts(icao){                    // current edition, plus codes only in the pending one
+  const r = data[icao] && data[icao].resp; if (!r) return [];
+  const out = [], seen = new Set();
+  r.charts.c.forEach(c => { seen.add(c.code); out.push(Object.assign({ref: 'c/' + c.code, ed: 'c'}, c)); });
+  r.charts.p.forEach(c => { if (!seen.has(c.code)) out.push(Object.assign({ref: 'p/' + c.code, ed: 'p'}, c)); });
+  return out;
+}
+const appLabel = t => t.replace(/\bRWYS?\s+/g, '').replace(/\s*\(LNAV\/VNAV ONLY\)/, ' LNAV/VNAV').replace(/\s+/g, ' ').trim();
+function approaches(icao, rwy){
+  return charts(icao).filter(c => c.kind === 'app' && (!rwy || c.rwys.includes(String(rwy).toUpperCase())))
+    .map(c => appLabel(c.title));
+}
+function appRef(icao, label){ const c = charts(icao).find(c => c.kind === 'app' && appLabel(c.title) === label); return c ? c.ref : null; }
+function titleOf(icao, ref){
+  const r = data[icao] && data[icao].resp; if (!r || !ref) return '';
+  if (ref.startsWith('sup/')) { const id = ref.slice(4).split('#')[0], s = r.sups.find(x => x.id === id);
+    return 'SUP ' + (s ? s.num : id) + ' · page ' + (view[ref] ? view[ref].page : (+ref.split('#')[1] || 1)); }
+  const [ed, code] = ref.split('/'), c = (r.charts[ed] || []).find(x => x.code === code);
+  return c ? c.title : code;
+}
+
+/* ---- the tabs, derived from the plan and the pads ---- */
+function tabs(){
+  if (!key || keyState === 'bad') return [];
+  const s = P.snap(), p = s.plan || {}, out = [];
+  const ad = (id, icao) => {
+    if (!icao) return;
+    const list = charts(icao).filter(c => c.kind === 'ad');
+    if (list.length) out.push({id, label: icao, icao, kind: 'ad', refs: list.map(c => c.ref), how: 'rule'});
+  };
+  const proc = (id, n, fid, icao, kind) => {
+    const f = s.f(n, fid);
+    if (!f.sel || f.struck || !icao) return;                // a struck badge means "not this"
+    const d = data[icao] && data[icao].resp; if (!d) return;
+    /* f.chart arrives from the other tablet through the relay: only a chart-shaped ref is used */
+    let ref = REF_RE.test(f.chart || '') ? f.chart : null, how = 'picked', m = null;
+    if (!ref) {
+      m = kind === 'app' ? null : (d.match[kind + ':' + f.sel.toUpperCase()] || {step: 'none'});
+      if (kind === 'app') { ref = appRef(icao, f.sel); how = ref ? 'rule' : 'none'; }
+      else { how = m.step; ref = m.ref || (m.sup ? 'sup/' + m.sup + '#' + m.page : null); }
+    }
+    out.push({id, label: f.sel, icao, kind, n, fid, name: f.sel, how, refs: ref ? [ref] : []});
+  };
+  ad('DEP', p.dep);
+  proc('SID', 'CLR', 'sid', p.dep, 'sid');
+  proc('STAR', 'ARR', 'star', p.arr, 'star');
+  proc('IAP', 'ARR', 'app', p.arr, 'app');
+  if (p.arr !== p.dep) ad('DEST', p.arr);
+  return out;
+}
+const curTab = () => tabs().find(t => t.id === active) || null;
+function refOf(t){ return t ? (sub[t.id] || t.refs[0] || null) : null; }
+
+/* ---- painting ---- */
+function paint(){
+  const T = tabs();
+  if (active !== 'EFB' && !T.some(t => t.id === active)) { active = 'EFB'; listFor = null; }
+  const on = T.length > 0;
+  bar.hidden = !on; document.body.classList.toggle('ct-on', on);
+  bar.innerHTML = on ? '<button type="button" data-tab="EFB" aria-pressed="' + (active === 'EFB') + '"><small>&nbsp;</small>EFB</button>' +
+    T.map(t => {
+      const r = refOf(t), cls = (!t.refs.length && !sub[t.id] ? 'q' : '') + (r && r.startsWith('p/') ? ' p' : '');
+      return '<button type="button" data-tab="' + esc(t.id) + '" class="' + cls + '" aria-pressed="' + (active === t.id) + '">' +
+        '<small>' + t.id + '</small>' + esc(t.label) + (t.refs.length || sub[t.id] ? '' : ' ?') + '</button>';
+    }).join('') : '';
+  show();
+}
+
+function show(){
+  const t = active === 'EFB' ? null : curTab();
+  cv.hidden = !t;
+  if (!t) return;
+  const ref = refOf(t);
+  if (!ref || listFor === t.id) { header(t, ref); list(t, ref); return; }
+  const l = stage.querySelector('.cv-l'); if (l) l.remove();
+  header(t, ref);
+  open(ref);
+}
+
+function header(t, ref){
+  const d = data[t.icao] && data[t.icao].resp, w = ref && wraps[ref], v = ref && vs(ref);
+  let note = '';
+  if (ref && ref.startsWith('p/')) note = 'Next edition, ' + (d && d.editions.p || '') + ' — not yet in force; usually carries a current SUP';
+  else if (ref && ref.startsWith('sup/')) note = 'AIP Supplement — browse to the chart, then Use this page';
+  if (t.how === 'relaxed') note = (note ? note + ' · ' : '') + '≈ loose match — check it is the right chart';
+  else if (t.how === 'learned') note = (note ? note + ' · ' : '') + 'remembered pick';
+  else if (t.how === 'picked') note = (note ? note + ' · ' : '') + 'picked by hand';
+  let h = '<b>' + esc(t.label) + '</b><span class="t">' + esc(ref ? titleOf(t.icao, ref) : 'No chart matched ' + t.name) + '</span>' +
+    (note ? '<span class="n">' + esc(note) + '</span>' : '') + '<span class="sp"></span>';
+  if (t.kind === 'ad' && t.refs.length > 1) h += t.refs.map((r, i) => '<button type="button" data-sub="' + esc(r) + '" class="' + (r === ref ? 'on' : '') + '">' +
+    esc(short(titleOf(t.icao, r), i)) + '</button>').join('');
+  if (w && w.pages > 1) h += '<button type="button" data-pg="-1">◀</button><span>' + v.page + ' / ' + w.pages + '</span><button type="button" data-pg="1">▶</button>';
+  if (ref && ref.startsWith('sup/') && t.kind !== 'ad') h += '<button type="button" data-use="1">Use this page</button>';
+  h += '<button type="button" data-list="1" class="' + (listFor === t.id ? 'on' : '') + '">Charts ▾</button>';
+  if (ref && listFor !== t.id) h += '<button type="button" data-fit="1">Fit</button>';
+  head.innerHTML = h;
+}
+const short = (title, i) => /AERODROME/.test(title) ? 'AD ' + (title.match(/PAGE (\d)/) || [0, i + 1])[1]
+  : title.replace(/\s*CHART\s*/, ' ').replace(/^APRON\s*-?\s*/, 'Apron ').trim().slice(0, 18);
+
+/* every chart of the tab's kind at that aerodrome — the "widened" list — plus SUPs */
+function list(t, ref){
+  stage.querySelectorAll('.cv-w').forEach(w => { w.hidden = true; });
+  let l = stage.querySelector('.cv-l');
+  if (!l) { l = document.createElement('div'); l.className = 'cv-l'; stage.appendChild(l); }
+  const d = data[t.icao] && data[t.icao].resp;
+  if (!d) { l.innerHTML = '<p class="note">Loading ' + esc(t.icao) + '…</p>'; return; }
+  const kind = t.kind, rows = [];
+  const add = (ed, c) => { const r = ed + '/' + c.code; if (REF_RE.test(r)) rows.push({ref: r, title: c.title, ed}); };
+  d.charts.c.filter(c => kind === 'ad' || c.kind === kind).forEach(c => add('c', c));
+  d.charts.p.filter(c => (kind === 'ad' || c.kind === kind) &&
+    !d.charts.c.some(x => x.code === c.code && x.title === c.title)).forEach(c => add('p', c));
+  let h = '';
+  if (!t.refs.length && t.kind !== 'ad') h += '<p class="note">Nothing matched <b>' + esc(t.name) + '</b> by name. Pick its chart — it is remembered for next time, on both tablets.</p>';
+  if (t.how === 'learned') h += '<button type="button" data-forget="1">Forget the remembered chart for ' + esc(t.name) + '</button>';
+  h += '<h4>' + esc(t.icao) + ' — ' + (kind === 'ad' ? 'all charts' : kind === 'app' ? 'approaches' : kind.toUpperCase() + 's') + '</h4>' +
+    rows.map(r => '<button type="button" data-ref="' + esc(r.ref) + '" class="' + (r.ref === ref ? 'cur' : '') + '">' + esc(r.title) +
+      (r.ed === 'p' ? '<small>next edition ' + esc(d.editions.p || '') + '</small>' : '') + '</button>').join('');
+  const sups = d.sups.filter(x => REF_RE.test('sup/' + x.id + '#1'));
+  if (sups.length) h += '<h4>AIP Supplements naming ' + esc(t.icao) + '</h4>' +
+    sups.map(s => '<button type="button" data-ref="sup/' + esc(s.id) + '#1">SUP ' + esc(s.num) + ' — ' + esc(s.title) +
+      '<small>effective ' + esc(s.effective) + '</small></button>').join('');
+  l.innerHTML = h;
+}
+
+/* ---- PDF.js, loaded on first use ---- */
+let lib = null;
+function pdfjs(){
+  if (!lib) lib = (async () => {
+    const dir = new URL('efb-app/', location.href);
+    const blob = async f => { const r = await fetch(new URL(f, dir)); if (!r.ok) throw new Error('PDF viewer not found (' + r.status + ')');
+      return URL.createObjectURL(new Blob([await r.text()], {type: 'text/javascript'})); };
+    const m = await import(await blob('pdfjs.min.mjs'));
+    m.GlobalWorkerOptions.workerSrc = await blob('pdfjs.worker.min.mjs');
+    return m;
+  })();
+  lib.catch(() => { lib = null; });
+  return lib;
+}
+function doc(dk){
+  if (!docs[dk]) {
+    docs[dk] = (async () => {
+      const m = await pdfjs();
+      const path = dk.startsWith('sup/') ? '/x/s/' + dk.slice(4) : '/x/p/' + dk;
+      const r = await api(path);
+      if (r.status === 429) throw new Error('Daily chart limit reached on the relay.');
+      if (r.status === 410) throw new Error('This chart is not in the edition any more.');
+      if (r.status === 404) throw new Error('The relay refused the chart key.');
+      if (!r.ok) throw new Error('Chart unavailable (HTTP ' + r.status + ').');
+      return m.getDocument({data: new Uint8Array(await r.arrayBuffer())}).promise;
+    })();
+    docs[dk].catch(() => { delete docs[dk]; });
+  }
+  return docs[dk];
+}
+
+/* ---- the view: one wrap + canvas per chart, kept while it is in the budget ---- */
+function vs(ref){
+  return view[ref] || (view[ref] = {s: 1, x: 0, y: 0, page: ref.startsWith('sup/') ? (+ref.split('#')[1] || 1) : 1, init: 0});
+}
+let vT = 0;
+function keepView(){ clearTimeout(vT); vT = setTimeout(() => { try { sessionStorage.setItem(VIEWK, JSON.stringify(view)); } catch(e){} }, 400); }
+function place(ref){ const w = wraps[ref], v = vs(ref); if (w) w.wrap.style.transform = 'translate(' + v.x + 'px,' + v.y + 'px) scale(' + v.s + ')'; }
+function fit(ref){
+  const w = wraps[ref], v = vs(ref), r = stage.getBoundingClientRect(); if (!w) return;
+  v.s = 1; v.x = (r.width - w.W0) / 2; v.y = (r.height - w.H0) / 2; place(ref); keepView();
+}
+let shown = null;
+function open(ref){
+  stage.querySelectorAll('.cv-w').forEach(w => { w.hidden = true; });
+  let m = stage.querySelector('.cv-m'); if (m) m.remove();
+  shown = ref;
+  order = order.filter(r => r !== ref).concat(ref);
+  while (order.length > 8) { const old = order.shift(); if (wraps[old]) { wraps[old].wrap.remove(); delete wraps[old]; } }
+  let w = wraps[ref];
+  if (w) { w.wrap.hidden = false; if (w.drawn !== vs(ref).page) draw(ref); place(ref); if (w.busy && !w.drawn) msg('Loading chart…'); return; }
+  w = wraps[ref] = {wrap: document.createElement('div'), canvas: document.createElement('canvas'), W0: 0, H0: 0, pages: 0, drawn: 0};
+  w.wrap.className = 'cv-w'; w.wrap.appendChild(w.canvas); stage.appendChild(w.wrap);
+  msg('Loading chart…');
+  draw(ref);
+}
+function msg(t){ let m = stage.querySelector('.cv-m'); if (!m) { m = document.createElement('div'); m.className = 'cv-m'; stage.appendChild(m); } m.textContent = t; }
+/* Single-flight per chart: a pick repaints twice (directly, then via efb-pads), and
+   PDF.js refuses two renders on one canvas at once. A second request while one is
+   in flight queues one redraw instead. */
+async function draw(ref){
+  const w = wraps[ref], v = vs(ref);
+  if (!w) return;
+  if (w.busy) { w.again = true; return; }
+  w.busy = true;
+  try {
+    const d = await doc(ref.split('#')[0]);
+    w.pages = d.numPages; v.page = Math.max(1, Math.min(v.page, d.numPages));
+    const pg = await d.getPage(v.page);
+    const r = stage.getBoundingClientRect(), vp1 = pg.getViewport({scale: 1});
+    const fitK = Math.min(r.width / vp1.width, r.height / vp1.height);
+    const dpr = window.devicePixelRatio || 1;
+    /* sharp to about 2× zoom; capped under the ~16 Mpx canvas limit of iPad Safari */
+    const k = Math.min(fitK * dpr * 2, Math.sqrt(15e6 / (vp1.width * vp1.height)));
+    const vp = pg.getViewport({scale: k});
+    w.canvas.width = Math.floor(vp.width); w.canvas.height = Math.floor(vp.height);
+    w.W0 = vp1.width * fitK; w.H0 = vp1.height * fitK;
+    w.canvas.style.width = w.W0 + 'px'; w.canvas.style.height = w.H0 + 'px';
+    w.wrap.style.width = w.W0 + 'px'; w.wrap.style.height = w.H0 + 'px';
+    await pg.render({canvas: w.canvas, canvasContext: w.canvas.getContext('2d'), viewport: vp}).promise;
+    w.drawn = v.page;
+    if (!v.init) { v.init = 1; fit(ref); } else place(ref);
+    if (shown === ref) { const m = stage.querySelector('.cv-m'); if (m) m.remove(); const t = curTab(); if (t) header(t, ref); }
+  } catch(e) {
+    if (wraps[ref] === w) { w.wrap.remove(); delete wraps[ref]; order = order.filter(r => r !== ref); }
+    if (shown === ref) msg(String(e && e.message || e));
+  } finally {
+    w.busy = false;
+    if (w.again && wraps[ref] === w) { w.again = false; draw(ref); }
+  }
+}
+
+/* ---- gestures: drag, pinch, wheel, double-tap — all on this tablet's own view ---- */
+const pts = new Map(); let g = null, tap = null, lastTap = 0;
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y), mid = (a, b) => ({x: (a.x + b.x) / 2, y: (a.y + b.y) / 2});
+function base0(){ const v = shown && view[shown]; g = v ? {v: Object.assign({}, v), a: [...pts.values()].map(p => Object.assign({}, p))} : null; }
+stage.addEventListener('pointerdown', e => {
+  if (!shown || !wraps[shown] || e.target.closest('.cv-l')) return;
+  try { stage.setPointerCapture(e.pointerId); } catch(_){}
+  pts.set(e.pointerId, {x: e.clientX, y: e.clientY}); base0();
+  tap = pts.size === 1 ? {x: e.clientX, y: e.clientY, t: performance.now()} : null;
+});
+stage.addEventListener('pointermove', e => {
+  if (!pts.has(e.pointerId) || !g) return;
+  pts.set(e.pointerId, {x: e.clientX, y: e.clientY});
+  const v = view[shown], a = [...pts.values()], r = stage.getBoundingClientRect();
+  if (tap && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > 8) tap = null;
+  if (a.length === 1 && g.a.length === 1) { v.x = g.v.x + a[0].x - g.a[0].x; v.y = g.v.y + a[0].y - g.a[0].y; }
+  else if (a.length >= 2 && g.a.length >= 2) {
+    const m0 = mid(g.a[0], g.a[1]), m1 = mid(a[0], a[1]);
+    const s = Math.max(0.5, Math.min(10, g.v.s * dist(a[0], a[1]) / Math.max(1, dist(g.a[0], g.a[1]))));
+    const px = (m0.x - r.left - g.v.x) / g.v.s, py = (m0.y - r.top - g.v.y) / g.v.s;
+    v.s = s; v.x = m1.x - r.left - px * s; v.y = m1.y - r.top - py * s;
+  }
+  place(shown);
+});
+function lift(e){
+  if (!pts.has(e.pointerId)) return;
+  pts.delete(e.pointerId); base0(); keepView();
+  if (tap && pts.size === 0 && performance.now() - tap.t < 300) {
+    const now = performance.now();
+    if (now - lastTap < 320) { zoomAt(tap.x, tap.y, view[shown].s > 1.05 ? 0 : 2.5); lastTap = 0; } else lastTap = now;
+  }
+  if (pts.size === 0) tap = null;
+}
+stage.addEventListener('pointerup', lift);
+stage.addEventListener('pointercancel', lift);
+stage.addEventListener('wheel', e => {
+  if (!shown || !wraps[shown]) return;
+  e.preventDefault();
+  zoomAt(e.clientX, e.clientY, view[shown].s * Math.exp(-e.deltaY * 0.0015));
+}, {passive: false});
+function zoomAt(cx, cy, s){
+  if (!s) { fit(shown); return; }
+  const v = view[shown], r = stage.getBoundingClientRect();
+  s = Math.max(0.5, Math.min(10, s));
+  const px = (cx - r.left - v.x) / v.s, py = (cy - r.top - v.y) / v.s;
+  v.s = s; v.x = cx - r.left - px * s; v.y = cy - r.top - py * s; place(shown); keepView();
+}
+
+/* ---- taps: the bar, the header, the list ---- */
+bar.addEventListener('click', e => {
+  const b = e.target.closest('[data-tab]'); if (!b) return;
+  active = b.dataset.tab; if (listFor !== active) listFor = null;
+  paint();
+});
+head.addEventListener('click', e => {
+  const t = curTab(); if (!t) return;
+  const b = e.target.closest('button'); if (!b) return;
+  const ref = refOf(t);
+  if (b.dataset.sub) { sub[t.id] = b.dataset.sub; show(); }
+  else if (b.dataset.pg && ref) { const v = vs(ref), w = wraps[ref]; v.page = Math.max(1, Math.min(w ? w.pages : 1, v.page + +b.dataset.pg)); keepView(); draw(ref); }
+  else if (b.dataset.use && ref) {
+    const page = vs(ref).page, id = ref.slice(4).split('#')[0], nref = 'sup/' + id + '#' + page;
+    view[nref] = Object.assign({}, vs(ref), {page}); delete sub[t.id];
+    P.setChart(t.n, t.fid, nref);
+    if (t.how !== 'rule' && t.kind !== 'app') learn({icao: t.icao, k: t.kind, n: t.name, sup: id, page});
+    paint();
+  }
+  else if (b.dataset.list) { listFor = listFor === t.id ? null : t.id; show(); }
+  else if (b.dataset.fit && ref) fit(ref);
+});
+stage.addEventListener('click', e => {
+  const t = curTab(); if (!t) return;
+  const f = e.target.closest('[data-forget]');
+  if (f) { learn({icao: t.icao, k: t.kind, n: t.name, forget: 1}); P.setChart(t.n, t.fid, null); listFor = null; return; }
+  const b = e.target.closest('.cv-l [data-ref]'); if (!b) return;
+  const ref = b.dataset.ref; listFor = null;
+  if (ref.startsWith('sup/') || t.kind === 'ad') { sub[t.id] = ref; show(); return; }      // browse first; Use this page commits a SUP page
+  delete sub[t.id];
+  P.setChart(t.n, t.fid, ref);
+  if (t.how !== 'rule' && t.kind !== 'app') learn({icao: t.icao, k: t.kind, n: t.name, code: ref.split('/')[1]});
+  paint();
+});
+
+window.addEventListener('resize', () => {
+  if (cv.hidden || !shown) return;
+  Object.keys(wraps).forEach(r => { if (r !== shown) { wraps[r].wrap.remove(); delete wraps[r]; } });
+  order = shown ? [shown] : [];
+  draw(shown);
+});
+window.addEventListener('efb-pads', () => { refresh(); paint(); });
+window.addEventListener('efb-plan', () => refresh());
+
+/* For the pads' approach badge, and for the link test. */
+window.efbCharts = {
+  approaches,
+  debug: () => ({ key: !!key, keyState, active, tabs: tabs().map(t => t.id + ':' + t.label + ':' + (refOf(t) || '-') + ':' + t.how),
+    shown, view: shown && view[shown] ? Object.assign({}, view[shown]) : null,
+    drawn: shown && wraps[shown] ? wraps[shown].drawn : 0, open: !cv.hidden })
+};
+keyMark();
+fetchAll();
+} catch(e){ try { console.warn('chart tabs disabled:', e); } catch(_){} }
 })();
 </script>
 </body>
