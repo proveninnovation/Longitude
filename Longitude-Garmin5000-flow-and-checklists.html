@@ -855,7 +855,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v28</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v29</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -4534,6 +4534,12 @@ async function fetchAll(){
   if (!key) { if (keyState !== 'other') keyState = ''; keyMark(); paint(); return; }
   const q = wants();
   let changed = false;
+  /* No Australian aerodrome yet: still say at once whether the key is good, via the
+     status route (it does not count against the cap). Before, the field stayed
+     neutral until a plan existed, which read as "not accepted". */
+  if (!Object.keys(q).some(k => /^Y[A-Z]{3}$/.test(k)) && keyState !== 'ok') {
+    try { const r = await api('/x/n'); keyState = r.ok ? 'ok' : r.status === 404 ? 'bad' : keyState; } catch(e) {}
+  }
   for (const [icao, qs] of Object.entries(q)) {
     if (!/^Y[A-Z]{3}$/.test(icao)) continue;              // the DAP is Australian aerodromes only
     const qq = qs.join(','), d = data[icao] || (data[icao] = {});
