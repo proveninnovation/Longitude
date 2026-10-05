@@ -784,6 +784,10 @@
   .ep-b.sel.x{background:transparent;color:var(--ep-dull);border-color:var(--line)}
   .ep-c.c1{color:var(--ink);border-color:var(--list-line);background:var(--list-bg);box-shadow:inset 3px 0 0 var(--list-accent)}
   .ep-more{color:var(--ink-faint);font-size:12px;padding:0 4px}
+  /* re-pick (D2): the chosen badge, ringed, stays first while the others are offered */
+  .ep-f.picking{border-color:var(--pm);box-shadow:0 0 0 1px var(--pm)}
+  .ep-b.cur{box-shadow:0 0 0 3px color-mix(in srgb,var(--pm) 40%,transparent)}
+  .ep-b.none{border-style:dashed;color:var(--warn);border-color:color-mix(in srgb,var(--warn) 55%,var(--line))}
   .ep-strip{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px;padding:8px;
     border:1px dashed var(--line);border-radius:9px}
   .ep-strip .tag{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--pf);margin-right:4px}
@@ -851,7 +855,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v26</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v27</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -3305,6 +3309,7 @@ function relayout(){ window.dispatchEvent(new Event('resize')); }   // header he
 /* ---- open / close ---------------------------------------------- */
 function open(n){
   if (n) st.tab = n;
+  picking = null;
   ep.hidden = false;
   document.documentElement.style.overflow = 'hidden';
   render();
@@ -3312,6 +3317,7 @@ function open(n){
 }
 function close(){
   ep.hidden = true;
+  picking = null;
   document.documentElement.style.overflow = '';
   saveNow(); renderChips();
 }
@@ -3459,6 +3465,11 @@ function opts(n, kind){
 
 /* ---- render ---------------------------------------------------- */
 let canv = [];
+/* Re-pick (D2, 2026-10-05): 'ARR|star' while that badge's alternatives are open.
+   This tablet only — never saved, never sent — so opening the list mid-call changes
+   nothing anywhere; only the final pick goes through chg(). Before D2 a tap on the
+   chosen badge deselected it, and that clear crossed the link at once. */
+let picking = null;
 const ro = ('ResizeObserver' in window) ? new ResizeObserver(es => es.forEach(e => paint(e.target))) : null;
 
 function render(){
@@ -3483,18 +3494,23 @@ function render(){
           S.areas.map(a => "'" + a + "'").join(' ') + '">';
   S.f.forEach(F => {
     const f = fs(n, F.id), inked = f.s.length > 0;
-    h += '<div class="ep-f' + (F.key ? ' key' : '') + (F.big ? ' big' : '') + '" style="grid-area:' + F.id + '" data-f="' + F.id + '">';
+    const o = F.badge ? opts(n, F.badge) : null;
+    const pk = !!(o && picking === n + '|' + F.id && f.sel && o.list.length > 1);
+    h += '<div class="ep-f' + (F.key ? ' key' : '') + (F.big ? ' big' : '') + (pk ? ' picking' : '') + '" style="grid-area:' + F.id + '" data-f="' + F.id + '">';
     if (F.l) h += '<span class="ep-l">' + esc(F.l) + '</span>';
     if (F.badge) {
-      const o = opts(n, F.badge);
       let list;
-      if (f.sel) list = [f.sel];
+      if (pk) list = [f.sel].concat(o.list.filter(v => v !== f.sel));   // the chosen one stays first, where the finger is
+      else if (f.sel) list = [f.sel];
       else list = o.list.length ? o.list : (o.plan ? [o.plan] : []);
       if (list.length) {
         h += '<div class="ep-row">' + list.map(v => {
-          const cls = f.sel ? 'sel' + (inked ? ' x' : '') : (same(v, o.plan) ? 'plan' : '');
+          const cls = f.sel && v === f.sel ? 'sel' + (inked ? ' x' : '') + (pk ? ' cur' : '')
+                    : (same(v, o.plan) ? 'plan' : '');
           return '<button type="button" class="ep-b ' + cls + '" data-b="' + esc(v) + '">' + esc(v) + '</button>';
-        }).join('') + (f.sel && o.list.length > 1 ? '<span class="ep-more">tap to change</span>' : '') + '</div>';
+        }).join('') + (pk ? '<button type="button" class="ep-b none" data-none="1">None</button>' +
+                            '<span class="ep-more">tap the new one · tap elsewhere to keep</span>'
+                      : f.sel && o.list.length > 1 ? '<span class="ep-more">tap to change</span>' : '') + '</div>';
       }
     }
     /* Chips beside the ink, not above it (v18): with them stacked, the box under
@@ -3565,11 +3581,12 @@ document.addEventListener('pointerdown', e => {
 tabsEl.addEventListener('click', e => {
   const b = e.target.closest('[data-t]'); if (!b) return;
   if (b.dataset.t === st.tab && pad(st.tab).lock) { chg(st.tab + '|lock', ''); renderChips(); }
-  st.tab = b.dataset.t; erasing = false; render(); save();
+  st.tab = b.dataset.t; erasing = false; picking = null; render(); save();
 });
 
 toolsEl.addEventListener('click', e => {
   const b = e.target.closest('[data-a]'); if (!b) return;
+  picking = null;
   const n = st.tab, P = pad(n);
   switch (b.dataset.a) {
     case 'close': menuOpen = false; close(); return;
@@ -3592,15 +3609,40 @@ toolsEl.addEventListener('click', e => {
   render(); save();
 });
 
+/* Tap-away closes an open re-pick list and keeps the choice. Capture phase, so it
+   runs first; the tap then does whatever it would have done anyway. A tap that
+   does nothing else still needs the list folded, hence the deferred render. */
+ep.addEventListener('click', e => {
+  if (!picking) return;
+  const fid = picking.split('|')[1];
+  if (e.target.closest('.ep-body [data-f="' + fid + '"] [data-b], .ep-body [data-f="' + fid + '"] [data-none]')) return;   // a pick, keep or None — the body handler decides
+  picking = null;
+  setTimeout(() => { if (!picking && !ep.hidden && !act && body.querySelector('.ep-f.picking')) render(); }, 0);
+}, true);
+
 body.addEventListener('click', e => {
   const n = st.tab, P = pad(n);
   if (P.lock) return;
   const t = e.target;
   const fEl = t.closest('[data-f]'), fid = fEl && fEl.dataset.f;
   const bb = t.closest('[data-b]'), cc = t.closest('[data-c]'), ss = t.closest('[data-set]'), rr = t.closest('[data-rb]');
-  if (bb && fid) {
-    const f = fs(n, fid), v = bb.dataset.b;
-    chg(fk(n, fid, 'sel'), f.sel === v ? null : v);   // tap the chosen one again to see them all
+  if (t.closest('[data-none]') && fid && picking === n + '|' + fid) {
+    /* None: ATC gave no STAR (vectors, a visual) or no SID. One clean clear. A
+       transition belongs to its procedure and goes with it; the runway stays. */
+    picking = null;
+    chg(fk(n, fid, 'sel'), null);
+    if (n === 'CLR' && fid === 'sid')  chg(fk(n, 'trans', 'sel'), null);
+    if (n === 'ARR' && fid === 'star') chg(fk(n, 'trans', 'sel'), null);
+  } else if (bb && fid) {
+    const f = fs(n, fid), v = bb.dataset.b, me = n + '|' + fid;
+    if (f.sel && picking !== me) {
+      /* tap the chosen badge: offer the others, change nothing */
+      if (opts(n, SPEC[n].f.find(x => x.id === fid).badge).list.length > 1) { picking = me; render(); }
+      return;
+    }
+    picking = null;
+    if (v === f.sel) { render(); return; }          // the chosen one again: keep it
+    chg(fk(n, fid, 'sel'), v);
     /* a new SID or STAR invalidates a transition or runway it does not have */
     if (n === 'CLR' && fid === 'sid') { reconcile(n, 'trans', 'sidTrans'); reconcile(n, 'rwy', 'depRwy'); }
     if (n === 'ARR' && fid === 'star') { reconcile(n, 'trans', 'starTrans'); reconcile(n, 'rwy', 'arrRwy'); }
@@ -3678,6 +3720,7 @@ function down(e, c){
   if (e.pointerType === 'touch' && (e.width > PALM_PX || e.height > PALM_PX)) return;   // a palm
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   e.preventDefault();
+  if (picking) { picking = null; dirty = true; }     // writing elsewhere keeps the choice; the list folds when the pen lifts
   try { c.setPointerCapture(e.pointerId); } catch(_){}
   const ink = !(e.pointerType === 'touch' && pen === 'pen');   // with a pen about, fingers tap but never ink
   const box = c.getBoundingClientRect();
