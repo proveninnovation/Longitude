@@ -705,6 +705,20 @@
   .sh-tab.pad.cur{background:color-mix(in srgb,var(--comm) 16%,var(--bg));box-shadow:inset 0 2px 0 var(--comm)}
   .sh-tab.setup{flex:1.15 1 0}
   .sh-more{flex:0 0 46px;font-size:20px}
+  /* A scrolling strip (Nic, 2026-10-09, on trial): tabs keep a usable width and the row
+     swipes sideways, with ‹ › at an edge that has more. Without body.sh-scroll it is as before. */
+  .sh-tabw{position:relative}
+  body.sh-scroll .sh-tabs{overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;overscroll-behavior-x:contain;position:relative}
+  body.sh-scroll .sh-tabs::-webkit-scrollbar{display:none}
+  body.sh-scroll .sh-tab{flex:1 0 64px;scroll-snap-align:start}
+  body.sh-scroll .sh-tab.pad{flex:1.3 0 84px}
+  body.sh-scroll .sh-tab.setup{flex:1.15 0 70px}
+  .sh-arr{position:absolute;top:0;bottom:4px;z-index:3;width:30px;min-height:0;padding:0;border:0;border-radius:0;
+    font:700 24px/1 system-ui,sans-serif;color:var(--ink-dim);touch-action:manipulation}
+  .sh-arr:active{transform:none}
+  .sh-arr.l{left:-8px;background:linear-gradient(to right,var(--bg) 50%,transparent);text-align:left;padding-left:5px}
+  .sh-arr.r{right:-8px;background:linear-gradient(to left,var(--bg) 50%,transparent);text-align:right;padding-right:5px}
+  .sh-arr[hidden]{display:none}
   @media (max-width:620px){
     .sh-tabs{overflow-x:auto;scrollbar-width:none} .sh-tabs::-webkit-scrollbar{display:none}
     .sh-tab,.sh-tab.pad,.sh-tab.setup{flex:0 0 58px}
@@ -764,6 +778,7 @@
   body.shell #ctabs{overflow-x:hidden}
   body.shell #ctabs > *{flex:1 1 0;min-width:0}
   body.shell #ctabs > [data-tab="VATSIM"]{flex:0 0 84px;padding:1px 4px}
+  body.shell #ctabs > [data-tab="PLAN"]{flex:0 0 70px;padding:1px 4px}
   body.shell #ctabs > .sh-dots{flex:0 0 64px;padding:1px 4px}
   body.shell #ctabs > button{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:1px 4px;font-size:13px}
   #ctabs .sh-dots{font-size:20px}
@@ -912,7 +927,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v31</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v32</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -1076,8 +1091,8 @@ const PHASES = [
 {kind:'flow', trigger:'Arrive at the aircraft', title:'Walkaround &amp; cockpit inspection', when:'Cold and dark · first in the seat',
  steps:[
   {who:'PM', t:'<b>Exterior walkaround</b> — chocks, tyres, gear pins, probes and static ports, fuel caps, reverser doors stowed, baggage door. Report back.', say:'Exterior inspection complete, no discrepancies.', c:'low', ev:'No walkaround exists in Operators Guide §XVII — the section opens at Cockpit Inspection. The items are generic business-jet exterior checks and the PM-does-it split is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B.'},
-  {who:'PF', t:'<b>Landing gear handle DOWN</b> before anything is powered. Then <b>STBY PWR — test and hold ten seconds</b>, green light, then ON.', c:'vhigh', ev:'Operators Guide §XVII p.17-2 Cockpit Inspection 3 (LANDING GEAR handle DOWN) and 1 (STBY PWR TEST and hold, green ≥10 sec, then ON). Order reversed here so the gear handle is checked before anything is powered.'},
-  {who:'PF', t:'<b>EMER LTS — ARM</b> · <b>BATT buttons both ON</b>, check volts as the displays come up.', note:'<b>Nic&rsquo;s sim:</b> the EMER LTS switch is not wired to hardware yet — set it in the virtual cockpit, and a Streamdeck button is coming. It is not cosmetic: leave it out of ARM and the pre-flight synoptic withholds a takeoff condition, which puts <b>NO TAKEOFF</b> on the CAS and takeoff is prohibited.', c:'full', ev:'Operators Guide §XVII p.17-2 Cockpit Inspection 2 (EMER LTS ARM) and 4 (BATT buttons both ON, Check Volts). NIC CONFIRMED 2026-09-13 (v3 review, item 1.3): the switch is not yet wired in his sim and a Streamdeck button is planned, “because if it&rsquo;s not in the right position we get a NO TAKEOFF warning on the CAS”. The CAS message is Operators Guide §III Crew Alerting System — NO TAKEOFF: “Conditions for takeoff listed in the pre-flight synoptic page have not been appropriately met and takeoff is prohibited.” Sim-hardware note, but the consequence is a real aeroplane behaviour.'},
+  {who:'PF', t:'<b>Landing gear handle DOWN</b> before anything is powered. Then <b>STBY PWR — test and hold ten seconds</b>, green light, then ON, and <b>NO STBY DATA</b> clears from the CAS.', c:'vhigh', ev:'Operators Guide §XVII p.17-2 Cockpit Inspection 3 (LANDING GEAR handle DOWN) and 1 (STBY PWR TEST and hold, green ≥10 sec, then ON). Order reversed here so the gear handle is checked before anything is powered. NIC, 2026-10-08 (issue #20): in his sim the switch is held at least 3 s, shows green, is set ON, and the CAS message NO STDBY DATA then clears. The CAS check is added from him; the Guide’s 10 s is kept, which satisfies his 3 s.'},
+  {who:'PF', t:'<b>EMER LTS — ARM</b> · <b>BATT buttons both ON</b>, check volts as the displays come up.', note:'<b>Nic&rsquo;s sim:</b> EMER LTS is on an overhead switch since 8 October, with a Streamdeck key as well. If the switch gives only ON and OFF, set <b>ARM</b> from the Streamdeck. It is not cosmetic: leave it out of ARM and the pre-flight synoptic withholds a takeoff condition, which puts <b>NO TAKEOFF</b> on the CAS and takeoff is prohibited.', c:'full', ev:'Operators Guide §XVII p.17-2 Cockpit Inspection 2 (EMER LTS ARM) and 4 (BATT buttons both ON, Check Volts). NIC CONFIRMED 2026-09-13 (v3 review, item 1.3): the switch is not yet wired in his sim and a Streamdeck button is planned, “because if it&rsquo;s not in the right position we get a NO TAKEOFF warning on the CAS”. The CAS message is Operators Guide §III Crew Alerting System — NO TAKEOFF: “Conditions for takeoff listed in the pre-flight synoptic page have not been appropriately met and takeoff is prohibited.” Sim-hardware note, but the consequence is a real aeroplane behaviour. UPDATED 2026-10-10: Nic wired a 2-position overhead switch (issue #14, closed 2026-10-08) sending values 1 and 0, which the panel code reads as ON and OFF, so whether it reaches ARM is asked on #14.'},
   {who:'PM', t:'<b>Power source</b> — external power ON if <b>AVAIL</b> is lit, <i>or</i> start the APU. Either way the batteries end up <b>0 or charging</b>.', note:'APU knob ON, then START. Green RPM and EGT within ten seconds.', c:'full', ev:'Operators Guide §XVII p.17-2 Cockpit Inspection 6a–6e (EXT PWR if AVAIL, or APU ON/START, BATT amps 0 or charging), plus p.17-11 Starting APU 2a — green RPM% and EGT digits within 10 seconds of ON. Corroborated on camera — Video VS-003 (CitationMax N2RF, New York–London, the transatlantic that begins the same trip as VS-001) @ 1:10–1:13 runs the choice out loud: “APU.” / “Is on.” — “External power.” / “Not required.”'},
   {who:'PF', t:'<b>EIS and CAS reviewed.</b> Anything amber gets said out loud, not silently accepted.', c:'high', ev:'The item is Operators Guide §XVII Cockpit Inspection 5 (EIS/CAS — Check). “Anything amber gets said out loud” is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B — monitoring discipline, not an Operators Guide instruction.'},
   {who:'PM', t:'Exterior and interior lights — <b>on, checked, off</b>, or set as required.', c:'vhigh', ev:'Operators Guide §XVII p.17-2 Cockpit Inspection 7 — Exterior/Interior Lights, ON/Check/Off or as Required.'},
@@ -1086,7 +1101,7 @@ const PHASES = [
 
 {kind:'list', short:'Inspection', title:'Cockpit Inspection', mode:'First in the seat · read &amp; do',
  items:[
-  ['STDBY PWR','Tested','PF',{c:'full', ev:'CHANGED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”), was “STBY PWR switch — Tested ten seconds, green — on”. Operators Guide §XVII p.17-2 Cockpit Inspection 1, verbatim. Corroborated on camera — VS-003 (New York–London) @ 0:57 — “Standby power.” / “And on my side.” — so this item is a Longitude document AND the real crew running it. AND VS-001 @ 2:07–2:47 runs the same list end to end, which the register did not know — “Circuit breakers.” / “Are in on my side.” / “In on mine.” then “Standby power.” / “Testing, it’s on.” So this is TWO flights, not one. See the correction recorded on step 4.7.'}],
+  ['STDBY PWR','Tested and armed','PF',{c:'full', ev:'CHANGED at NIC’S REQUEST 2026-10-08 (issue #20, his comment on STDBY PWR), was “Tested”: the switch is tested, then left ON. Before that, CHANGED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”), was “STBY PWR switch — Tested ten seconds, green — on”. Operators Guide §XVII p.17-2 Cockpit Inspection 1, verbatim. Corroborated on camera — VS-003 (New York–London) @ 0:57 — “Standby power.” / “And on my side.” — so this item is a Longitude document AND the real crew running it. AND VS-001 @ 2:07–2:47 runs the same list end to end, which the register did not know — “Circuit breakers.” / “Are in on my side.” / “In on mine.” then “Standby power.” / “Testing, it’s on.” So this is TWO flights, not one. See the correction recorded on step 4.7.'}],
   ['EMER LIGHTS','Armed','PF',{c:'vhigh', ev:'CHANGED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”), was “EMER LTS switch — Armed”. Operators Guide §XVII p.17-2 Cockpit Inspection 2, verbatim.'}],
   ['Landing gear handle','Down','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-2 Cockpit Inspection 3, verbatim.'}],
   ['BATTERIES left &amp; right','ON, volts checked','PF',{c:'full', ev:'CHANGED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”), was “BATT buttons — both — On, volts checked”. Operators Guide §XVII p.17-2 Cockpit Inspection 4, verbatim. Corroborated on camera — VS-003 (New York–London) @ 0:59 — “Batteries are on.” — so this item is a Longitude document AND the real crew running it.'}],
@@ -2800,7 +2815,32 @@ titlebar.insertBefore(ro, titlebar.querySelector('.bar'));
 
 const strip = document.createElement('nav');
 strip.className = 'sh-tabs'; strip.setAttribute('aria-label', 'Checklists');
-hdrWrap.appendChild(strip);
+/* The strip scrolls sideways (Nic, 2026-10-09, on trial). ‹ › show only at an edge that
+   has more, and a tap pages across. Removing the sh-scroll class puts the old strip back. */
+document.body.classList.add('sh-scroll');
+const stripW = document.createElement('div'); stripW.className = 'sh-tabw';
+const arrL = document.createElement('button'), arrR = document.createElement('button');
+arrL.type = arrR.type = 'button'; arrL.className = 'sh-arr l'; arrR.className = 'sh-arr r';
+arrL.textContent = '‹'; arrR.textContent = '›';
+arrL.setAttribute('aria-label', 'Earlier tabs'); arrR.setAttribute('aria-label', 'Later tabs');
+stripW.append(arrL, strip, arrR);
+hdrWrap.appendChild(stripW);
+function arrows(){
+  const m = strip.scrollWidth - strip.clientWidth;
+  arrL.hidden = strip.scrollLeft <= 2; arrR.hidden = strip.scrollLeft >= m - 2;
+}
+strip.addEventListener('scroll', arrows, {passive: true});
+try { new ResizeObserver(arrows).observe(strip); } catch(e){ window.addEventListener('resize', arrows); }
+[arrL, arrR].forEach(a => a.addEventListener('click', () =>
+  strip.scrollBy({left: (a === arrL ? -1 : 1) * strip.clientWidth * 0.75, behavior: 'smooth'})));
+/* Bring the current tab into view when the tab changes, and only then: a tick from the
+   other seat repaints the strip, and must not drag it back from where a pilot swiped it. */
+function reveal(){
+  const b = strip.querySelector('.cur'); if (!b) return;
+  const pad = 34, l = b.offsetLeft, r = l + b.offsetWidth;
+  if (l < strip.scrollLeft + pad) strip.scrollLeft = Math.max(0, l - pad);
+  else if (r > strip.scrollLeft + strip.clientWidth - pad) strip.scrollLeft = r - strip.clientWidth + pad;
+}
 
 const pages = {};
 function page(k){
@@ -2937,6 +2977,7 @@ function renderTabs(){
     const bar = got ? '<span class="pb' + (got === tot ? ' full' : '') + '"><b style="width:' + Math.round(100 * got / tot) + '%"></b></span>' : '';
     return '<button type="button" class="sh-tab' + (tot && got === tot ? ' done' : '') + c + '" data-k="' + t.k + '">' + t.label + bar + '</button>';
   }).join('');
+  arrows();
 }
 
 function show(k, keepScroll){
@@ -2946,7 +2987,7 @@ function show(k, keepScroll){
   Object.keys(pages).forEach(x => { pages[x].hidden = x !== k; });
   try { if (window.efbCharts && window.efbCharts.home) window.efbCharts.home(); } catch(e){}
   closeMenu();
-  renderTabs();
+  renderTabs(); reveal();
   if (!keepScroll) window.scrollTo(0, 0);
   try { window.dispatchEvent(new CustomEvent('efb-view', {detail: k})); } catch(e){}
 }
@@ -3010,7 +3051,7 @@ show(cur);
 setTimeout(() => {
   if (document.querySelector('#ctabs [data-more]')) return;
   const b = document.createElement('button'); b.type = 'button'; b.className = 'sh-tab sh-more'; b.dataset.more = '1'; b.textContent = '⋯';
-  b.addEventListener('click', more); strip.after(b);
+  b.addEventListener('click', more); stripW.after(b);
 }, 1500);
 
 } catch(e){ try { console.warn('tab shell disabled:', e); document.body.classList.remove('shell'); } catch(_){} }
@@ -3896,6 +3937,8 @@ const fmtVal = (n, id) => { const v = val(n, id); return v ? specOf(n, FD[n][id]
 window.efbPads = {
   snap: () => ({ plan: st.plan, f: (n, id) => { const f = fs(n, id); return {sel: f.sel, chart: f.chart || null, struck: f.s.length > 0}; } }),
   setChart: (n, id, v) => { chg(fk(n, id, 'chart'), v || null); save(); render(); },
+  /* The box being edited ('CLR|sid'), or ''. The chart preload waits for its box to close. */
+  editing: () => { try { return focus || ''; } catch(e){ return ''; } },
   tabInfo: k => k === 'CLR' ? ap(st.plan.dep) + (val('ATIS', 'info') ? ' · ' + esc(val('ATIS', 'info')) : '')
                             : ap(st.plan.arr) + (val('AATIS', 'info') ? ' · ' + esc(val('AATIS', 'info')) : '')
 };
@@ -3996,6 +4039,19 @@ function firstFix(route, sid){
   }
   return '';
 }
+/* The SimBrief load (issue #24), as numbers in the plan's own units. It rides in the
+   plan, so it crosses the link, and the PLAN page works Nic's figures from it. */
+function loadOf(d){
+  const w = d.weights || {}, f = d.fuel || {}, n = v => +v || 0;
+  if (!n(w.oew)) return null;
+  return { u: String((d.params && d.params.units) || 'kgs').toLowerCase(),
+    oew: n(w.oew), pax: n(w.pax_count_actual || w.pax_count), paxW: n(w.pax_weight), cargo: n(w.cargo),
+    maxPax: n(d.aircraft && d.aircraft.max_passengers),
+    taxi: n(f.taxi), trip: n(f.enroute_burn), cont: n(f.contingency), altn: n(f.alternate_burn), res: n(f.reserve),
+    extra: n(f.extra), ramp: n(f.plan_ramp),
+    max: {zfw: n(w.max_zfw), tow: n(w.max_tow), ldw: n(w.max_ldw)},
+    sb: {zfw: n(w.est_zfw), tow: n(w.est_tow), ldw: n(w.est_ldw)} };
+}
 async function loadSimBrief(){
   const u = fSb.value.trim(); put(SBKEY, u);
   if (!u) { status('Enter the SimBrief Pilot ID under ⚙ This tablet first.'); return; }
@@ -4024,7 +4080,8 @@ async function loadSimBrief(){
       fl: +g.initial_altitude || 0,
       /* The airframe's name in the SimBrief profile ("Longitude" on Nic's), spoken as the type in a
          request call. It is the owner's to rename, so the page never supplies one of its own. */
-      type: String((d.aircraft && d.aircraft.name) || '').trim(), src: 'SimBrief'
+      type: String((d.aircraft && d.aircraft.name) || '').trim(), src: 'SimBrief',
+      ld: loadOf(d)
     });
   } catch(e){ sbMsg = 'SimBrief: ' + esc(e.message || 'fetch failed') + '. The pads still work by hand.'; status(); }
 }
@@ -5207,8 +5264,79 @@ function onPlan(p){
 window.addEventListener('efb-plan', e => onPlan(e.detail));
 if (!mount()) return;
 onPlan(window.efbPlan ? window.efbPlan() : null);
+/* The PLAN page takes the element and opens it (Neil and Nic, 2026-10-09). Prep keeps it
+   if the chart layer never loads. */
+window.efbRoute = { el, open: v => { open = !!v; paint(); } };
 
 } catch(e){ try { console.warn('route check disabled:', e); } catch(_){} }
+})();
+/* ================================================================
+   LOAD SHEET — added 2026-10-10 (Nic, issue #24). The SimBrief load,
+   worked to Nic's house figures, on the PLAN page under the route:
+   84 kg a passenger, one a seat from the front; the bags into the
+   baggage station; 200 kg of crew and stores, half in each crew seat;
+   block fuel half in each wing tank. SimBrief's own totals (its
+   passenger weight, no crew line) sit underneath for comparison.
+   Read-only: nothing reaches the sim yet. That half needs a bridge on
+   FS01 and waits for its rig capture. No PHASES row and no c:/ev:.
+================================================================ */
+(function loadSheet(){
+'use strict';
+try {
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const PAX_KG = 84, CREW_KG = 200, LB = 2.20462;
+const css = document.createElement('style');
+css.textContent = `
+  .ls{margin:14px 0 0}
+  .ls-h{font-size:10.5px;font-weight:700;letter-spacing:.1em;color:var(--ink-faint);margin:0 0 4px}
+  .ls table{border-collapse:collapse;width:100%;max-width:560px;font-size:14px}
+  .ls td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:baseline}
+  .ls td.v{text-align:right;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:nowrap;color:var(--ink)}
+  .ls td.w{color:var(--ink-faint);font-size:12.5px}
+  .ls tr.t td{font-weight:700;border-bottom-color:var(--ink-faint)}
+  .ls .over{color:var(--warn)}
+  .ls-sb,.ls-none,.ls-note{color:var(--ink-faint);font-size:12.5px;line-height:1.45;margin:8px 2px 0;max-width:560px}
+`;
+document.head.appendChild(css);
+const el = document.createElement('div');
+el.className = 'ls';
+
+function paint(p){
+  const d = p && p.ld;
+  if (!d) {
+    el.innerHTML = '<p class="ls-none">No load yet. <b>Load from SimBrief</b> on <b>Setup</b> brings the weights and fuel here.</p>';
+    return;
+  }
+  const k = d.u === 'lbs' ? LB : 1, u = d.u === 'lbs' ? 'lb' : 'kg';
+  const f = n => Math.round(n).toLocaleString('en-AU');
+  const half = n => (n / 2).toLocaleString('en-AU', {maximumFractionDigits: 1});     // 3,045 → 1,522.5, so the halves add up
+  const pw = PAX_KG * k, crew = CREW_KG * k, pax = d.pax * pw, pay = pax + d.cargo + crew;
+  const zfw = d.oew + pay, ramp = zfw + d.ramp, tow = ramp - d.taxi, ldw = tow - d.trip;
+  const lim = (v, m) => '<td class="v' + (m && v > m ? ' over' : '') + '">' + f(v) + '</td><td class="w">' +
+    (m ? (v > m ? 'over ' : 'max ') + f(m) : '') + '</td>';
+  const row = (a, v, w) => '<tr><td>' + a + '</td><td class="v">' + f(v) + '</td><td class="w">' + (w || '') + '</td></tr>';
+  el.innerHTML = '<div class="ls-h">LOAD · ' + u + ' · Nic&rsquo;s figures</div><table>' +
+    row('Empty weight', d.oew, 'SimBrief OEW') +
+    row('Passengers', pax, d.pax + ' × ' + f(pw) + ', one a seat from the front' +
+      (d.maxPax && d.pax > d.maxPax ? ' · <span class="over">more than the ' + d.maxPax + ' seats</span>' : '')) +
+    row('Baggage', d.cargo, 'baggage station') +
+    row('Crew and stores', crew, half(crew) + ' each crew seat') +
+    '<tr class="t"><td>Zero fuel</td>' + lim(zfw, d.max.zfw) + '</tr>' +
+    row('Block fuel', d.ramp, half(d.ramp) + ' each wing tank') +
+    '<tr class="t"><td>Take-off</td>' + lim(tow, d.max.tow) + '</tr>' +
+    '<tr class="t"><td>Landing</td>' + lim(ldw, d.max.ldw) + '</tr>' +
+    '</table>' +
+    '<p class="ls-sb">Fuel: taxi ' + f(d.taxi) + ' · trip ' + f(d.trip) + ' · contingency ' + f(d.cont) +
+      ' · alternate ' + f(d.altn) + ' · reserve ' + f(d.res) + ' · extra ' + f(d.extra) + '. Take-off is block less taxi; landing is take-off less trip.</p>' +
+    '<p class="ls-sb">SimBrief&rsquo;s own, with passengers at ' + f(d.paxW) + ' and no crew line: zero fuel ' + f(d.sb.zfw) +
+      ' · take-off ' + f(d.sb.tow) + ' · landing ' + f(d.sb.ldw) + '.</p>' +
+    '<p class="ls-note">Shown only. Set it in the sim&rsquo;s Weight &amp; Balance by hand for now: loading it into the sim waits for FS01 (issue #24).</p>';
+}
+window.addEventListener('efb-plan', e => paint(e.detail));
+paint(window.efbPlan ? window.efbPlan() : null);
+window.efbLoads = { el };
+
+} catch(e){ try { console.warn('load sheet disabled:', e); } catch(_){} }
 })();
 /* ================================================================
    CHART TABS — added 2026-10-05 (D4). Design: Reference/DAP-Charts.md.
@@ -5260,6 +5388,7 @@ let active = 'EFB';
 const sub = {};             // tab id → ref chosen inside it (DEP/DEST pages, a SUP being browsed)
 let listFor = null;         // tab id whose chart list is open
 let order = [];             // refs, most recently shown last (canvas budget)
+let pT = 0, pOff = false;   // the preload's timer, and its stop after the relay's daily cap
 
 /* ---- styles: self-contained, so a throw above leaves the page untouched ---- */
 const css = document.createElement('style');
@@ -5294,6 +5423,9 @@ css.textContent = `
   .cv-s[hidden],.cv-v[hidden]{display:none}
   .cv-v{flex:1 1 auto;overflow:auto;padding:4px 12px 20px}
   .cv-v .vf{border-bottom:0;font-size:14px}
+  .cv-h a.ext{display:inline-flex;align-items:center;min-height:34px;padding:3px 12px;border-radius:7px;border:1px solid var(--pm);
+    color:var(--pm);font-weight:700;font-size:13px;text-decoration:none;touch-action:manipulation}
+  .cv-p .rc{border-top:0}
   .cv-l{position:absolute;inset:0;overflow:auto;background:var(--bg);padding:8px 10px 20px;z-index:2}
   .cv-l h4{margin:12px 2px 6px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
   .cv-l button{display:block;width:100%;text-align:left;margin:0 0 5px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);
@@ -5313,9 +5445,15 @@ const bar = document.createElement('nav');
 bar.id = 'ctabs'; bar.hidden = true; bar.setAttribute('aria-label', 'Chart tabs');
 const cv = document.createElement('div');
 cv.id = 'cview'; cv.hidden = true; cv.setAttribute('role', 'dialog'); cv.setAttribute('aria-label', 'Chart');
-cv.innerHTML = '<div class="cv-h"></div><div class="cv-s"></div><div class="cv-v" hidden></div>';
+cv.innerHTML = '<div class="cv-h"></div><div class="cv-s"></div><div class="cv-v" hidden></div><div class="cv-v cv-p" hidden></div>';
 document.body.appendChild(cv); document.body.appendChild(bar);
-const head = cv.querySelector('.cv-h'), stage = cv.querySelector('.cv-s'), vv = cv.querySelector('.cv-v');
+const head = cv.querySelector('.cv-h'), stage = cv.querySelector('.cv-s'), vv = cv.querySelector('.cv-v'), pv = cv.querySelector('.cv-p');
+/* PLAN (Neil and Nic, 2026-10-09): the route check moves here from Prep, opened, with the
+   load sheet under it. Without the tab shell they stay where they were. */
+if (window.efbShell) {
+  if (window.efbRoute) { pv.appendChild(window.efbRoute.el); window.efbRoute.open(true); }
+  if (window.efbLoads) pv.appendChild(window.efbLoads.el);
+}
 
 /* ---- the chart key, on the Pads sheet beside the SimBrief Pilot ID ---- */
 const plan = document.querySelector('.ep-plan');
@@ -5447,14 +5585,15 @@ function refOf(t){ return t ? (sub[t.id] || t.refs[0] || null) : null; }
 /* ---- painting ---- */
 function paint(){
   const T = tabs();
-  if (active !== 'EFB' && active !== 'VATSIM' && !T.some(t => t.id === active)) { active = 'EFB'; listFor = null; }
+  if (!['EFB', 'VATSIM', 'PLAN'].includes(active) && !T.some(t => t.id === active)) { active = 'EFB'; listFor = null; }
   const on = T.length > 0 || !!window.efbShell;      // with the tabs, the bar also carries ⋯
   bar.hidden = !on; document.body.classList.toggle('ct-on', on);
   /* With the tabs, the strip above stays visible over a chart and is the way back,
      so the bar's EFB button became VATSIM (Neil, 2026-10-09). 'EFB' is still the
      name of "no layer open". Without the tabs, EFB stays: nothing else closes a chart. */
   bar.innerHTML = on ? (window.efbShell
-      ? '<button type="button" data-tab="VATSIM" aria-pressed="' + (active === 'VATSIM') + '"><small>&nbsp;</small>VATSIM</button>'
+      ? '<button type="button" data-tab="VATSIM" aria-pressed="' + (active === 'VATSIM') + '"><small>&nbsp;</small>VATSIM</button>' +
+        '<button type="button" data-tab="PLAN" aria-pressed="' + (active === 'PLAN') + '"><small>&nbsp;</small>PLAN</button>'
       : '<button type="button" data-tab="EFB" aria-pressed="' + (active === 'EFB') + '"><small>&nbsp;</small>EFB</button>') +
     /* With the tabs (branch efb-tabs) every chart kind has a fixed slot, equal width,
        so DEP, SID, STAR, IAP and DEST are always in the same place: an unavailable one
@@ -5466,16 +5605,27 @@ function paint(){
         '<small>' + t.id + '</small>' + esc(t.label) + (t.refs.length || sub[t.id] ? '' : ' ?') + '</button>';
     }).join('') + (window.efbShell ? '<button type="button" class="sh-dots" data-more="1" aria-label="More">⋯</button>' : '') : '';
   show();
+  soon();
 }
 
 function show(){
-  const vat = active === 'VATSIM' && !!window.efbVatsim;
-  const t = active === 'EFB' || active === 'VATSIM' ? null : curTab();
-  cv.hidden = !t && !vat;
-  stage.hidden = vat; vv.hidden = !vat;
+  const vat = active === 'VATSIM' && !!window.efbVatsim, pln = active === 'PLAN';
+  const t = ['EFB', 'VATSIM', 'PLAN'].includes(active) ? null : curTab();
+  cv.hidden = !t && !vat && !pln;
+  stage.hidden = vat || pln; vv.hidden = !vat; pv.hidden = !pln;
   if (vat) {
-    head.innerHTML = '<b>VATSIM</b><span class="t">Frequencies from where the aeroplane is on the network</span>';
+    /* VATSIM Radar opens in its own tab (Neil, 2026-10-10). It can't be framed here: it sends
+       frame-ancestors 'self' to every site but its own list (localhost is on it, so a local
+       test frames it and the live page wouldn't), and signing in to it inside a frame takes a
+       partner token. In its own tab the sign-in and everything behind it work as normal. */
+    head.innerHTML = '<b>VATSIM</b><span class="t">Frequencies from where the aeroplane is on the network</span><span class="sp"></span>' +
+      '<a class="ext" href="https://vatsim-radar.com/" target="_blank" rel="noopener">VATSIM Radar ↗</a>';
     if (window.efbVatsim.el.parentNode !== vv) vv.appendChild(window.efbVatsim.el);
+  }
+  if (pln) {
+    const p = (window.efbPlan && window.efbPlan()) || {};
+    head.innerHTML = '<b>PLAN</b><span class="t">' + (p.dep || p.arr ? esc((p.dep || '····') + ' → ' + (p.arr || '····')) +
+      (p.cs ? ' · ' + esc(p.cs) : '') + (p.src ? ' · from ' + esc(p.src) : '') : 'No plan loaded') + '</span>';
   }
   try { window.dispatchEvent(new Event('efb-chartview')); } catch(e){}
   if (!t) return;
@@ -5715,13 +5865,34 @@ window.addEventListener('resize', () => {
   draw(shown);
 });
 window.addEventListener('efb-pads', () => { refresh(); paint(); });
-window.addEventListener('efb-plan', () => refresh());
+window.addEventListener('efb-plan', () => { refresh(); if (active === 'PLAN') show(); soon(); });
+
+/* ---- preload (Neil and Nic, 2026-10-09): the first open of each chart waited on the relay
+   and the parse. Each tab's chart is fetched and parsed in the background once it has
+   settled: its own box on the pad is closed, and the pads have been still for 1.5 s. A
+   re-pick inside that window restarts the wait. Bytes and parse only, nothing is drawn,
+   and only the charts the bar shows, so the relay's daily cap barely notices. ---- */
+function editing(){ try { return (P.editing && P.editing()) || ''; } catch(e){ return ''; } }
+function preload(){
+  clearTimeout(pT); pT = 0;
+  if (pOff || !key || document.visibilityState !== 'visible') return;
+  const ed = editing(); let wait = false;
+  tabs().forEach(t => {
+    const ref = refOf(t); if (!ref) return;
+    if (ed && t.n && ed === t.n + '|' + t.fid) { wait = true; return; }      // still being chosen
+    const dk = ref.split('#')[0]; if (docs[dk]) return;
+    doc(dk).catch(e => { if (/limit/i.test(String(e && e.message))) pOff = true; });
+  });
+  if (wait) soon();
+}
+function soon(){ clearTimeout(pT); pT = setTimeout(preload, 1500); }
+document.addEventListener('visibilitychange', soon);
 
 /* For the pads' approach badge, and for the link test. */
 window.efbCharts = {
   approaches,
   home: () => { if (active !== 'EFB') { active = 'EFB'; listFor = null; paint(); } },
-  debug: () => ({ key: !!key, keyState, active, tabs: tabs().map(t => t.id + ':' + t.label + ':' + (refOf(t) || '-') + ':' + t.how),
+  debug: () => ({ key: !!key, keyState, active, loaded: Object.keys(docs), tabs: tabs().map(t => t.id + ':' + t.label + ':' + (refOf(t) || '-') + ':' + t.how),
     shown, view: shown && view[shown] ? Object.assign({}, view[shown]) : null,
     drawn: shown && wraps[shown] ? wraps[shown].drawn : 0, open: !cv.hidden })
 };
