@@ -665,140 +665,196 @@
   #lnkOff{margin-right:auto;color:var(--ink-faint)}
 
 
-  /* ================= ENTRY PADS — added 2026-10-02 ==================
-     Handwritten ATC pads (ATIS · CLR · ARR · HOLD · OTHER). Everything is .ep-*
-     and built by the entryPads block at the foot of the script; with that
-     block absent or failing, none of this matches anything. */
-  :root{ --ep-ink:#9fe8ff; --ep-dull:#5d6f80; }
-  html[data-theme="light"]{ --ep-ink:#0b4f8f; --ep-dull:#97a6b4; }
-  /* Locked-pad chips: their own row under the title line, so they never push the
-     controls around. One row, scrolling sideways rather than wrapping. The caret
-     beside Pads hides it, to win the header height back. */
-  #epchips{display:flex;gap:6px;flex-wrap:nowrap;align-items:center;overflow-x:auto;
-    margin:-2px 0 9px;scrollbar-width:none}
-  #epchips::-webkit-scrollbar{display:none}
-  #epchips:empty,#epchips.off{display:none}
-  .ep-chip{flex:0 0 auto}
-  .padgrp{display:flex}
-  .padgrp #padbtn:not(:last-child){border-top-right-radius:0;border-bottom-right-radius:0}
-  #epcaret{border-top-left-radius:0;border-bottom-left-radius:0;border-left:0;padding:7px 8px;
-    color:var(--list-accent);font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px}
-  #epcaret[hidden]{display:none}
-  #epcaret .car{font-size:10px;color:var(--ink-faint);transition:transform .15s}
-  #epcaret[aria-expanded="true"] .car{transform:rotate(180deg)}
-  .ep-chip{display:inline-flex;align-items:center;gap:7px;min-height:32px;padding:3px 10px 3px 8px;
-    border-radius:999px;border:1px solid var(--list-line);background:var(--list-bg);color:var(--list-accent);
-    font-size:12px;font-weight:700;letter-spacing:.3px}
-  .ep-chip .t{color:var(--ink-faint);font-weight:600}
-  .ep-chip .x{color:var(--ink);font-weight:600}
-  .ep-chip .sep{color:var(--ink-faint);font-weight:700;margin:0 -2px}
-  .ep-chip canvas{height:22px;display:block}
-  /* Nothing in a chip shrinks: a thumbnail drawn W px wide is shown W px wide, never squeezed. */
-  .ep-chip > *{flex-shrink:0}
-  /* Tap folds, hold opens: no callout or selection on the hold, and a bar fills
-     along the bottom like the pad's own Locked button. */
-  .ep-chip{position:relative;overflow:hidden;touch-action:pan-x;-webkit-touch-callout:none;
-    -webkit-user-select:none;user-select:none}
-  .ep-chip::after{content:"";position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--list-accent)}
-  .ep-chip.hold::after{width:100%;transition:width .7s linear}
-  .ep-chip.col{padding:3px 10px;color:var(--ink-dim)}
-  /* The filed callsign, as SimBrief has it — what VATSIM puts on the controller's
-     scope. Rides --comm: it is the cockpit's identity outside the cockpit.
-     Absent (not empty) until a SimBrief plan supplies one. */
-  .ep-cs{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:2px 12px;
-    border-radius:8px;border:1px solid var(--comm-line);background:var(--comm-bg);color:var(--comm);
-    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:20px;font-weight:700;
-    letter-spacing:.08em;white-space:nowrap;flex:0 0 auto;line-height:1}
-  .ep-cs[hidden]{display:none}
-  .ep-top .ep-cs{order:-1}
-  #padbtn{color:var(--pm);border-color:color-mix(in srgb,var(--pm) 45%,var(--line));font-weight:600}
-
-  .ep{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;
-    overscroll-behavior:contain}
-  .ep[hidden]{display:none}
-  /* A resting hand is a long-press. Nothing on a pad is worth copying, so nothing
-     but the typing fields can be selected or raise the OS copy/paste prompt (v20). */
-  .ep{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-  .ep input{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
-  .ep-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;
-    background:var(--panel-2);border-bottom:1px solid var(--line)}
-  .ep-tabs{display:flex;gap:4px;flex:1 1 auto;flex-wrap:wrap}
-  .ep-tabs button{font-weight:700;letter-spacing:.06em;min-width:64px}
-  .ep-tabs button[aria-pressed="true"]{background:var(--pm);border-color:var(--pm);color:var(--bg)}
-  .ep-tabs button.lk{color:var(--list-accent);border-color:var(--list-line)}
-  .ep-tabs button.lk[aria-pressed="true"]{color:var(--bg);background:var(--list-accent)}
-  .ep-tools{display:flex;gap:6px;flex-wrap:wrap}
-  .ep-tools button{min-width:48px;min-height:42px;touch-action:manipulation}
-  .ep-tools button[aria-pressed="true"]{background:var(--warn);border-color:var(--warn);color:var(--bg)}
-  .ep-split{position:relative;display:flex}
-  .ep-split > [data-a="clear"]{border-top-right-radius:0;border-bottom-right-radius:0}
-  .ep-split > .more{border-top-left-radius:0;border-bottom-left-radius:0;border-left:0;min-width:40px;padding:0 10px}
-  .ep-tools .ep-split > .more.on{background:var(--warn);border-color:var(--warn);color:var(--bg);font-weight:700}
-  .ep-menu{position:absolute;top:100%;right:0;margin-top:5px;z-index:5;display:flex;flex-direction:column;gap:5px;
-    padding:6px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;
-    box-shadow:0 8px 24px rgba(0,0,0,.35)}
-  .ep-menu button{min-width:150px;justify-content:flex-start;text-align:left}
-  /* Pen only is the normal state once a pen is seen — not an alarm, unlike Erase. */
-  .ep-menu [data-a="pen"][aria-pressed="true"]{background:transparent;color:var(--list-accent);border-color:var(--list-line)}
-  .ep-tools .done{background:var(--list-accent);border-color:var(--list-accent);color:#08140e;font-weight:700}
-  /* A label, not a button: unlocking is a second tap on the pad's own tab (v17). A
-     press-and-hold here raised the tablet's copy/paste prompt before 0.7 s was up. */
-  .ep-tools .unl{display:inline-flex;align-items:center;min-height:42px;padding:0 12px;border-radius:8px;
-    border:1px solid var(--list-line);color:var(--list-accent);font-size:13px;font-weight:600}
-  .ep-plan{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;
-    border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-dim)}
-  .ep-plan input{font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--line);
-    border-radius:8px;padding:6px 8px;min-height:36px;width:9em;text-transform:uppercase}
-  .ep-plan input.ap{width:4.6em}
-  .ep-plan .st{flex:1 1 220px;color:var(--ink-faint)}
-  .ep-plan .st b{color:var(--ink-dim)}
-  .ep-body{flex:1 1 auto;overflow:auto;padding:10px 12px 14px;display:flex;flex-direction:column}
-  .ep-grid{display:grid;gap:7px;grid-auto-rows:minmax(84px,auto);flex:1 0 auto;align-content:space-evenly}
-  /* flex-grow gives the grid the sheet's spare height and space-evenly spends it as
-     equal gaps: above the first row, between rows, and above the strips (Neil, v21).
-     Rows keep minmax(84px, auto). */
-  .ep-grid > .ep-f{min-height:84px}
-  .ep-foot{margin-top:auto;padding-top:10px}
-  .ep-f{position:relative;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:9px;
-    background:var(--panel);padding:19px 8px 6px;min-width:0}
-  .ep-f.key{border-color:color-mix(in srgb,var(--pm) 35%,var(--line))}
-  .ep-f.big{min-height:104px}
-  .ep-l{position:absolute;top:4px;left:9px;right:8px;font-size:10.5px;font-weight:700;letter-spacing:.09em;
-    text-transform:uppercase;color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
-  .ep-ink{position:relative;flex:1 1 auto;min-height:44px}
-  .ep-ink canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;
-    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;cursor:crosshair}
-  .ep-pre{position:absolute;left:2px;top:4px;font-size:21px;font-weight:700;letter-spacing:.04em;
-    color:var(--ep-dull);pointer-events:none;transition:color .12s}
-  .ep-pre.ok{color:var(--ink);text-shadow:0 0 12px color-mix(in srgb,var(--pm) 40%,transparent)}
-  .ep-pre.x,.ep-b.x,.ep-c.c2{text-decoration:line-through;text-decoration-color:var(--warn);
-    text-decoration-thickness:3px;color:var(--ep-dull)}
-  .ep-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:2px 0 4px}
-  .ep-side{display:flex;gap:8px;flex:1 1 auto;min-height:44px}
-  .ep-side > .ep-row{flex:0 0 auto;flex-direction:column;flex-wrap:nowrap;align-items:stretch;justify-content:flex-start;margin:0}
-  .ep-side > .ep-ink{flex:1 1 auto;min-width:0;border-left:1px dashed var(--line)}
-  .ep-b,.ep-c{min-height:38px;padding:6px 11px;border-radius:8px;font-weight:700;font-size:14px;letter-spacing:.03em;
-    touch-action:manipulation;color:var(--ink-faint);background:transparent;border:1px solid var(--line)}
-  .ep-b.plan{color:var(--ink-dim);border-color:var(--ink-faint);border-style:dashed}
-  .ep-b.sel{color:var(--bg);background:var(--pm);border-color:var(--pm)}
-  .ep-b.sel.x{background:transparent;color:var(--ep-dull);border-color:var(--line)}
-  .ep-c.c1{color:var(--ink);border-color:var(--list-line);background:var(--list-bg);box-shadow:inset 3px 0 0 var(--list-accent)}
-  .ep-more{color:var(--ink-faint);font-size:12px;padding:0 4px}
-  /* re-pick (D2): the chosen badge, ringed, stays first while the others are offered */
-  .ep-f.picking{border-color:var(--pm);box-shadow:0 0 0 1px var(--pm)}
-  .ep-b.cur{box-shadow:0 0 0 3px color-mix(in srgb,var(--pm) 40%,transparent)}
-  .ep-b.none{border-style:dashed;color:var(--warn);border-color:color-mix(in srgb,var(--warn) 55%,var(--line))}
-  .ep-strip{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px;padding:8px;
-    border:1px dashed var(--line);border-radius:9px}
-  .ep-strip .tag{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--pf);margin-right:4px}
-  .ep.locked .ep-ink canvas{pointer-events:none;cursor:default}
-  .ep.locked .ep-b,.ep.locked .ep-c{pointer-events:none}
-  .ep.locked .ep-grid{opacity:.92}
-  .ep-hint{margin:10px 2px 0;font-size:12px;color:var(--ink-faint);line-height:1.45}
+  /* ================= THE TABBED SHELL — branch efb-tabs, 2026-10-08 ==========
+     One row of tabs in flight order (Reference/EFB-Redesign.md). The renderer still
+     builds every card; tabShell files them into pages. Everything here is .sh-*,
+     .tp, .st-*, .kp-*, .kb or .kt-*, so with the shell absent none of it matches. */
+  :root{ --ep-ink:#9fe8ff; --ep-dull:#5d6f80; --say:#d98a4a;
+    --kt-bg:#223040; --kt-edge:#3b5068; --kt-key:#31445a; --kt-key-line:#43597a; --kt-fn:#2a3a4d; --kt-press:#4a6584;
+    --kt-ring:#7fa6cf; --kt-txt:#f2f7fc; --kt-lab:#cfe2f7; --kt-dim:#9db3c9; --key-h:48px;
+    --tab-done:#1f6e45; }
+  html[data-theme="light"]{ --ep-ink:#0b4f8f; --ep-dull:#97a6b4; --say:#a8521a;
+    --kt-bg:#dbe4ee; --kt-edge:#9fb3c8; --kt-key:#ffffff; --kt-key-line:#b4c3d3; --kt-fn:#eef2f6; --kt-press:#c9d6e4;
+    --kt-ring:#3f7cbf; --kt-txt:#10171e; --kt-lab:#1f3550; --kt-dim:#4c5c6b;
+    --tab-done:#0a4227; }
+  body.shell #jump, body.shell #sheet, body.shell #reset, body.shell #theme{display:none}
+  body.shell .titlebar{margin-bottom:7px;flex-wrap:nowrap}
+  body.shell .titlebar h1{flex:0 1 auto;min-width:0}
+  body.shell main.wrap{padding-top:2px}
+  body.shell section.tp{margin:0 0 14px}
+  .tp[hidden]{display:none}
+  .sh-ro{display:inline-flex;align-items:baseline;gap:7px;padding:3px 10px;border-radius:8px;margin-left:auto;
+    background:var(--comm-bg);border:1px solid var(--comm-line);color:var(--comm);
+    font:600 15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:nowrap;flex:0 0 auto}
+  .sh-ro small{font:700 9.5px system-ui,sans-serif;letter-spacing:.08em;color:var(--ink-faint)}
+  .sh-ro .dim{color:var(--ink-faint)}
+  body.shell .bar{margin-left:0;flex-wrap:nowrap}
+  .sh-tabs{display:flex;gap:3px;margin:0 -8px}
+  .sh-tab{flex:1 1 0;min-width:0;min-height:0;height:50px;padding:0 2px 3px;border:0;border-radius:9px 9px 0 0;position:relative;
+    background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font:700 10px/1.15 system-ui,-apple-system,sans-serif;letter-spacing:.05em;text-transform:uppercase;text-align:center;
+    color:var(--ink-dim);touch-action:manipulation}
+  .sh-tab:active{transform:none}
+  .sh-tab.cur{background:var(--panel);color:var(--ink);box-shadow:inset 0 2px 0 var(--ink-dim)}
+  .sh-tab .pb{position:absolute;left:6px;right:6px;bottom:3px;height:3px;border-radius:2px;background:var(--line);overflow:hidden}
+  .sh-tab .pb b{display:block;height:100%;background:var(--list-accent);opacity:.7}
+  .sh-tab .pb.full b{background:var(--tab-done);opacity:1}
+  .sh-tab.pad{flex:1.3 1 0;color:var(--comm);background:var(--comm-bg);border:1px solid var(--comm-line);border-bottom:0;font-size:11.5px}
+  .sh-tab.pad small{font:600 9px ui-monospace,Consolas,monospace;color:var(--ink-faint);letter-spacing:0;margin-top:2px;
+    text-transform:none;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+  .sh-tab.pad.cur{background:color-mix(in srgb,var(--comm) 16%,var(--bg));box-shadow:inset 0 2px 0 var(--comm)}
+  .sh-tab.setup{flex:1.15 1 0}
+  .sh-more{flex:0 0 46px;font-size:20px}
   @media (max-width:620px){
-    .ep-grid{display:flex;flex-direction:column}
+    .sh-tabs{overflow-x:auto;scrollbar-width:none} .sh-tabs::-webkit-scrollbar{display:none}
+    .sh-tab,.sh-tab.pad,.sh-tab.setup{flex:0 0 58px}
+    body.shell .titlebar h1{display:none}
   }
-  @media print{ .ep,.padgrp,#epchips,.ep-cs,.devrow{display:none !important} }
+  .tp-h{display:flex;align-items:center;gap:10px;margin:14px 0 2px}
+  .tp-h h2{font-size:22px;margin:0;letter-spacing:.2px}
+  .tp-sub{color:var(--ink-dim);font-size:13.5px;margin:2px 0 8px}
+  /* the checklist sits open at the top of its tab and no longer folds */
+  body.shell .tp .card.list{margin-top:12px}
+  body.shell .tp .card.list > .head .chev{visibility:hidden}
+  body.shell .tp .card.list > .head{cursor:default}
+  details.fl{margin:14px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
+  details.fl>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:0 14px;min-height:50px;
+    color:var(--ink-dim);font-weight:600}
+  details.fl>summary::-webkit-details-marker{display:none}
+  details.fl>summary .names{margin-left:auto;color:var(--ink-faint);font-weight:400;font-size:13px;text-align:right;padding:6px 0}
+  .fchev{color:var(--ink-faint);transition:transform .15s;display:inline-block}
+  details.fl[open]>summary .fchev{transform:rotate(90deg)}
+  details.fl>.flows{padding:0 8px 2px}
+  details.fl section.card{margin:8px 0}
+  .sh-slot .rc{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);margin:14px 0}
+
+  /* Setup */
+  .st-card{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:2px 14px;margin:10px 0}
+  .st-card:empty,#slot-vf:not(:has(> .vf:not([hidden]))){display:none}
+  .st-in{padding:0 14px 6px;border-top:1px solid var(--line)}
+  .st-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-height:54px;border-top:1px solid var(--line);padding:6px 0}
+  .st-card > .st-row:first-child,.st-in > .st-row:first-child,#slot-tablet > .st-row:first-child{border-top:0}
+  .st-row[hidden]{display:none}
+  .st-k{width:110px;color:var(--ink-faint);font-size:13px;flex:0 0 auto}
+  .st-row input{font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;
+    padding:7px 9px;min-height:40px;width:9em}
+  .st-row input.ap{width:4.8em;text-transform:uppercase}
+  .st-v{flex:1 1 200px;color:var(--ink-dim);font-size:13.5px}
+  .st-v b{color:var(--ink)}
+  .st-v small{color:var(--ink-faint);font-size:12px}
+  .st-seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex:0 0 auto}
+  .st-seg button{border:0;border-radius:0;background:transparent;color:var(--ink-faint);font-weight:600;min-height:40px;padding:7px 14px}
+  .st-seg button[aria-pressed="true"]{background:var(--panel-2);color:var(--ink);box-shadow:inset 0 -2px 0 var(--both)}
+  .st-warn{color:var(--warn)}
+  .st-stale{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  #stReset{border-color:color-mix(in srgb,var(--warn) 45%,var(--line))}
+  .st-slot .vf{border-bottom:0;padding:6px 0}
+  .st-about{font-size:14px;color:var(--ink-dim)}
+  .st-about footer{padding:0}
+
+  /* ⋯ */
+  .sh-menu{position:fixed;right:10px;bottom:56px;z-index:95;width:300px;max-width:calc(100vw - 20px);max-height:70vh;overflow:auto;
+    border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:0 12px 40px rgba(0,0,0,.5);padding:6px 0}
+  .sh-menu[hidden]{display:none}
+  .sh-menu .mh{padding:8px 14px 4px;font:700 10px system-ui,sans-serif;letter-spacing:.1em;color:var(--ink-faint)}
+  .sh-menu button{display:block;width:100%;text-align:left;border:0;border-radius:0;background:transparent;padding:10px 14px;
+    color:var(--ink-dim);font-size:14px;min-height:42px}
+  .sh-menu button.ref{padding-left:24px;font-size:13.5px}
+  /* fixed slots: EFB and ⋯ at the ends, the five chart kinds equal between them */
+  body.shell #ctabs{overflow-x:hidden}
+  body.shell #ctabs > *{flex:1 1 0;min-width:0}
+  body.shell #ctabs > [data-tab="EFB"],body.shell #ctabs > .sh-dots{flex:0 0 64px;padding:1px 4px}
+  body.shell #ctabs > button{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:1px 4px;font-size:13px}
+  #ctabs .sh-dots{font-size:20px}
+  .ct-slot{box-sizing:border-box;border:1px solid transparent;padding:1px 4px}   /* sized exactly like a tab, so nothing shifts */
+  body.shell #cview{top:var(--shtop,0px)}
+
+  /* The callsign, as SimBrief has it — what VATSIM puts on the controller's scope. */
+  .ep-cs{display:inline-flex;align-items:center;min-height:32px;padding:2px 10px;
+    border-radius:8px;border:1px solid var(--comm-line);background:var(--comm-bg);color:var(--comm);
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:17px;font-weight:700;
+    letter-spacing:.06em;white-space:nowrap;flex:0 0 auto;line-height:1}
+  .ep-cs[hidden]{display:none}
+
+  /* ---- the pads: one box, keyed or inked --------------------------- */
+  .kp{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  .kp-tools{margin-left:auto;display:flex;gap:6px}
+  .kp-tools button{min-width:46px;touch-action:manipulation}
+  .kp-tools [data-a="erase"][aria-pressed="true"]{background:var(--warn);border-color:var(--warn);color:var(--bg);font-weight:700}
+  .kp-sec{font:700 11px system-ui,sans-serif;letter-spacing:.1em;color:var(--ink-faint);text-transform:uppercase;margin:14px 0 7px;
+    display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+  .kp-sec em{font:400 12px system-ui,sans-serif;letter-spacing:0;text-transform:none;font-style:normal}
+  .kp-row{display:flex;gap:8px;margin-bottom:8px}
+  .kb{position:relative;flex:1 1 0;min-width:0;height:60px;border:1px solid var(--line);border-radius:10px;background:var(--panel);
+    padding:20px 9px 4px;display:flex;align-items:baseline;gap:1px;white-space:nowrap;overflow:hidden;cursor:pointer;
+    touch-action:manipulation}
+  .kb.heavy{border:3px solid var(--ink-dim);background:var(--panel-2);padding:18px 7px 2px}
+  .kb > label{position:absolute;top:5px;left:9px;font:700 10px system-ui,sans-serif;letter-spacing:.08em;color:var(--ink-faint);pointer-events:none}
+  .kb.heavy > label{top:3px;left:7px}
+  .kb .src{position:absolute;top:5px;right:8px;font:700 9px system-ui,sans-serif;letter-spacing:.06em;color:var(--comm);opacity:.8;pointer-events:none}
+  .kb .v{font:600 22px/1.1 ui-monospace,Consolas,"SF Mono",monospace;color:var(--ink);overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+  .kb .v.pred{color:var(--ink-faint)}
+  .kb .v.x{text-decoration:line-through;text-decoration-color:var(--warn);text-decoration-thickness:3px;color:var(--ep-dull)}
+  .kb .gh{font:500 22px/1.1 ui-monospace,Consolas,monospace;color:var(--ink-faint);opacity:.45;pointer-events:none}
+  .kb.focus{border-color:var(--kt-edge);box-shadow:0 0 0 2px var(--kt-ring);background:var(--kt-bg)}
+  .kb canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  .kb.inkable{cursor:crosshair}
+  .kb.inkable canvas{pointer-events:auto;touch-action:none}
+  .kb.ink{border-style:dashed}
+  .kb.tall{height:150px}
+  body.pen .kb{height:84px}
+  body.pen .kb.tall{height:180px}
+  body.pen .kb .v{font-size:20px}
+  .kp-say{display:flex;gap:8px;align-items:baseline;font-size:13px;color:var(--ink-dim);margin:0 0 4px;line-height:1.35}
+  .kp-say b{flex:none;width:104px;font:700 10px system-ui,sans-serif;letter-spacing:.07em;color:var(--say)}
+  .kp-say .ph{color:var(--trig);font-weight:600}
+  .kp-say .kn{color:var(--list-accent);font-weight:600}
+  .kp-say + .kp-row{margin-top:8px}
+  .kp-live{font-weight:600;color:var(--comm)}
+  .kb .src.warn{color:var(--warn);opacity:1}
+  .kp-hint{color:var(--ink-faint);font-size:12px;margin:4px 2px 0;line-height:1.45}
+  @media (max-width:560px){ .kp-row{flex-wrap:wrap} .kb{flex-basis:30%} .kp-say{flex-direction:column;gap:0} }
+
+  /* the tray — one fixed height for every kind of box (P9) */
+  .kt{position:fixed;left:0;right:0;bottom:0;z-index:70;background:var(--kt-bg);border-top:1px solid var(--kt-edge);
+    box-shadow:0 -10px 28px rgba(0,0,0,.35);padding:8px 10px 10px;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  body.ct-on .kt{bottom:48px}
+  .kt[hidden]{display:none}
+  .kt-in{max-width:860px;margin:0 auto}
+  .kt-idle{height:calc(var(--key-h) * 5 + 24px);display:grid;place-items:center;border:1px dashed var(--kt-edge);border-radius:12px;
+    color:var(--kt-dim);font:600 15px system-ui,sans-serif;letter-spacing:.3px}
+  .kt-s{display:flex;gap:6px;height:var(--key-h);margin-bottom:6px;align-items:stretch;overflow:hidden}
+  .kt-l{flex:none;width:118px;display:flex;flex-direction:column;justify-content:center;padding-left:4px;line-height:1.15}
+  .kt-l b{font:700 12px system-ui,sans-serif;letter-spacing:.08em;color:var(--kt-lab)}
+  .kt-l span{color:var(--kt-dim);font-size:11px;white-space:normal}
+  .kt .sg{flex:1 1 0;min-width:0;max-width:170px;min-height:0;padding:0 4px;border-radius:9px;border:1px solid var(--comm);background:var(--comm-bg);color:var(--comm);
+    font:600 17px ui-monospace,Consolas,monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05;
+    touch-action:manipulation}
+  .kt .sg small{font:600 9px system-ui,sans-serif;letter-spacing:.06em;opacity:.75}
+  .kt .sg.tok{border-color:var(--kt-key-line);background:var(--kt-key);color:var(--kt-txt)}
+  .kt-b{display:flex;gap:6px}
+  .kt-p{flex:1;display:grid;gap:6px;grid-template-rows:repeat(4,var(--key-h));min-width:0}
+  .kt-p.dg{grid-template-columns:repeat(3,1fr)}
+  .kt-p.lt{grid-template-columns:repeat(7,1fr)}
+  .kt-p.tx{grid-template-columns:repeat(9,1fr)}
+  .kt-p.op{grid-template-columns:repeat(4,1fr);grid-template-rows:none;grid-auto-rows:var(--key-h);
+    height:calc(var(--key-h) * 4 + 18px);overflow-y:auto;align-content:start}
+  .kt-fn{flex:none;width:118px;display:grid;gap:6px;grid-template-rows:repeat(4,var(--key-h))}
+  .kt .k{height:var(--key-h);min-height:0;padding:0;border-radius:9px;background:var(--kt-key);border:1px solid var(--kt-key-line);
+    font:600 22px ui-monospace,Consolas,monospace;color:var(--kt-txt);box-shadow:0 1px 0 rgba(0,0,0,.35);touch-action:manipulation}
+  .kt .k:active{background:var(--kt-press);transform:none}
+  .kt .k.f{background:var(--kt-fn);font:600 15px system-ui,sans-serif;color:var(--kt-dim)}
+  .kt .k.tk{font:700 14px system-ui,sans-serif}
+  .kt .k.blank{visibility:hidden}
+  .kt .k.exp{font:700 12px system-ui,sans-serif;letter-spacing:.06em;color:var(--comm);border-color:var(--comm-line)}
+  .kt .k.exp.off{opacity:.35;pointer-events:none}
+  .kt-p.tx .k{font-size:18px}
+  .kt-p.op .k{font:600 15px ui-monospace,Consolas,monospace;padding:0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .kt-p.op .k.plan{border-color:var(--comm);color:var(--comm)}
+  .kt-p.op .k.sel{background:var(--comm-bg);border:2px solid var(--comm);color:var(--comm)}
+  .kt-p.op .k.none{border-style:dashed;color:var(--warn)}
+  @media (max-width:560px){ .kt-l,.kt-fn{width:72px} .kt-p.op{grid-template-columns:repeat(3,1fr)} .kt .k.exp{font-size:10px;letter-spacing:0} }
+  @media print{ .kt,.sh-menu,.ep-cs,.sh-tabs{display:none !important} }
 
   /* ---- VATSIM frequencies (vf-*) — its own block, mounted under the pads' plan row */
   .vf{padding:7px 12px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-dim)}
@@ -855,7 +911,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v29</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v30</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -2708,6 +2764,259 @@ try {
 } catch(e){}
 
 /* ===============================================================
+   THE TABBED SHELL — branch efb-tabs, 2026-10-08
+
+   One row of tabs in flight order, one tab per checklist (design and
+   Neil's settled points in Reference/EFB-Redesign.md). The renderer above
+   still builds every card exactly as before, numbering and all; this block
+   only FILES them into pages:
+
+     - each checklist gets a page, the checklist first;
+     - the flows since the previous checklist go under it, inside one
+       collapsed "Flows" heading (Engine start lands under Before taxi);
+     - reference cards go to a page reached from the ⋯ on the chart bar;
+     - CLR before Prep and ARR before Descent are drawn by the entry pads;
+     - Setup holds this flight, and ⚙ this tablet.
+
+   Ticks, persistence and the link all find rows by data-ref, so moving
+   the cards changes nothing for them. The tab shown is per tablet.
+================================================================*/
+(function tabShell(){
+'use strict';
+try {
+const VIEWK = 'c700-view';
+const get = k => { try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } };
+const put = (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch(e){} };
+const mainEl = document.getElementById('main');
+const hdrWrap = document.querySelector('header > .wrap');
+const titlebar = document.querySelector('header .titlebar');
+document.body.classList.add('shell');
+
+/* The header readout: cleared level and squawk. The pads fill it. */
+const ro = document.createElement('span');
+ro.className = 'sh-ro'; ro.id = 'shRo'; ro.title = 'Cleared level and squawk, from the CLR tab';
+titlebar.insertBefore(ro, titlebar.querySelector('.bar'));
+
+const strip = document.createElement('nav');
+strip.className = 'sh-tabs'; strip.setAttribute('aria-label', 'Checklists');
+hdrWrap.appendChild(strip);
+
+const pages = {};
+function page(k){
+  let s = pages[k];
+  if (!s) { s = document.createElement('section'); s.className = 'tp'; s.dataset.tab = k; s.hidden = true; mainEl.appendChild(s); pages[k] = s; }
+  return s;
+}
+
+/* Mock labels (Reference/EFB-Redesign-Mockup.html); anything unknown keeps its phase-menu name. */
+const SHORT = {'Inspection':'Insp', 'Prep':'Prep', 'Before start':'Start', 'Before taxi':'Before<br>taxi', 'Taxi':'Taxi',
+  'Before T/O':'Before<br>T/O', 'After T/O':'After<br>T/O', 'Descent':'Desc', 'Approach':'Appr',
+  'Before ldg':'Before<br>ldg', 'After ldg':'After<br>ldg', 'Shutdown':'Shut<br>down'};
+
+const TABS = [{k:'setup', label:'Setup'}];
+const cards = Array.from(mainEl.querySelectorAll(':scope > section.card'));
+const intro = Array.from(mainEl.querySelectorAll(':scope > .caveat'));
+let pending = [], n = 0, lastPage = null;
+
+function fileFlows(pg){
+  if (!pending.length) return;
+  const d = document.createElement('details');
+  d.className = 'fl';
+  d.innerHTML = '<summary><span class="fchev">▸</span>Flows<span class="names"></span></summary><div class="flows"></div>';
+  d.querySelector('.names').textContent = pending.map(c => {
+    const nm = c.querySelector('.head .name'); if (!nm) return '';
+    const t = nm.cloneNode(true); t.querySelectorAll('.trig,.when,.cf').forEach(x => x.remove());
+    return t.textContent.trim();
+  }).filter(Boolean).join(' / ');
+  const box = d.querySelector('.flows');
+  pending.forEach(c => box.appendChild(c));
+  pg.appendChild(d);
+  pending = [];
+}
+
+cards.forEach(card => {
+  const kind = card.dataset.kind;
+  if (kind === 'flow') { pending.push(card); return; }
+  if (kind === 'ref') { page('ref').appendChild(card); return; }
+  const k = 'L' + (n++), pg = page(k);
+  const l = links.find(x => x.listCard === card);
+  const label = l ? l.label : (card.querySelector('.head .name') || {}).textContent || k;
+  if (label === 'Prep') TABS.push({k:'CLR'});
+  if (label === 'Descent') TABS.push({k:'ARR'});
+  TABS.push({k, label: SHORT[label] || label, phase: label, card});
+  pg.appendChild(card);
+  /* The checklist is always open, at the top of its tab: its head no longer folds it. */
+  card.dataset.open = 'true';
+  card.addEventListener('click', e => { if (e.target.closest('.head') && e.target.closest('.card') === card) e.stopPropagation(); }, true);
+  fileFlows(pg);
+  if (label === 'Prep') { const rc = document.createElement('div'); rc.id = 'slot-rc'; rc.className = 'sh-slot'; pg.appendChild(rc); }
+  lastPage = pg;
+});
+if (pending.length && lastPage) fileFlows(lastPage);
+if (!TABS.some(t => t.k === 'CLR')) TABS.splice(1, 0, {k:'CLR'});
+if (!TABS.some(t => t.k === 'ARR')) TABS.push({k:'ARR'});
+
+/* The reference page */
+const ref = page('ref');
+ref.insertAdjacentHTML('afterbegin', '<div class="tp-h"><h2>Reference</h2></div><p class="tp-sub">Doctrine, not running items. Nothing here is ticked.</p>');
+
+/* ---- Setup: this flight, then ⚙ this tablet --------------------- */
+const su = page('setup');
+su.innerHTML =
+  '<div class="tp-h"><h2>Setup</h2></div><p class="tp-sub">This flight</p>' +
+  '<div class="st-card" id="slot-plan"></div>' +
+  '<div class="st-card st-slot" id="slot-vf"></div>' +
+  '<div class="st-card">' +
+    '<div class="st-row"><span class="st-k">Link tablets</span><span class="st-v" id="stLink"></span><button type="button" id="stLinkGo">Link…</button></div>' +
+    '<div class="st-row"><span class="st-k">Seat</span><div class="st-seg" id="stSeat">' +
+      ['BOTH', 'PF', 'PM'].map(s => '<button type="button" data-seat="' + s + '">' + (s === 'BOTH' ? 'Both' : s) + '</button>').join('') + '</div></div>' +
+    '<div class="st-row"><span class="st-k">New flight</span><button type="button" id="stReset" class="st-warn">Reset · new flight</button>' +
+      '<span class="st-v">Clears ticks and pads on both tablets. The plan stays.</span></div>' +
+  '</div>' +
+  '<details class="fl cfg" id="stCfg"><summary><span class="fchev">▸</span>⚙ This tablet</summary><div class="st-in">' +
+    '<div id="slot-tablet"></div>' +
+    '<div class="st-row"><span class="st-k">Chart key</span><span id="slot-ck"></span></div>' +
+    '<div class="st-row"><span class="st-k">Theme</span><div class="st-seg" id="stTheme"><button type="button" data-th="dark">Dark</button><button type="button" data-th="light">Light</button></div></div>' +
+    '<div class="st-row"><span class="st-k">Review</span><div class="st-seg" id="stDev"><button type="button" data-dev="off">Off</button><button type="button" data-dev="on">On</button></div>' +
+      '<span class="st-v">Numbers every line and shows its sourcing, for reporting changes.</span></div>' +
+  '</div></details>' +
+  '<details class="fl cfg" id="stAbout"><summary><span class="fchev">▸</span>About this page</summary><div class="st-in st-about"></div></details>';
+const about = su.querySelector('.st-about');
+intro.forEach(p => about.appendChild(p));
+const foot = document.querySelector('body > footer');
+if (foot) { foot.classList.remove('wrap'); about.appendChild(foot); }
+const cfg = su.querySelector('#stCfg');
+try { if (get('c700-cfgopen') === '1') cfg.open = true; } catch(e){}
+cfg.addEventListener('toggle', () => put('c700-cfgopen', cfg.open ? '1' : ''));
+
+const linkBtn = document.getElementById('link');
+function paintSetup(){
+  const role = document.body.dataset.role || 'BOTH';
+  su.querySelectorAll('#stSeat [data-seat]').forEach(b => b.setAttribute('aria-pressed', b.dataset.seat === role));
+  const th = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+  su.querySelectorAll('#stTheme [data-th]').forEach(b => b.setAttribute('aria-pressed', b.dataset.th === th));
+  const dv = document.body.dataset.dev === 'on' ? 'on' : 'off';
+  su.querySelectorAll('#stDev [data-dev]').forEach(b => b.setAttribute('aria-pressed', b.dataset.dev === dv));
+  const lt = linkBtn && linkBtn.querySelector('.ltxt');
+  su.querySelector('#stLink').textContent = lt ? lt.textContent : '';
+}
+su.addEventListener('click', e => {
+  const s = e.target.closest('[data-seat]');
+  if (s) { const o = document.querySelector('.crew .seg button[data-role="' + s.dataset.seat + '"]'); if (o) o.click(); }
+  const t = e.target.closest('[data-th]');
+  if (t && (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark') !== t.dataset.th) document.getElementById('theme').click();
+  const d = e.target.closest('[data-dev]');
+  if (d && (document.body.dataset.dev === 'on' ? 'on' : 'off') !== d.dataset.dev) document.getElementById('dev').click();
+  if (e.target.closest('#stLinkGo') && linkBtn) linkBtn.click();
+  if (e.target.closest('#stReset')) document.getElementById('reset').click();
+  paintSetup();
+});
+try {
+  new MutationObserver(paintSetup).observe(document.body, {attributes:true, attributeFilter:['data-role', 'data-dev']});
+  new MutationObserver(paintSetup).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+  if (linkBtn) new MutationObserver(paintSetup).observe(linkBtn, {attributes:true, childList:true, subtree:true, characterData:true});
+} catch(e){}
+paintSetup();
+
+/* ---- the strip ---------------------------------------------------- */
+let cur = get(VIEWK);
+if (!TABS.some(t => t.k === cur) && !['ref', 'HOLD', 'OTHER'].includes(cur)) cur = 'setup';
+
+function chartOpen(){ try { return !!(window.efbCharts && window.efbCharts.debug().open); } catch(e){ return false; } }
+function renderTabs(){
+  const co = chartOpen();
+  strip.innerHTML = TABS.map(t => {
+    const c = t.k === cur && !co ? ' cur' : '';
+    if (t.k === 'CLR' || t.k === 'ARR') {
+      const info = (window.efbPads && window.efbPads.tabInfo) ? window.efbPads.tabInfo(t.k) : '';
+      return '<button type="button" class="sh-tab pad' + c + '" data-k="' + t.k + '">' + t.k + '<small>' + info + '</small></button>';
+    }
+    if (t.k === 'setup') return '<button type="button" class="sh-tab setup' + c + '" data-k="setup">Setup</button>';
+    const tot = t.card.querySelectorAll('.item').length, got = t.card.querySelectorAll('.item.done').length;
+    /* The bar stays when the list is done, full and a darker green; the heading stays white (Neil, 2026-10-08). */
+    const bar = got ? '<span class="pb' + (got === tot ? ' full' : '') + '"><b style="width:' + Math.round(100 * got / tot) + '%"></b></span>' : '';
+    return '<button type="button" class="sh-tab' + (tot && got === tot ? ' done' : '') + c + '" data-k="' + t.k + '">' + t.label + bar + '</button>';
+  }).join('');
+}
+
+function show(k, keepScroll){
+  if (!pages[k] && !['CLR', 'ARR', 'HOLD', 'OTHER'].includes(k)) k = 'setup';
+  cur = k; put(VIEWK, k);
+  page(k);
+  Object.keys(pages).forEach(x => { pages[x].hidden = x !== k; });
+  try { if (window.efbCharts && window.efbCharts.home) window.efbCharts.home(); } catch(e){}
+  closeMenu();
+  renderTabs();
+  if (!keepScroll) window.scrollTo(0, 0);
+  try { window.dispatchEvent(new CustomEvent('efb-view', {detail: k})); } catch(e){}
+}
+strip.addEventListener('click', e => {
+  const b = e.target.closest('[data-k]'); if (b) show(b.dataset.k);
+});
+
+/* A tick anywhere, here or from the other seat, re-tints the strip. */
+let rq = 0;
+const later = () => { if (rq) return; rq = requestAnimationFrame(() => { rq = 0; renderTabs(); }); };
+try { new MutationObserver(later).observe(mainEl, {subtree:true, attributes:true, attributeFilter:['class']}); } catch(e){}
+window.addEventListener('efb-pads', later);
+window.addEventListener('efb-plan', later);
+window.addEventListener('efb-chartview', later);
+document.getElementById('reset').addEventListener('click', later);
+
+/* The other seat's pill follows to the tab, not a scroll position. */
+const pos = document.getElementById('pos');
+pos.addEventListener('click', () => {
+  const ph = pos.querySelector('.pwhat').textContent;
+  const t = TABS.find(x => x.phase === ph);
+  if (t) setTimeout(() => show(t.k), 0);
+}, true);
+
+/* ---- ⋯ : HOLD, OTHER and the reference cards ---------------------- */
+const menu = document.createElement('div');
+menu.className = 'sh-menu'; menu.hidden = true;
+const refs = Array.from(ref.querySelectorAll('section.card'));
+menu.innerHTML = '<div class="mh">PADS</div><button type="button" data-go="HOLD">HOLD</button><button type="button" data-go="OTHER">OTHER</button>' +
+  '<div class="mh">REFERENCE</div>' + refs.map((c, i) => {
+    const nm = c.querySelector('.head .name').cloneNode(true); nm.querySelectorAll('.when,.cf').forEach(x => x.remove());
+    return '<button type="button" class="ref" data-ref-i="' + i + '">' + nm.textContent.trim().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])) + '</button>';
+  }).join('');
+document.body.appendChild(menu);
+function closeMenu(){ menu.hidden = true; }
+function more(){ menu.hidden = !menu.hidden; }
+menu.addEventListener('click', e => {
+  const g = e.target.closest('[data-go]');
+  if (g) { show(g.dataset.go); return; }
+  const r = e.target.closest('[data-ref-i]');
+  if (r) {
+    const c = refs[+r.dataset.refI];
+    show('ref', true);
+    refs.forEach(x => { x.dataset.open = x === c ? 'true' : 'false'; });
+    c.scrollIntoView({block:'start'});
+  }
+});
+document.addEventListener('click', e => {
+  if (!menu.hidden && !e.target.closest('.sh-menu') && !e.target.closest('[data-more]')) closeMenu();
+}, true);
+
+/* The chart layer starts below the header and the strip, so the strip stays usable. */
+const header = document.querySelector('header');
+function shtop(){ document.documentElement.style.setProperty('--shtop', header.getBoundingClientRect().height + 'px'); }
+try { new ResizeObserver(shtop).observe(header); } catch(e){ window.addEventListener('resize', shtop); }
+shtop();
+
+window.efbShell = { page, show, cur: () => cur, more, refresh: renderTabs };
+show(cur);
+/* If the chart tabs are missing, ⋯ still needs a home. */
+setTimeout(() => {
+  if (document.querySelector('#ctabs [data-more]')) return;
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'sh-tab sh-more'; b.dataset.more = '1'; b.textContent = '⋯';
+  b.addEventListener('click', more); strip.after(b);
+}, 1500);
+
+} catch(e){ try { console.warn('tab shell disabled:', e); document.body.classList.remove('shell'); } catch(_){} }
+})();
+
+/* ===============================================================
    THE TWO-CREW LAYER — added 2026-09-15, before the first live run
    with a tablet in each seat.
 
@@ -3128,27 +3437,33 @@ else setStatus('off');
 
 })();
 /* ================================================================
-   ENTRY PADS — added 2026-10-02 (branch entry-pads)
+   ENTRY PADS — added 2026-10-02; rebuilt for the tabs on 2026-10-08
+   (branch efb-tabs)
 
-   Handwritten ATC pads: ATIS · CLR · ARR · HOLD · OTHER. Design and evidence in
-   Reference/EFB-Entry-Pad-Design.md and Reference/ATC-Entry-Pads-Australia.md.
+   ATC entry on the CLR and ARR tabs, each with its own ATIS strip, plus
+   HOLD and OTHER behind the ⋯ on the chart bar. Layout and order are the
+   keyed mockup's, rev 8 (Reference/EFB-Redesign-Keyed-Mockup.html and
+   Reference/EFB-Keyed-Entry.md).
 
-   - Field order is the order an Australian controller speaks.
-   - Pre-filled values (from the SimBrief plan) start DULL. Tap one as ATC
-     says it and it goes BRIGHT. Write in a box and its pre-fill strikes
-     itself through: "ATC said something else".
-   - A tap is a pointer that lifts within 8 px and 300 ms. Once a box has
-     ink, a tap in it is ink — that is the decimal point in 129.7.
-   - SID / STAR / runway / transition are BADGES, from VATPAC's vatSys
-     dataset, fetched live for this route and HELD IN MEMORY ONLY — never
-     stored, never published (the dataset carries no licence; Neil,
-     2026-10-02). No dataset → no badges → pre-fill and ink still work.
-   - Ink and pad state persist like ticks (c700-pads, 14 h, cleared by
-     Reset).
-   - Linked, the pads and the plan cross the relay (2026-10-03) as a flat
-     key → value map: one key per stroke, toggle and lock. Each key is
-     last-writer-wins on its own, so both seats can ink the same box and
-     both keep their strokes. See "the link" below.
+   Every box can be KEYED or INKED. Which, is a setting of THIS TABLET
+   (⚙ Entry: Keys | Pen, kept in c700-entry):
+
+   - Keys: the tray of EFB-Keyed-Entry.md, P1–P12. The field grammars sit
+     between ENGINE START and ENGINE END, lifted verbatim from the mockup and
+     tested by Reference/Test-KeyedEntry.mjs.
+   - Pen: the same boxes in the same order, taller, with ink in them. A
+     choice (runway, SID, STAR, approach…) still picks from the tray, which
+     appears only while a choice is open. A tap on a dull prediction takes it.
+   - The setting changes how a box is FILLED, never what is stored. A box
+     holds a value (keyed, picked, or a prediction taken) and/or strokes,
+     and both modes draw both. So a PM keying and a PF in pen mode share one
+     clearance, and nothing new crosses the relay but one key per value.
+   - A keyed or picked value replaces the box's ink. Ink over a value strikes
+     it (and a struck SID or STAR hides its chart tab, as before).
+
+   On the link, as before, a flat key → value map: CLR|f|sq|v, CLR|f|sid|sel,
+   CLR|f|sid|chart, CLR|f|sq|s|<stroke id>, ~plan. An older page ignores the
+   |v keys and the new pads (AATIS); an older relay passes them through.
 
    Same rule as the crew layer: built after the page is on screen, wrapped,
    and every failure degrades to the page exactly as it was.
@@ -3157,7 +3472,267 @@ else setStatus('off');
 'use strict';
 try {
 
-const KEY = 'c700-pads', SBKEY = 'c700-simbrief', PENKEY = 'c700-pen';
+// ENGINE START — field grammars. Pure functions, no DOM. Reference/Test-KeyedEntry.mjs runs these under node.
+const KE = (() => {
+  const DIG = '0123456789'.split('');
+  const nums = (a, b, s = 1) => { const r = []; for (let n = a; n <= b; n += s) r.push(String(n)); return r; };
+
+  // VHF COM channels as six-digit kHz strings. 25 kHz is Australia's (and the GTC's default);
+  // 8.33 adds the European channel names x.x05/10/15, x.x30/35/40 and so on.
+  function comChannels(spacing){
+    const set = new Set(nums(118000, 136975, 25));
+    if (spacing === 8.33) for (const b of nums(118000, 136975, 25)) for (const o of [5, 10, 15]) set.add(String(+b + o));
+    return [...set].sort();
+  }
+
+  function freq({spacing = 25} = {}){
+    const ch = comChannels(spacing);
+    const reach = p => ch.some(c => c.startsWith(p));
+    // The digits as keyed, or with the leading 1 left off. Never ambiguous: a second digit
+    // of 1–3 means the 1 was keyed, and anything else means it was skipped.
+    const canon = b => reach(b) ? b : reach('1' + b) ? '1' + b : null;
+    const fmt = v => v.slice(0, 3) + '.' + (v.slice(3).replace(/0+$/, '') || '0');
+    return {
+      kind: 'freq', keys: DIG, tokens: [], canon,
+      enabled: b => new Set(DIG.filter(d => canon(b + d) !== null)),
+      push: (b, k) => b + k,
+      status(b){
+        const c = canon(b);
+        if (!c || c.length < 3) return {state: 'none'};
+        const left = ch.filter(x => x.startsWith(c));
+        // One channel left: finish it, including spacing digits nobody keys (12472 -> 124.725).
+        if (left.length === 1) return {state: 'must', value: left[0]};
+        const v = c.padEnd(6, '0');
+        return ch.includes(v) ? {state: 'can', value: v} : {state: 'none'};
+      },
+      show(b){
+        if (!b) return {text: '', ghost: '1__.__'};
+        const c = canon(b) ?? b;
+        const text = c.length > 3 ? c.slice(0, 3) + '.' + c.slice(3) : c;
+        return {text, ghost: '___.__'.slice(text.length)};
+      },
+      fmt,
+    };
+  }
+
+  function octal(){
+    const K = '01234567'.split('');
+    return {
+      kind: 'squawk', keys: DIG, tokens: [],
+      enabled: b => new Set(b.length < 4 ? K : []),
+      push: (b, k) => b + k,
+      status: b => b.length === 4 ? {state: 'must', value: b} : {state: 'none'},
+      show: b => ({text: b, ghost: '____'.slice(b.length)}),
+      fmt: v => v,
+    };
+  }
+
+  function letter(){
+    const L = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    return {
+      kind: 'letter', keys: L, tokens: [],
+      enabled: b => new Set(b ? [] : L),
+      push: (b, k) => b + k,
+      status: b => b.length === 1 ? {state: 'must', value: b} : {state: 'none'},
+      show: b => ({text: b, ghost: b ? '' : '_'}),
+      fmt: v => v,
+    };
+  }
+
+  // QNH. Finishes only once the whole value has been keyed: a digit nobody pressed is never filled in,
+  // which is the out-by-a-digit error the QNH box exists to stop.
+  function qnh({lo = 900, hi = 1060} = {}){
+    const V = nums(lo, hi);
+    return {
+      kind: 'qnh', keys: DIG, tokens: [],
+      enabled: b => new Set(DIG.filter(d => V.some(v => v.startsWith(b + d)))),
+      push: (b, k) => b + k,
+      status(b){
+        if (!V.includes(b)) return {state: 'none'};
+        return V.filter(v => v.startsWith(b)).length === 1 ? {state: 'must', value: b} : {state: 'can', value: b};
+      },
+      show: b => ({text: b, ghost: (b[0] === '9' ? '___' : '____').slice(b.length)}),
+      fmt: v => v,
+    };
+  }
+
+  // Level, read from how many digits were keyed (Neil, rev 4), so there is no A/FL key:
+  // 1–2 digits are thousands (5 = A050, 10 = A100), 3 are a flight level (240 = FL240),
+  // 4–5 are feet (5000 = A050, 4500 = A045, 10000 = A100). Stored in hundreds: A50 is A050, F240 is FL240.
+  // An altitude shows as it is read back, with the coded form after it: "6000 (A060)" (Neil, rev 5).
+  // {arrival: true} adds two toggles for the arrival. WHEN READY (Neil, rev 7): "when ready descend FL210", shown "WR FL210".
+  // VIA STAR (rev 8): "descend via the STAR to 3000" keeps the STAR's restrictions, a plain "descend to" does not;
+  // shown "VIA 3000 (A030)". Each toggles a leading flag (W, then V), so it can be tapped before or after the digits.
+  function level({arrival = false} = {}){
+    const V = [...nums(1, 18), ...nums(10, 450, 5).map(v => v.padStart(3, '0')), ...nums(1000, 18000, 100)];
+    const FLAGS = arrival ? ['WR', 'VIA'] : [], CH = {WR: 'W', VIA: 'V'}, WORD = {W: 'WR ', V: 'VIA '};
+    const read = ds => ds.length <= 2 ? 'A' + ds * 10 : ds.length === 3 ? 'F' + ds : 'A' + ds / 100;
+    const one = v => v[0] === 'A' ? `${v.slice(1) * 100} (A${v.slice(1).padStart(3, '0')})` : 'FL' + v.slice(1);
+    const split = b => { const m = b.match(/^[WV]*/)[0]; return [m, b.slice(m.length)]; };
+    const words = fl => [...fl].map(c => WORD[c]).join('');
+    const fmt = v => { const [fl, rest] = split(v); return words(fl) + one(rest); };
+    return {
+      kind: 'level', keys: DIG, tokens: FLAGS, toggles: FLAGS,
+      labels: {WR: 'WHEN READY', VIA: 'VIA STAR'},
+      hint: arrival ? '5 or 5000 · 3 digits = FL · WR · VIA' : null,
+      enabled(b){ const ds = split(b)[1]; return new Set([...FLAGS, ...DIG.filter(d => V.some(v => v.startsWith(ds + d)))]); },
+      push(b, k){
+        if (!CH[k]) return b + k;
+        const [fl, ds] = split(b), c = CH[k];
+        const set = fl.includes(c) ? fl.replace(c, '') : fl + c;
+        return ['W', 'V'].filter(x => set.includes(x)).join('') + ds;
+      },
+      status(b){
+        const [fl, ds] = split(b);
+        if (!V.includes(ds)) return {state: 'none'};
+        return {state: V.filter(v => v.startsWith(ds)).length === 1 ? 'must' : 'can', value: fl + read(ds)};
+      },
+      show(b){
+        const [fl, ds] = split(b);
+        if (!ds) return {text: words(fl).trim(), ghost: '___'};
+        return {text: words(fl) + (V.includes(ds) ? one(read(ds)) : ds), ghost: ''};
+      },
+      fmt,
+    };
+  }
+
+  // Wind as heard: three digits of direction, then speed, then G and the gust. VRB replaces the direction.
+  // Then, as the ATIS gives them (rev 8), XW and the maximum crosswind, TW and the maximum tailwind: 340/12 XW14 TW3.
+  // Stored with single-letter markers: V = VRB, X = crosswind, T = tailwind.
+  function wind(){
+    const parse = b => {
+      const [, base, x, t] = b.match(/^([^XT]*)(?:X(\d*))?(?:T(\d*))?/);
+      const vrb = base[0] === 'V', dir = vrb ? 'VRB' : base.slice(0, 3), rest = vrb ? base.slice(1) : base.slice(3);
+      const [spd, gust] = rest.split('G');
+      const ok = (vrb || dir.length === 3) && spd.length && (!rest.includes('G') || gust.length);
+      return {dirDone: vrb || dir.length === 3, dir, spd, gust, hasG: rest.includes('G'), ok, x, t, full: base.length + (x === undefined ? 0 : x.length + 1) + (t === undefined ? 0 : t.length + 1) === b.length};
+    };
+    const text = b => {
+      const p = parse(b);
+      return p.dir + (p.dirDone ? '/' + p.spd + (p.hasG ? 'G' + p.gust : '') : '') +
+        (p.x !== undefined ? ' XW' + p.x : '') + (p.t !== undefined ? ' TW' + p.t : '');
+    };
+    return {
+      kind: 'wind', keys: DIG, tokens: ['VRB', 'G', 'XW', 'TW'], chips: ['XW', 'TW'],
+      enabled(b){
+        if (!b) return new Set(['0', '1', '2', '3', 'VRB']);
+        const p = parse(b);
+        if (p.t !== undefined) return new Set(p.t.length < 2 ? DIG : []);
+        if (p.x !== undefined) return new Set([...(p.x.length < 2 ? DIG : []), ...(p.x.length ? ['TW'] : [])]);
+        if (!p.dirDone) {
+          if (b.length === 1) return new Set(b === '3' ? DIG.slice(0, 7) : DIG);
+          return new Set(b === '36' ? ['0'] : DIG);
+        }
+        const s = new Set();
+        if (!p.hasG) { if (p.spd.length < 3) DIG.forEach(d => s.add(d)); if (p.spd.length) s.add('G'); }
+        else if (p.gust.length < 3) DIG.forEach(d => s.add(d));
+        if (p.ok) { s.add('XW'); s.add('TW'); }
+        return s;
+      },
+      push: (b, k) => b + ({VRB: 'V', XW: 'X', TW: 'T'}[k] || k),
+      status(b){
+        const p = parse(b);
+        return p.full && p.ok && p.x !== '' && p.t !== '' ? {state: 'can', value: b} : {state: 'none'};
+      },
+      show(b){
+        if (!b) return {text: '', ghost: '___/__'};
+        const p = parse(b);
+        const t = text(b);
+        if (!p.full) return {text: b.replace(/^V/, 'VRB').replace(/X/g, ' XW').replace(/T/g, ' TW'), ghost: ''};
+        if (p.x === '' && p.t === undefined || p.t === '') return {text: t, ghost: '__'};
+        return {text: t, ghost: p.dirDone ? (p.spd.length ? '' : '__') : '___/__'.slice(t.length)};
+      },
+      fmt: v => text(v),
+    };
+  }
+
+  function temp(){
+    return {
+      kind: 'temp', keys: DIG, tokens: ['M'],
+      enabled(b){ const ds = b.replace('M', ''); return new Set([...(ds ? [] : ['M']), ...(ds.length < 2 ? DIG : [])]); },
+      push: (b, k) => k === 'M' ? (b === 'M' ? '' : 'M') : b + k,
+      status(b){ const ds = b.replace('M', ''); return ds.length === 2 ? {state: 'must', value: b} : ds.length ? {state: 'can', value: b} : {state: 'none'}; },
+      show(b){ const ds = b.replace('M', ''); return {text: b, ghost: '__'.slice(ds.length)}; },
+      fmt: v => v,
+    };
+  }
+
+  // Up to two cloud layers (rev 8): amount, then the base in hundreds of feet as spoken. FEW 0 1 5 BKN 0 3 5.
+  // An amount after a finished layer starts the second; an amount on an unfinished layer replaces it.
+  function cloud(){
+    const AMT = ['FEW', 'SCT', 'BKN', 'OVC'];
+    const layers = b => b.match(/(FEW|SCT|BKN|OVC)\d*/g) || [];
+    const done = l => /\d{3}$/.test(l);
+    const fmt = v => layers(v).join(' ') || v;   // a picked CAVOK has no layers and shows as itself
+    return {
+      kind: 'cloud', keys: DIG, tokens: AMT,
+      hint: 'FEW 030 · then SCT… for a 2nd',
+      enabled(b){ const L = layers(b), last = L[L.length - 1]; return new Set([...AMT, ...(last && !done(last) ? DIG : [])]); },
+      push(b, k){
+        const L = layers(b), last = L[L.length - 1];
+        if (!AMT.includes(k)) return b + k;
+        if (last && done(last) && L.length < 2) return b + k;
+        return L.slice(0, -1).join('') + k;
+      },
+      status(b){
+        const L = layers(b);
+        if (!L.length || L.join('') !== b || !L.every(done)) return {state: 'none'};
+        return {state: L.length === 2 ? 'must' : 'can', value: b};
+      },
+      show(b){ const L = layers(b), last = L[L.length - 1] || ''; return {text: fmt(b), ghost: last && !done(last) ? '___'.slice(last.length - 3) : L.length ? '' : '___'}; },
+      fmt,
+    };
+  }
+
+  // A choice from a list, tapped. Runway, approach type, visibility.
+  function options(list){
+    return {kind: 'opts', options: list, keys: [], tokens: [], enabled: () => new Set(), push: b => b,
+      status: () => ({state: 'none'}), show: b => ({text: b, ghost: ''}), fmt: v => v};
+  }
+
+  // Run a key sequence through a field the way the UI does. Returns what was committed and how many keys it took.
+  function run(spec, keys, {pred} = {}){
+    let b = spec.initial ? spec.initial() : '', n = 0;
+    for (const k of keys) {
+      n++;
+      if (k === 'ENT') {
+        if (b === (spec.initial ? spec.initial() : '') && pred) return {value: pred, taps: n};
+        const s = spec.status(b);
+        if (s.state !== 'none') return {value: s.value, taps: n};
+        return {value: null, blocked: k, taps: n};
+      }
+      if (!spec.enabled(b).has(k)) return {value: null, blocked: k, taps: n};
+      b = spec.push(b, k);
+      const s = spec.status(b);
+      if (s.state === 'must') return {value: s.value, taps: n};
+    }
+    return {value: null, partial: b, taps: n};
+  }
+
+  // The UI's entry rule from rev 3 (Neil, 2026-10-07): every key is live and nothing is refused, because the
+  // EFB touches no cockpit system and entry is on the user (GIGO). The strict grammar still finishes legal
+  // values by itself and formats them. Anything else is kept exactly as typed, stored with a leading '~' so a
+  // raw value is never mistaken for a parsed one. maxLen stops a runaway buffer, nothing more.
+  function loose(spec, maxLen){
+    const all = new Set([...spec.keys, ...spec.tokens]);
+    const init = spec.initial ? spec.initial() : '';
+    return Object.assign({}, spec, {
+      strict: spec,
+      enabled: b => b.length >= maxLen ? new Set(spec.toggles || []) : all,
+      status(b){
+        const s = spec.status(b);
+        if (s.state !== 'none' || b === init) return s;
+        return {state: 'can', value: '~' + spec.show(b).text};
+      },
+      fmt: v => v.startsWith('~') ? v.slice(1) : spec.fmt(v),
+    });
+  }
+
+  return {freq, octal, letter, qnh, level, wind, temp, cloud, options, loose, run, comChannels};
+})();
+// ENGINE END
+
+const KEY = 'c700-pads', SBKEY = 'c700-simbrief', PENKEY = 'c700-pen', MODEKEY = 'c700-entry', COMKEY = 'c700-com';
 const STALE = 14 * 3600 * 1000;
 const AIRSPACE = 'https://raw.githubusercontent.com/vatSys/australia-dataset/master/Airspace.xml';
 /* Pilot ID (all digits) or username. The Pilot ID is the safer of the two: Nic's
@@ -3173,52 +3748,122 @@ const norm = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 /* SimBrief and vatSys usually agree on idents (BORE5A); tolerate a stray suffix. */
 const same = (a, b) => { a = norm(a); b = norm(b); return !!a && !!b && (a === b || a.startsWith(b) || b.startsWith(a)); };
 
-/* ---- the pads ------------------------------------------------ */
-/* pre: pre-fill from the plan · badge: option source · chips: tap targets
-   (cyc = dull → heard → not said; grp = one of) · noink: chips only */
+let mode = get(MODEKEY) === 'pen' ? 'pen' : 'keys';
+let spacing = get(COMKEY) === '8.33' ? 8.33 : 25;
+let pen = get(PENKEY);                         // '' never seen · 'pen' fingers tap only · 'finger' fingers ink too
+let erasing = false;
+document.body.classList.toggle('pen', mode === 'pen');
+
+/* ---- two more grammars, outside the tested block ------------------ */
+const DIG = '0123456789'.split('');
+function digits(len, ghost){
+  return {kind:'digits', keys:DIG, tokens:[], enabled: b => new Set(b.length < len ? DIG : []), push: (b, k) => b + k,
+    status: b => b.length === len ? {state:'must', value:b} : b ? {state:'can', value:b} : {state:'none'},
+    show: b => ({text:b, ghost:(ghost || '_'.repeat(len)).slice(b.length)}), fmt: v => v};
+}
+/* Letters and digits, for a box with no list to pick from: a SID typed when the
+   dataset is unreachable, a holding fix. */
+const TXT = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('');
+function text(max){
+  return {kind:'text', keys:TXT, tokens:[], enabled: b => new Set(b.length < max ? TXT : []), push: (b, k) => b + k,
+    status: b => b ? {state:'can', value:b} : {state:'none'}, show: b => ({text:b, ghost: b ? '' : '_'}), fmt: v => v};
+}
+
+/* ---- the pads --------------------------------------------------- */
+/* k: how the box is keyed. opts boxes store in |sel (the chart tabs read it),
+   every other kind in |v. badge: options from the plan's procedures. pred: a
+   value the page can predict, shown dull with its src (P7). w: flex share. */
+const VIS = ['GT 10KM', '10KM', '8KM', '5KM', '3000M', '1500M', 'CAVOK'];
+const APCH = ['INST', 'ILS', 'GLS', 'RNP', 'VISUAL', 'INDEP VIS'];
+/* Every ATIS box is predicted from the live weather (wxPick, below): the VATSIM ATIS,
+   else the real-world METAR. The letter comes from VATSIM only. */
+const atisRows = side => {
+  const live = id => ({pred: () => (wxPick(side, id) || {}).v, src: () => (wxPick(side, id) || {}).s});
+  return [
+  [ Object.assign({id:'info', l:'INFO', k:'letter', heavy:1, w:1, live: () => wxCode(side)}, live('info')),
+    Object.assign({id:'apch', l:'APCH', k:'opts', list:() => APCH, w:2}, live('apch')),
+    Object.assign({id:'rwy', l: side === 'dep' ? 'DEP RWY' : 'ARR RWY', k:'opts', list:() => rwys(side), heavy:1, w:1.5, max:3}, live('rwy')) ],
+  [ Object.assign({id:'wind', l:'WIND', k:'wind', w:2}, live('wind')),
+    Object.assign({id:'vis', l:'VIS', k:'opts', list:() => VIS, w:1.5}, live('vis')),
+    Object.assign({id:'cld', l:'CLOUD', k:'cloud', extra:['CAVOK'], w:2}, live('cld')) ],
+  [ Object.assign({id:'tmp', l:'TEMP', k:'temp', w:1}, live('tmp')),
+    Object.assign({id:'qnh', l:'QNH', k:'qnh', heavy:1, w:1.5}, live('qnh')),
+    {id:'notes', l:'NOTES · INK', k:'ink', w:2} ] ];
+};
+/* A box's value, else what the page predicts for it: an ATIS runway or QNH taken or
+   only predicted still predicts the clearance box that follows from it. */
+const valOrPred = (n, id) => { const v = val(n, id); if (v) return {v, s: 'ATIS'}; const F = FD[n] && FD[n][id], p = F && predOf(n, F);
+  return p ? {v: p, s: srcOf(n, F)} : null; };
 const SPEC = {
-  ATIS: { cols:4, areas:['info time apch apch','rwy rwy rwy sfc','opr opr opr opr','wind vis wx cld','tmp qnh qnh flags'],
-    f:[ {id:'info', l:'Info', big:1, key:1}, {id:'time', l:'Time'}, {id:'apch', l:'Apch — expect', key:1},
-        {id:'rwy', l:'Runway(s)'}, {id:'sfc', l:'Sfc cond'},
-        {id:'opr', l:'Opr info — PROPS · IVA · LAHSO · coord · start approval'},
-        {id:'wind', l:'Wind'}, {id:'vis', l:'Vis'}, {id:'wx', l:'Wx'}, {id:'cld', l:'Cloud'},
-        {id:'tmp', l:'Temp / DP'}, {id:'qnh', l:'QNH', big:1, key:1},
-        {id:'flags', l:'', noink:1, chips:[{id:'qna', t:'Actual QNH N/A'}, {id:'zulu', t:'ZULU — twr closed'}]} ],
-    sum:{ink:['info','qnh']} },
-  CLR: { cols:4, areas:['to via route route','rwy sid sid trans','lvl lvl sq sq','dep dep bay bay'],
-    f:[ {id:'to', l:'To', pre:p => p.arr}, {id:'via', l:'Via', pre:p => p.via},
-        {id:'route', l:'Route — write it if amended', chips:[{id:'fpr', t:'FPR', cyc:1}]},
-        {id:'rwy', l:'Rwy', badge:'depRwy'}, {id:'sid', l:'SID', badge:'sid'}, {id:'trans', l:'Trans', badge:'sidTrans'},
-        {id:'lvl', l:'Level', big:1, key:1, chips:[{id:'via', t:'↑ VIA SID TO', cyc:1}]},
-        {id:'sq', l:'Squawk', big:1, key:1}, {id:'dep', l:'Dep freq'}, {id:'bay', l:'Bay'} ],
-    rb:[['pdc','PDC rcvd'], ['pdcrb','PDC read back'], ['vrb','Voice read back']],
-    set:[['sq','SQ'], ['alt','ALT SEL'], ['fms','SID / RWY in FMS'], ['stby','DEP in STBY']],
-    sum:{badge:'sid', ink:['sq']} },
-  ARR: { cols:4, areas:['star star trans rwy','lvl lvl lvl wr','qnh app app app','cnl cnl cnl spd'],
-    f:[ {id:'star', l:'STAR', badge:'star'}, {id:'trans', l:'Trans', badge:'starTrans'}, {id:'rwy', l:'Rwy', badge:'arrRwy'},
-        {id:'lvl', l:'Level — empty means not cleared down', big:1, key:1, chips:[{id:'via', t:'↓ VIA STAR TO', cyc:1}]},
-        {id:'wr', l:'', noink:1, chips:[{id:'wr', t:'When ready'}]},
-        {id:'qnh', l:'QNH', key:1}, {id:'app', l:'Expect approach · via', badge:'app'},
-        {id:'cnl', l:'Cancel restrictions @', chips:[{id:'lvl', t:'CNL LVL'}, {id:'spd', t:'CNL SPD'}]},
-        {id:'spd', l:'Speed'} ],
-    set:[['alt','ALT SEL'], ['qnh','QNH both'], ['fms','STAR / APP in FMS'], ['brief','Brief']],
-    sum:{badge:'star', ink:['lvl']} },
-  HOLD: { cols:6, areas:['fix inb turn leg lvl efc','notes notes notes notes notes notes'],
-    f:[ {id:'fix', l:'Fix'}, {id:'inb', l:'Inbound'},
-        {id:'turn', l:'Turn', noink:1, chips:[{id:'L', t:'L', grp:'t'}, {id:'R', t:'R', grp:'t'}]},
-        {id:'leg', l:'Leg', pre:() => '1 MIN'}, {id:'lvl', l:'Level', key:1}, {id:'efc', l:'EFC', key:1},
-        {id:'notes', l:'Notes', big:1} ],
-    sum:{ink:['fix','efc']} },
-  /* Anything the other four have no box for. One full-width line; its chip
-     thumbnail takes whatever width the row has left (sum.fill). */
-  OTHER: { cols:1, areas:['line'],
-    f:[ {id:'line', l:'', key:1} ],
-    sum:{ink:['line'], fill:1} }
+  ATIS: {rows: atisRows('dep')},
+  CLR: {rows: [
+    [ {id:'rwy', l:'RWY', k:'opts', badge:'depRwy', heavy:1, w:1, max:3,
+        pred: () => (valOrPred('ATIS', 'rwy') || {}).v || st.plan.depRwy, src: () => valOrPred('ATIS', 'rwy') ? valOrPred('ATIS', 'rwy').s : 'PLAN'},
+      {id:'sid', l:'SID', k:'opts', badge:'sid', heavy:1, w:1.5, none:1, pred: () => st.plan.sid, src: 'PLAN'},
+      {id:'trans', l:'TRANS', k:'opts', badge:'sidTrans', w:1, pred: () => st.plan.sidTrans, src: 'PLAN'} ],
+    [ {id:'lvl', l:'VIA SID TO', k:'level', heavy:1, w:1},
+      {id:'sq', l:'SQUAWK', k:'squawk', heavy:1, w:1},
+      {id:'dep', l:'DEP FREQ', k:'freq', heavy:1, w:1.5} ] ]},
+  AATIS: {rows: atisRows('arr')},
+  /* The arrival is two calls (rev 8): Centre's STAR clearance at cruise, then the
+     first altitude below transition, with its QNH and usually the approach. */
+  ARR: {rows: [
+    [ {id:'star', l:'STAR', k:'opts', badge:'star', heavy:1, w:1.5, none:1, pred: () => st.plan.star, src: 'PLAN'},
+      {id:'trans', l:'TRANS', k:'opts', badge:'starTrans', w:1, pred: () => st.plan.starTrans, src: 'PLAN'},
+      {id:'rwy', l:'RWY', k:'opts', badge:'arrRwy', heavy:1, w:1, max:3,
+        pred: () => (valOrPred('AATIS', 'rwy') || {}).v || st.plan.arrRwy, src: () => valOrPred('AATIS', 'rwy') ? valOrPred('AATIS', 'rwy').s : 'PLAN'},
+      {id:'lvl', l:'LEVEL', k:'arrlevel', heavy:1, w:2} ],
+    [ {id:'alt', l:'LEVEL', k:'arrlevel', heavy:1, w:2},
+      /* Predicted from the arrival ATIS, never completed by the page (P5): this is
+         where a transposed QNH is caught. */
+      {id:'qnh', l:'QNH', k:'qnh', heavy:1, w:1.5, pred: () => (valOrPred('AATIS', 'qnh') || {}).v, src: () => (valOrPred('AATIS', 'qnh') || {}).s},
+      {id:'app', l:'APPROACH', k:'opts', badge:'app', w:1.5, max:12},
+      {id:'frq', l:'APP FREQ', k:'freq', w:1} ] ]},
+  HOLD: {rows: [
+    [ {id:'fix', l:'FIX', k:'text', max:5, w:1.4},
+      {id:'inb', l:'INBOUND', k:'digits3', w:1},
+      {id:'turn', l:'TURN', k:'opts', list:() => ['L', 'R'], w:.8},
+      {id:'leg', l:'LEG', k:'opts', list:() => ['1 MIN', '1.5 MIN', '2 MIN', '4 NM', '5 NM'], w:1, pred: () => '1 MIN', src: 'STD'} ],
+    [ {id:'lvl', l:'LEVEL', k:'level', heavy:1, w:1.4},
+      {id:'efc', l:'EFC', k:'time', w:1} ],
+    [ {id:'notes', l:'NOTES · INK', k:'ink', w:1, tall:1} ] ]},
+  /* Anything the others have no box for. */
+  OTHER: {rows: [[ {id:'line', l:'ANYTHING ELSE · INK', k:'ink', w:1, tall:1} ]]}
 };
 const NAMES = Object.keys(SPEC);
+const FD = {};
+NAMES.forEach(n => { FD[n] = {}; SPEC[n].rows.forEach(r => r.forEach(F => { FD[n][F.id] = F; })); });
+
+/* What each page shows, top to bottom. */
+const VIEWS = {
+  CLR: {pads:['ATIS', 'CLR'], h:'Clearance', sub: () => ap(st.plan.dep) + ' · departure ATIS, then the airways clearance',
+    blocks: () => [
+      ['sec', 'ATIS · ' + ap(st.plan.dep), 'broadcast order · heavy = read back' + wxNote('dep')], ['rows', 'ATIS'],
+      ['sec', 'Clearance', 'in the order ATC says it'],
+      /* The request calls (Reference/ATC-Australia-Real-World.md §2a). Known slots fill in green (K5). */
+      ['say', 'DEL', '[ACFT], [TYPE], IFR for [DEST], information [ATIS], request clearance.'],
+      ['say', 'CTAF · TAXI', '[ACFT], [TYPE], IFR, taxiing [DEPT] for [DEST], runway [RWY].'],
+      ['say', 'CTAF · AIRBORNE', '[ACFT], [DIST] miles [DIR] [DEPT], passing [ALT], climbing to [ALT:CLIMB], estimating [FIX] [TIME], request clearance.'],
+      ['rows', 'CLR'],
+      ['hint', 'Dull = predicted: tap the box again, or its chip, to take it. The ATIS runway predicts the clearance runway.'] ]},
+  ARR: {pads:['ARR', 'AATIS'], h:'Arrival', sub: () => ap(st.plan.arr) + ' · the STAR clearance, the arrival ATIS, then Approach',
+    blocks: () => [
+      ['sec', 'STAR clearance · Centre', 'at cruise · STAR → transition → runway → level'], ['rows', 'ARR', 0],
+      ['sec', 'ATIS · ' + ap(st.plan.arr), 'broadcast order · heavy = read back' + wxNote('arr')], ['rows', 'AATIS'],
+      ['sec', 'First altitude · Approach', 'level → QNH → approach → frequency'],
+      ['say', 'APPROACH', '[ACFT], descending to [ALT], received [ATIS:AATIS].'],
+      ['say', 'IF NEEDED', '[ACFT], require [APPROACH] runway [RWY:ARWY].'],
+      ['rows', 'ARR', 1],
+      ['hint', 'No level is predicted on arrival: an empty LEVEL means not cleared below the current level. WR = when ready, VIA = via the STAR.'] ]},
+  HOLD: {pads:['HOLD'], h:'Hold', sub: () => 'Fix, inbound course, turns, leg, level, expect further clearance',
+    blocks: () => [['rows', 'HOLD']]},
+  OTHER: {pads:['OTHER'], h:'Other', sub: () => 'Whatever the other pads have no box for',
+    blocks: () => [['rows', 'OTHER']]}
+};
+const ap = s => esc(s || '····');
 
 /* ---- state ---------------------------------------------------- */
-let st = {v:1, at:Date.now(), plan:{}, pads:{}, tab:'CLR'};
+let st = {v:1, at:Date.now(), plan:{}, pads:{}};
 try {
   const s = JSON.parse(get(KEY) || 'null');
   if (s && s.v === 1 && Date.now() - (s.at || 0) < STALE) st = Object.assign(st, s);
@@ -3226,125 +3871,123 @@ try {
 let saveT = null;
 function saveNow(){ st.at = Date.now(); put(KEY, JSON.stringify(st)); }
 function save(){ clearTimeout(saveT); saveT = setTimeout(saveNow, 300); padsChanged(); }
-/* For the chart tabs (D4): every pad change, local or from the other seat, passes
-   through save(), so one event here is enough. Coalesced to one per task. */
+/* For the chart tabs (D4) and the tab strip: every pad change, local or from the
+   other seat, passes through save(), so one event here is enough. */
 let pcT = 0;
 function padsChanged(){ if (pcT) return; pcT = setTimeout(() => { pcT = 0; try { window.dispatchEvent(new Event('efb-pads')); } catch(e){} }, 0); }
-/* What the chart tabs may see and do. Read-only views, plus one write: a chart picked
-   by hand for a badge, which goes through chg() like any pad edit. */
-window.efbPads = {
-  snap: () => ({ plan: st.plan, f: (n, id) => { const f = fs(n, id); return {sel: f.sel, chart: f.chart || null, struck: f.s.length > 0}; } }),
-  setChart: (n, id, v) => { chg(fk(n, id, 'chart'), v || null); save(); if (!ep.hidden && !act) render(); }
-};
-/* Broker data arrived (approach options for the app badge): show it if the sheet is up. */
-window.addEventListener('efb-charts', () => { if (!ep.hidden) { if (act) dirty = true; else render(); } });
 window.addEventListener('pagehide', saveNow);
 
-/* Every stroke carries an id, which is its key on the link. Strokes saved
-   before 2026-10-03 have none, so they get one now. */
+/* Every stroke carries an id, which is its key on the link. */
 const rid = () => Math.random().toString(36).slice(2, 9);
 Object.values(st.pads || {}).forEach(P => Object.values((P && P.f) || {}).forEach(f =>
   (f.s || []).forEach(t => { if (!t.id) t.id = rid(); })));
-const pad = n => st.pads[n] || (st.pads[n] = {lock:'', f:{}, set:{}, rb:{}});
-const fs = (n, id) => { const p = pad(n); return p.f[id] || (p.f[id] = {s:[], ok:0, sel:null, ch:{}}); };
-/* f.chart: a chart chosen by hand for this badge (D4) — 'c/BCSSR07' or 'sup/s26-h69#3'.
-   It crosses the link, so both tablets show the same chart; it goes when sel changes. */
-const undo = {};                               // per pad, memory only
-const stack = n => undo[n] || (undo[n] = []);
+/* A pad keeps the old page's shape (lock, set, rb) though this page uses only f:
+   the two versions share c700-pads on one origin, and the old Pads sheet throws on
+   a pad without set and rb. */
+const blankPad = () => ({lock:'', f:{}, set:{}, rb:{}});
+const pad = n => st.pads[n] || (st.pads[n] = blankPad());
+Object.keys(st.pads || {}).forEach(n => { st.pads[n] = Object.assign(blankPad(), st.pads[n]); });
+const fs = (n, id) => { const p = pad(n); p.f = p.f || {}; return p.f[id] || (p.f[id] = {s:[], sel:null, v:null, ch:{}}); };
+/* The value a box holds, whatever its kind: a pick lives in sel, anything keyed in v. */
+const val = (n, id) => { const F = FD[n] && FD[n][id], f = fs(n, id); return (F && F.k === 'opts' ? f.sel : f.v) || null; };
+const fmtVal = (n, id) => { const v = val(n, id); return v ? specOf(n, FD[n][id]).fmt(v) : ''; };
 
-/* Procedures: MEMORY ONLY. Never written to storage. */
+/* Read-only views for the chart tabs, plus the one write they make. */
+window.efbPads = {
+  snap: () => ({ plan: st.plan, f: (n, id) => { const f = fs(n, id); return {sel: f.sel, chart: f.chart || null, struck: f.s.length > 0}; } }),
+  setChart: (n, id, v) => { chg(fk(n, id, 'chart'), v || null); save(); render(); },
+  tabInfo: k => k === 'CLR' ? ap(st.plan.dep) + (val('ATIS', 'info') ? ' · ' + esc(val('ATIS', 'info')) : '')
+                            : ap(st.plan.arr) + (val('AATIS', 'info') ? ' · ' + esc(val('AATIS', 'info')) : '')
+};
+window.addEventListener('efb-charts', () => render());
+
+/* Undo is this tablet's own, per page. A gesture is one entry: every key it
+   changed, with the value it had before. */
+const undo = {};
+const stack = v => undo[v] || (undo[v] = []);
+let grp = null;
+function curVal(key){
+  const a = key.split('|'); if (a[1] !== 'f' || !SPEC[a[0]]) return null;
+  const f = fs(a[0], a[2]);
+  if (a[3] === 's') { const t = f.s.find(x => x.id === a[4]); return t ? Object.assign(wire(t)) : null; }
+  if (a[3] === 'ch') return f.ch[a[4]] || null;
+  return f[a[3]] || null;
+}
+function op(key, v){ if (grp) grp.push([key, curVal(key)]); chg(key, v); }
+function gesture(vk, fn){ grp = []; try { fn(); } finally { if (grp.length) stack(vk).push({t:'g', ops: grp}); grp = null; } }
+function undoOne(vk){
+  const u = stack(vk).pop(); if (!u) return;
+  if (u.t === 'g') u.ops.slice().reverse().forEach(([k, v]) => chg(k, v));
+  else if (u.t === 'clear') { Object.assign(st.pads, JSON.parse(u.snap)); u.names.forEach(n => Object.entries(flat(n)).forEach(([k, v]) => tx(k, v))); }
+}
+
+/* Procedures: MEMORY ONLY. Never written to storage (the dataset carries no licence). */
 let procs = null, procsKey = '', procsMsg = '';
 
-let pen = get(PENKEY);                         // '' never seen · 'pen' pen only · 'finger' finger ink
-let erasing = false;
-
-/* ---- chrome: PAD button, recall chips, the sheet --------------- */
-const bar = document.querySelector('header .bar');
+/* ---- chrome: the callsign and the readout in the header ---------------- */
 const ver = document.getElementById('ver');
-const padBtn = document.createElement('button');
-padBtn.id = 'padbtn'; padBtn.type = 'button'; padBtn.textContent = 'Pads';
-padBtn.title = 'ATIS, clearance, arrival, hold and other pads — write as ATC speaks';
-const padGrp = document.createElement('span'); padGrp.className = 'padgrp';
-const caret = document.createElement('button');
-caret.id = 'epcaret'; caret.type = 'button'; caret.hidden = true;
-caret.title = 'Show or hide the locked pads under the title';
-padGrp.append(padBtn, caret);
-bar.insertBefore(padGrp, bar.querySelector('.crew'));
-const chips = document.createElement('div'); chips.id = 'epchips';
-document.querySelector('header .titlebar').insertAdjacentElement('afterend', chips);
-/* Expanded on every load, and re-expanded whenever a pad newly locks: a
-   collapse is for now, never a setting that hides a fresh clearance. */
-let chipSeen = null;                      // locked pad names at the last render
-function chipsShown(on){
-  chips.classList.toggle('off', !on); caret.setAttribute('aria-expanded', on ? 'true' : 'false');
-  relayout();
-}
-caret.addEventListener('click', () => { chipsShown(chips.classList.contains('off')); renderChips(); });
-caret.setAttribute('aria-expanded', 'true');
-try { localStorage.removeItem('c700-chips'); } catch(e){}   // retired key
 const csHdr = document.createElement('button');
 csHdr.type = 'button'; csHdr.className = 'ep-cs'; csHdr.hidden = true;
-csHdr.title = 'Callsign filed in SimBrief — what VATSIM shows ATC. Tap for the clearance pad';
+csHdr.title = 'Callsign filed in SimBrief — what VATSIM shows ATC. Tap for the clearance';
 ver.insertAdjacentElement('beforebegin', csHdr);
-
-const ep = document.createElement('div');
-ep.className = 'ep'; ep.hidden = true; ep.setAttribute('role', 'dialog'); ep.setAttribute('aria-label', 'Entry pads');
-ep.innerHTML =
-  '<div class="ep-top"><div class="ep-tabs"></div><div class="ep-tools"></div></div>' +
-  '<div class="ep-plan">' +
-    '<input id="epSb" placeholder="SimBrief Pilot ID" autocapitalize="off" autocorrect="off" spellcheck="false" style="text-transform:none">' +
-    '<button type="button" id="epSbGo">Load plan</button>' +
-    '<input id="epDep" class="ap" placeholder="DEP" maxlength="4" autocorrect="off" spellcheck="false">' +
-    '<span>→</span>' +
-    '<input id="epArr" class="ap" placeholder="ARR" maxlength="4" autocorrect="off" spellcheck="false">' +
-    '<span class="st" id="epSt"></span></div>' +
-  '<div class="ep-body"></div>';
-document.body.appendChild(ep);
-ep.addEventListener('contextmenu', e => { if (!e.target.closest('input')) e.preventDefault(); });
-const $ = s => ep.querySelector(s);
-const tabsEl = $('.ep-tabs'), toolsEl = $('.ep-tools'), body = $('.ep-body');
-const fSb = $('#epSb'), fDep = $('#epDep'), fArr = $('#epArr'), stEl = $('#epSt');
-fSb.value = get(SBKEY);
-const csPad = document.createElement('span'); csPad.className = 'ep-cs'; csPad.hidden = true;
-$('.ep-top').prepend(csPad);
-/* Both copies, so the callsign stays in view with the Pads sheet over the header. */
+csHdr.addEventListener('click', () => { if (window.efbShell) window.efbShell.show('CLR'); });
 function renderCs(){
   const cs = (st.plan.cs || '').trim().toUpperCase();
-  [csHdr, csPad].forEach(e => {
-    e.hidden = !cs;
-    e.textContent = cs;
-  });
-  relayout();
+  csHdr.hidden = !cs; csHdr.textContent = cs;
 }
-csHdr.addEventListener('click', () => open('CLR'));
+function renderRo(){
+  const el = document.getElementById('shRo'); if (!el) return;
+  const one = id => { const t = fmtVal('CLR', id); return t ? esc(t) : '<span class="dim">––––</span>'; };
+  el.innerHTML = '<small>CLR</small>' + one('lvl') + ' · ' + one('sq');
+}
 
-function relayout(){ window.dispatchEvent(new Event('resize')); }   // header height → --hdr
-
-/* ---- open / close ---------------------------------------------- */
-function open(n){
-  if (n) st.tab = n;
-  picking = null;
-  ep.hidden = false;
-  document.documentElement.style.overflow = 'hidden';
-  render();
-  if (!procs && (st.plan.dep || st.plan.arr)) loadProcs();
+/* ---- Setup: the plan row, and this tablet's settings ------------------ */
+const slotPlan = document.getElementById('slot-plan'), slotTab = document.getElementById('slot-tablet');
+const planHost = slotPlan || document.createElement('div');
+planHost.insertAdjacentHTML('beforeend',
+  '<div class="st-row"><span class="st-k">Plan</span><span class="st-v" id="epSt"></span>' +
+    '<button type="button" id="epSbGo">Load from SimBrief</button></div>' +
+  '<div class="st-row"><span class="st-k">Or type</span>' +
+    '<input id="epDep" class="ap" placeholder="DEP" maxlength="4" autocorrect="off" spellcheck="false"><span>→</span>' +
+    '<input id="epArr" class="ap" placeholder="ARR" maxlength="4" autocorrect="off" spellcheck="false"></div>');
+const tabHost = slotTab || document.createElement('div');
+tabHost.insertAdjacentHTML('beforeend',
+  '<div class="st-row"><span class="st-k">Entry</span><div class="st-seg" id="epMode">' +
+    '<button type="button" data-mode="keys">Keys</button><button type="button" data-mode="pen">Pen</button></div>' +
+    '<span class="st-v">How this tablet fills the ATC boxes. The other seat sees the same values either way.</span></div>' +
+  '<div class="st-row" id="epPenRow"><span class="st-k">Fingers</span><div class="st-seg" id="epPen">' +
+    '<button type="button" data-pen="finger">Ink too</button><button type="button" data-pen="pen">Tap only</button></div>' +
+    '<span class="st-v">Pen mode. Once a pen has been seen, fingers only tap unless this says otherwise.</span></div>' +
+  '<div class="st-row"><span class="st-k">COM spacing</span><div class="st-seg" id="epCom">' +
+    '<button type="button" data-com="25">25 kHz</button><button type="button" data-com="8.33">8.33 kHz</button></div></div>' +
+  '<div class="st-row"><span class="st-k">SimBrief ID</span>' +
+    '<input id="epSb" placeholder="Pilot ID" autocapitalize="off" autocorrect="off" spellcheck="false"></div>');
+const $ = s => document.getElementById(s);
+const fSb = $('epSb'), fDep = $('epDep'), fArr = $('epArr'), stEl = $('epSt');
+fSb.value = get(SBKEY);
+fSb.addEventListener('change', () => put(SBKEY, fSb.value.trim()));
+function paintSettings(){
+  tabHost.querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === mode));
+  tabHost.querySelectorAll('[data-pen]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pen === (pen === 'pen' ? 'pen' : 'finger')));
+  tabHost.querySelectorAll('[data-com]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.com === spacing));
+  $('epPenRow').hidden = mode !== 'pen';
 }
-function close(){
-  ep.hidden = true;
-  picking = null;
-  document.documentElement.style.overflow = '';
-  saveNow(); renderChips();
-}
-padBtn.addEventListener('click', () => open());
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !ep.hidden) close(); });
-/* Safari's own pinch, while the sheet is up */
-document.addEventListener('gesturestart', e => { if (!ep.hidden) e.preventDefault(); });
+tabHost.addEventListener('click', e => {
+  const m = e.target.closest('[data-mode]'), p = e.target.closest('[data-pen]'), c = e.target.closest('[data-com]');
+  if (m && m.dataset.mode !== mode) {
+    close(); mode = m.dataset.mode; put(MODEKEY, mode === 'pen' ? 'pen' : '');
+    document.body.classList.toggle('pen', mode === 'pen'); erasing = false;
+  }
+  if (p) { pen = p.dataset.pen; put(PENKEY, pen); }
+  if (c) { spacing = +c.dataset.com; put(COMKEY, spacing === 8.33 ? '8.33' : ''); specCache.clear(); }
+  paintSettings(); render();
+});
+paintSettings();
 
 /* ---- plan: SimBrief, or two airports typed ---------------------- */
-/* The first fix of the route, for CLR's Via. Navaids and most fixes are letters
-   only, but a waypoint can carry a digit (MA2NI, on YBMA→YBCS; v17 — it used to be
-   skipped, so RILVO showed instead). What is left out is an airway (J64, Q11) and a
-   SID or STAR (GROOK2, AVL2A). */
+/* The first fix of the route, for the CTAF call's FIX. Navaids and most fixes are
+   letters only, but a waypoint can carry a digit (MA2NI, on YBMA→YBCS, v17). What
+   is left out is an airway (J64, Q11) and a SID or STAR (GROOK2, AVL2A). */
 function firstFix(route, sid){
   for (const t of String(route || '').split(/\s+/)) {
     if (!t || t === 'DCT' || same(t, sid)) continue;
@@ -3355,7 +3998,7 @@ function firstFix(route, sid){
 }
 async function loadSimBrief(){
   const u = fSb.value.trim(); put(SBKEY, u);
-  if (!u) { status('Enter the SimBrief Pilot ID (or username) first.'); return; }
+  if (!u) { status('Enter the SimBrief Pilot ID under ⚙ This tablet first.'); return; }
   sbMsg = ''; status('Fetching the SimBrief plan…');
   try {
     const r = await fetch(SIMBRIEF + (/^\d+$/.test(u) ? 'userid=' : 'username=') + encodeURIComponent(u), {cache:'no-store'});
@@ -3369,9 +4012,7 @@ async function loadSimBrief(){
         : (why.replace(/^Error:\s*/, '') || 'no plan'));
     }
     const g = d.general || {};
-    /* The navlog, cut to what the route check shows: [ident, via, sid/star 0|1].
-       TOC and TOD are SimBrief's markers, not fixes in the GTC. json=v2 gives an
-       array; v1 nested it under .fix. */
+    /* The navlog, cut to what the route check shows: [ident, via, sid/star 0|1]. */
     const nl = Array.isArray(d.navlog) ? d.navlog : ((d.navlog && d.navlog.fix) || []);
     const fx = [].concat(nl).filter(f => f && f.ident && !/^(TOC|TOD)$/.test(f.ident))
       .map(f => [String(f.ident), String(f.via_airway || ''), f.is_sid_star === '1' ? 1 : 0]);
@@ -3379,39 +4020,44 @@ async function loadSimBrief(){
       cs: (d.atc && d.atc.callsign) || '', dep: d.origin.icao_code || '', arr: d.destination.icao_code || '',
       depRwy: d.origin.plan_rwy || '', arrRwy: d.destination.plan_rwy || '',
       sid: g.sid_ident || '', sidTrans: g.sid_trans || '', star: g.star_ident || '', starTrans: g.star_trans || '',
-      via: g.sid_trans || firstFix(g.route, g.sid_ident), route: g.route || '', fx, src: 'SimBrief'
+      via: g.sid_trans || firstFix(g.route, g.sid_ident), route: g.route || '', fx,
+      fl: +g.initial_altitude || 0,
+      /* The airframe's name in the SimBrief profile ("Longitude" on Nic's), spoken as the type in a
+         request call. It is the owner's to rename, so the page never supplies one of its own. */
+      type: String((d.aircraft && d.aircraft.name) || '').trim(), src: 'SimBrief'
     });
-  } catch(e){ sbMsg = 'SimBrief: ' + esc(e.message || 'fetch failed') + '. Pads still work by hand.'; status(); }
+  } catch(e){ sbMsg = 'SimBrief: ' + esc(e.message || 'fetch failed') + '. The pads still work by hand.'; status(); }
 }
-/* A new route over pads that still hold the last leg: offer to clear them, so
-   a forgotten Reset at the turn can't leave leg 1's clearance looking current.
-   Pads only — checklist ticks are Reset's business. */
-let staleFrom = '';
-let sbMsg = '';          // a SimBrief failure stays on screen until the next Load, not the next render
+/* Loading a plan over a tablet that still holds a flight (ticks or pads): offer
+   Reset · new flight, Clear pads, or Keep — so a forgotten Reset at the turn can't
+   leave leg 1's clearance and ticks looking current (Neil, 2026-10-08; before, only
+   a changed route with inked pads asked, and only about the pads). Keep is for a
+   re-generated OFP mid-preparation. */
+let staleFrom = '', staleTicks = 0;
+const ticked = () => document.querySelectorAll('.item.done, .row.done').length;
+let sbMsg = '';
 function hasContent(){
   return NAMES.some(n => { const P = st.pads[n]; if (!P) return false;
-    if (P.lock || Object.values(P.set || {}).some(Boolean) || Object.values(P.rb || {}).some(Boolean)) return true;
-    return Object.values(P.f || {}).some(f => f.s.length || f.ok || f.sel || Object.values(f.ch || {}).some(Boolean)); });
+    return Object.values(P.f || {}).some(f => (f.s && f.s.length) || f.sel || f.v || f.x); });
 }
 /* fromPeer: the other seat loaded it. It is not offered the clear — the
    tablet that changed the route was, and its answer reaches both. */
 function setPlan(np, fromPeer){
   const prev = st.plan || {}, was = (prev.dep || '') + '>' + (prev.arr || '');
-  if (!fromPeer && was !== (np.dep || '') + '>' + (np.arr || '') && (prev.dep || prev.arr) && hasContent())
-    staleFrom = (prev.dep || '····') + ' → ' + (prev.arr || '····');
+  staleTicks = ticked();
+  if (!fromPeer && (hasContent() || staleTicks)) staleFrom = (prev.dep || prev.arr) ? (prev.dep || '····') + ' → ' + (prev.arr || '····') : 'the last flight';
   st.plan = np; save(); procs = null;
-  if (act) dirty = true; else render();
-  renderCs(); loadProcs();
+  render(); renderCs(); loadProcs(); mAt = {}; vAt = 0; refreshWx();
   if (!fromPeer) chg('~plan', np);
   announcePlan();
 }
-/* Other blocks (the VATSIM frequency panel) follow the plan without reaching into
-   this one: an event on each change, and a getter for the plan already stored. */
+/* Other blocks (VATSIM, route check) follow the plan without reaching in here. */
 function announcePlan(){ try { window.dispatchEvent(new CustomEvent('efb-plan', {detail: st.plan})); } catch(e){} }
 window.efbPlan = () => st.plan;
 stEl.addEventListener('click', e => {
   const b = e.target.closest('[data-stale]'); if (!b) return;
-  if (b.dataset.stale === 'clear') { clearPads(NAMES); Object.keys(undo).forEach(k => delete undo[k]); saveNow(); renderChips(); }
+  if (b.dataset.stale === 'reset') { staleFrom = ''; document.getElementById('reset').click(); return; }   // ticks and pads, both tablets
+  if (b.dataset.stale === 'clear') { clearPads(NAMES); Object.keys(undo).forEach(k => delete undo[k]); saveNow(); }
   staleFrom = ''; render();
 });
 function typedPlan(){
@@ -3419,7 +4065,7 @@ function typedPlan(){
   if (dep === (st.plan.dep || '') && arr === (st.plan.arr || '')) return;
   setPlan({dep, arr, via:'', src:'typed'});
 }
-$('#epSbGo').addEventListener('click', loadSimBrief);
+$('epSbGo').addEventListener('click', loadSimBrief);
 fSb.addEventListener('keydown', e => { if (e.key === 'Enter') loadSimBrief(); });
 [fDep, fArr].forEach(f => { f.addEventListener('change', typedPlan);
   f.addEventListener('keydown', e => { if (e.key === 'Enter') f.blur(); }); });
@@ -3442,30 +4088,34 @@ async function loadProcs(){
       tr: Array.from(e.querySelectorAll('Transition'), t => t.getAttribute('Name'))
     }));
     procs = { dep:{rw:rwys(dep), p:list('SID', dep)}, arr:{rw:rwys(arr), p:list('STAR', arr)} };
-    procsMsg = '<b>' + procs.dep.p.length + ' SIDs · ' + procs.arr.p.length + ' STARs</b> (VATPAC dataset, this session only)';
-  } catch(e){ procs = null; procsMsg = 'Procedures unavailable — write them in.'; }
+    procsMsg = procs.dep.p.length + ' SIDs · ' + procs.arr.p.length + ' STARs (VATPAC dataset, this session only)';
+  } catch(e){ procs = null; procsMsg = 'Procedures unavailable — key or write them in.'; }
   render();
 }
 function status(msg){
   const p = st.plan;
   const route = (p.dep || p.arr)
     ? '<b>' + esc(p.dep || '····') + (p.depRwy ? ' ' + esc(p.depRwy) : '') + ' → ' + esc(p.arr || '····') +
-      (p.arrRwy ? ' ' + esc(p.arrRwy) : '') + '</b>' + (p.cs ? ' · ' + esc(p.cs) : '') + ' · '
-    : 'No plan — load SimBrief or type the two airports. ';
-  stEl.innerHTML = (msg || (route + (procsMsg || ''))) +
-    (sbMsg && !msg ? '<br><b style="color:var(--warn)">' + sbMsg + '</b>' : '') + (staleFrom
-    ? '<br><b style="color:var(--pf)">New route — the pads still hold ' + esc(staleFrom) + '.</b> ' +
-      '<button type="button" data-stale="clear">Clear pads</button> <button type="button" data-stale="keep">Keep</button>'
+      (p.arrRwy ? ' ' + esc(p.arrRwy) : '') + '</b>' + (p.cs ? ' · ' + esc(p.cs) : '') + '<br>'
+    : 'No plan yet. ';
+  stEl.innerHTML = (msg || (route + '<small>' + esc(procsMsg) + '</small>')) +
+    (sbMsg && !msg ? '<br><b class="st-warn">' + sbMsg + '</b>' : '') + (staleFrom
+    ? '<br><b style="color:var(--pf)">This tablet still holds ' + esc(staleFrom) + ' — ' +
+      [staleTicks ? staleTicks + ' tick' + (staleTicks > 1 ? 's' : '') : '', hasContent() ? 'pads' : ''].filter(Boolean).join(' and ') + '.</b> ' +
+      '<span class="st-stale"><button type="button" data-stale="reset" class="st-warn">Reset · new flight</button>' +
+      (hasContent() ? '<button type="button" data-stale="clear">Clear pads</button>' : '') +
+      '<button type="button" data-stale="keep">Keep</button></span>'
     : '');
+  fDep.value = p.dep || ''; fArr.value = p.arr || '';
 }
 
-/* ---- badge options -------------------------------------------- */
+/* ---- options -------------------------------------------------- */
 function find(arr, name){ return arr && name ? arr.find(x => same(x.n, name)) : null; }
 function opts(n, kind){
   const p = st.plan;
   const d = procs && procs.dep, a = procs && procs.arr;
-  const sid  = d && find(d.p, fs('CLR', 'sid').sel || p.sid);
-  const star = a && find(a.p, fs('ARR', 'star').sel || p.star);
+  const sid  = d && find(d.p, fs('CLR', 'sid').sel || fs('CLR', 'sid').x || p.sid);
+  const star = a && find(a.p, fs('ARR', 'star').sel || fs('ARR', 'star').x || p.star);
   switch (kind) {
     case 'depRwy':   return {list: sid && sid.rw.length ? sid.rw : (d ? d.rw : []), plan: p.depRwy};
     case 'sid':      return {list: d ? d.p.map(x => x.n) : [], plan: p.sid};
@@ -3473,225 +4123,500 @@ function opts(n, kind){
     case 'star':     return {list: a ? a.p.map(x => x.n) : [], plan: p.star};
     case 'starTrans':return {list: star ? star.tr : [], plan: p.starTrans};
     case 'arrRwy':   return {list: star && star.rw.length ? star.rw : (a ? a.rw : []), plan: p.arrRwy};
-    /* D3: the approach charts for the chosen runway, from the chart broker. With no
-       chart key or no relay this is empty and the box is ink only, as before. */
+    /* D3: the approach charts for the chosen runway, from the chart broker. */
     case 'app': {
       const C = window.efbCharts;
-      return {list: C ? C.approaches(p.arr, fs('ARR', 'rwy').sel || p.arrRwy) : [], plan: ''};
+      return {list: C ? C.approaches(p.arr, fs('ARR', 'rwy').sel || fs('ARR', 'rwy').x || p.arrRwy) : [], plan: ''};
     }
   }
   return {list:[], plan:''};
 }
+function rwys(side){
+  const pr = procs && procs[side], pl = side === 'dep' ? st.plan.depRwy : st.plan.arrRwy;
+  return pr && pr.rw.length ? pr.rw : (pl ? [pl] : []);
+}
+const optsOf = (n, F) => F.badge ? opts(n, F.badge) : {list: F.list ? F.list() : [], plan: ''};
+
+const specCache = new Map();
+function specOf(n, F){
+  if (F.k === 'opts') { const o = optsOf(n, F); return o.list.length ? KE.options(o.list) : text(F.max || 8); }
+  if (specCache.has(F.k)) return specCache.get(F.k);
+  const s = F.k === 'letter' ? KE.loose(KE.letter(), 1)
+    : F.k === 'wind' ? KE.loose(KE.wind(), 14)
+    : F.k === 'cloud' ? KE.loose(KE.cloud(), 12)
+    : F.k === 'temp' ? KE.loose(KE.temp(), 3)
+    : F.k === 'qnh' ? KE.loose(KE.qnh(), 4)
+    : F.k === 'level' ? KE.loose(KE.level(), 5)
+    : F.k === 'arrlevel' ? KE.loose(KE.level({arrival: true}), 7)
+    : F.k === 'squawk' ? KE.loose(KE.octal(), 4)
+    : F.k === 'freq' ? KE.loose(KE.freq({spacing}), 6)
+    : F.k === 'digits3' ? digits(3)
+    : F.k === 'time' ? digits(4)
+    : F.k === 'text' ? text(F.max || 7)
+    : text(0);
+  specCache.set(F.k, s);
+  return s;
+}
+const HINT = {letter:'one tap', squawk:'0–7 only', qnh:'as heard', wind:'340 12 · G gust', freq:'no decimal, 1 optional',
+  level:'5 or 5000 · 3 digits = FL', temp:'M for minus', cloud:'FEW 030', opts:'tap one', text:'letters and digits', digits:'digits'};
+/* EXPECTED (Neil, 2026-10-09): a value the crew keyed or picked and then dulled, held
+   in the box's |x and sent over the link like any value. It is a prediction of the
+   crew's own, so it wins over the page's and everything else treats it as dull: a
+   second tap or the tray chip takes it, and it predicts what follows from it.
+   A page prediction for a badge box is dropped when the chosen or expected procedure
+   has no such option, so an expected STAR doesn't leave the plan's transition behind.
+   Only the boxes that follow a procedure: a SID or STAR the dataset names differently
+   from SimBrief must still predict. */
+const DEPS = ['sidTrans', 'starTrans', 'depRwy', 'arrRwy'];
+const predOf = (n, F) => {
+  const x = fs(n, F.id).x; if (x) return x;
+  const v = F.pred ? F.pred() : null; if (!v) return null;
+  if (DEPS.includes(F.badge)) { const o = opts(n, F.badge); if (o.list.length && !o.list.some(y => same(y, v))) return null; }
+  return v;
+};
+const srcOf = (n, F) => fs(n, F.id).x ? 'EXP' : typeof F.src === 'function' ? F.src() : (F.src || '');
+/* A box inks when it is an ink box, and in pen mode when it is not a choice with a list. */
+const inkable = (n, F) => F.k === 'ink' || (mode === 'pen' && (F.k !== 'opts' || !optsOf(n, F).list.length));
+
+/* ---- live weather: the VATSIM ATIS, else the real-world METAR -------------
+   (Neil, 2026-10-08.) What a tablet can reach, checked that day:
+   - VATSIM's data feed (CORS *) carries each controller ATIS as text. VATPAC tags it:
+     "[APCH] EXP ILS APCH RWY 21 … [RWY] 21 FOR DEP. +[WIND] 250/19-29 [VIS] GT 10KM …".
+   - metar.vatsim.net (CORS *) is the real-world METAR; VATSIM runs on real weather.
+   - A real-world ATIS has no free Australian feed (paid D-ATIS only), and
+     aviationweather.gov sends no CORS header, so neither is used.
+   Box by box, the ATIS wins and the METAR fills what it lacks. Nothing is stored or sent:
+   each tablet reads for itself, only while CLR or ARR is on screen. A failure leaves the
+   boxes unpredicted, never an error. */
+const VDATA = 'https://data.vatsim.net/v3/vatsim-data.json', VMETAR = 'https://metar.vatsim.net/';
+const wx = {};                                   // ICAO → {atis: {code, at, f}, metar: {raw, at, f}, ga, gm}
+let vAt = 0, vBusy = false, mAt = {};
+const wxIcao = side => (side === 'dep' ? st.plan.dep : st.plan.arr) || '';
+/* What was read hours ago (the arrival's weather, fetched on the ground) is never
+   shown: ga / gm are when each source was last read, and the cache counts only while
+   it is fresher than a little over one refresh (Neil, 2026-10-09, C1). */
+const WX_ATIS_MS = 5 * 60000, WX_METAR_MS = 15 * 60000;
+function wxOf(side){
+  const w = wx[wxIcao(side)]; if (!w) return null;
+  const now = Date.now();
+  return {atis: now - (w.ga || 0) < WX_ATIS_MS ? w.atis : null, metar: now - (w.gm || 0) < WX_METAR_MS ? w.metar : null};
+}
+function wxPick(side, id){
+  const w = wxOf(side); if (!w) return null;
+  const a = w.atis && w.atis.f[id]; if (a) return {v: a, s: 'VATSIM'};
+  const m = w.metar && w.metar.f[id]; if (m) return {v: m, s: 'METAR'};
+  return null;
+}
+const wxCode = side => { const w = wxOf(side); return (w && w.atis && w.atis.code) || ''; };
+function wxNote(side){
+  const w = wxOf(side); if (!w) return '';
+  if (w.atis) return ' · <b class="kp-live">VATSIM ATIS ' + esc(w.atis.code) + (w.atis.at ? ' ' + esc(w.atis.at) + 'Z' : '') + '</b>';
+  if (w.metar) return ' · <b class="kp-live">no VATSIM ATIS · METAR ' + esc(w.metar.at || '') + 'Z</b>';
+  return '';
+}
+function visOf(m){ m = +m; return m >= 9999 ? 'GT 10KM' : m >= 5000 && m % 1000 === 0 ? m / 1000 + 'KM' : m + 'M'; }
+const tempOf = t => (t[0] === 'M' ? 'M' : '') + t.replace('M', '').padStart(2, '0');
+/* Values come back in each box's own stored form, so they format like keyed ones. */
+function parseAtis(text, side){
+  const f = {}, parts = text.toUpperCase().split(/\+?\[([A-Z]+)\]/);
+  for (let i = 1; i < parts.length; i += 2) {
+    const tag = parts[i], b = (parts[i + 1] || '').trim();
+    if (tag === 'APCH') {
+      const m = b.match(/INDEP\w*\s+VIS|\bILS\b|\bGLS\b|\bRNP\b|\bVISUAL\b|\bINST\w*/);
+      if (m) f.apch = /INDEP/.test(m[0]) ? 'INDEP VIS' : /^INST/.test(m[0]) ? 'INST' : m[0];
+    } else if (tag === 'RWY') {
+      /* "21 AND RWY 24 FOR ARR. RWY 21 FOR DEP." A clause naming this side wins; one
+         naming neither is shared; one naming only the other side is skipped. */
+      const want = side === 'dep' ? 'DEP' : 'ARR', other = side === 'dep' ? 'ARR' : 'DEP', any = [], mine = [];
+      b.split(/[.;,]/).forEach(cl => {
+        const rw = cl.match(/\b\d{2}[LRC]?\b/g) || [];
+        if (new RegExp('\\b' + want).test(cl)) mine.push(...rw);
+        else if (!new RegExp('\\b' + other).test(cl)) any.push(...rw);
+      });
+      if (mine[0] || any[0]) f.rwy = mine[0] || any[0];
+    } else if (tag === 'WIND') {
+      const m = b.match(/(\d{3}|VRB)\s*\/\s*(\d{1,3})(?:\s*-\s*(\d{1,3}))?/);
+      if (m) {
+        f.wind = (m[1] === 'VRB' ? 'V' : m[1]) + +m[2] + (m[3] ? 'G' + +m[3] : '');
+        const x = b.match(/XW\D{0,8}(\d{1,2})/), t = b.match(/TW\D{0,8}(\d{1,2})/);
+        if (x) f.wind += 'X' + x[1];
+        if (t) f.wind += 'T' + t[1];
+      }
+    } else if (tag === 'VIS') {
+      const m = b.match(/GT\s*10\s*KM|(\d+)\s*KM|(\d{3,4})\s*M\b/);
+      if (m) f.vis = /^GT/.test(m[0]) ? 'GT 10KM' : m[1] ? m[1] + 'KM' : m[2] + 'M';
+    } else if (tag === 'WX' || tag === 'CLD') {
+      if (/CAVOK/.test(b)) { f.vis = 'CAVOK'; f.cld = 'CAVOK'; }
+      const L = (b.match(/(FEW|SCT|BKN|OVC)\s*\d{3}/g) || []).slice(0, 2).map(x => x.replace(/\s/g, ''));
+      if (L.length) f.cld = L.join('');
+    } else if (tag === 'TMP') {
+      const m = b.match(/M?\d{1,2}/); if (m) f.tmp = tempOf(m[0]);
+    } else if (tag === 'QNH') {
+      const m = b.match(/\b\d{3,4}\b/); if (m) f.qnh = m[0];
+    }
+  }
+  return f;
+}
+function parseMetar(raw){
+  const f = {}, r = ' ' + raw.toUpperCase() + ' ';
+  const w = r.match(/\s(\d{3}|VRB)(\d{2,3})(?:G(\d{2,3}))?KT\s/);
+  if (w) f.wind = (w[1] === 'VRB' ? 'V' : w[1]) + +w[2] + (w[3] ? 'G' + +w[3] : '');
+  if (/\sCAVOK\s/.test(r)) { f.vis = 'CAVOK'; f.cld = 'CAVOK'; }
+  else { const v = r.match(/\s(\d{4})\s/); if (v) f.vis = visOf(v[1]); }
+  const L = (r.match(/(FEW|SCT|BKN|OVC)\d{3}/g) || []).slice(0, 2); if (L.length) f.cld = L.join('');
+  const t = r.match(/\s(M?\d{2})\/(M?\d{2})?\s/); if (t) f.tmp = tempOf(t[1]);
+  const q = r.match(/\sQ(\d{4})\s/); if (q) f.qnh = String(+q[1]);
+  return f;
+}
+async function refreshWx(force){
+  const vk = view();
+  if (!force && (document.visibilityState !== 'visible' || (vk !== 'CLR' && vk !== 'ARR'))) return;
+  const icaos = [st.plan.dep, st.plan.arr].filter(x => /^[A-Z]{4}$/.test(x || ''));
+  if (!icaos.length) return;
+  let changed = false;
+  if (!vBusy && Date.now() - vAt > 60000) {
+    vBusy = true;
+    try {
+      const d = await (await fetch(VDATA, {cache: 'no-store'})).json();
+      vAt = Date.now();
+      icaos.forEach(ic => {
+        const a = (d.atis || []).find(x => x.callsign === ic + '_ATIS' || x.callsign === ic + '_D_ATIS');
+        const w = wx[ic] || (wx[ic] = {});
+        const was = JSON.stringify(w.atis || null);
+        if (Date.now() - (w.ga || 0) >= WX_ATIS_MS) changed = true;   // was hidden as stale: show it again
+        w.ga = Date.now();
+        if (a && a.atis_code) {
+          const text = (a.text_atis || []).join(' ');
+          const code = String(a.atis_code).toUpperCase().slice(0, 1);
+          w.atis = {code, at: (text.match(/\b\d{2}(\d{4})\b/) || [])[1] || '',
+                    f: Object.assign({info: code}, parseAtis(text, ic === st.plan.dep ? 'dep' : 'arr'))};
+        } else w.atis = null;
+        if (JSON.stringify(w.atis) !== was) changed = true;
+      });
+    } catch(e){ vAt = Date.now() - 45000; }   // try again in 15 s
+    vBusy = false;
+  }
+  for (const ic of icaos) {
+    if (Date.now() - (mAt[ic] || 0) < 300000) continue;
+    mAt[ic] = Date.now();
+    try {
+      const raw = (await (await fetch(VMETAR + ic, {cache: 'no-store'})).text()).trim().split('\n')[0];
+      if (!/^[A-Z]{4}\s\d{6}Z/.test(raw)) continue;
+      const w = wx[ic] || (wx[ic] = {});
+      const was = JSON.stringify(w.metar || null);
+      if (Date.now() - (w.gm || 0) >= WX_METAR_MS) changed = true;
+      w.gm = Date.now();
+      w.metar = {raw, at: raw.split(/\s/)[1].slice(2, 6), f: parseMetar(raw)};
+      if (JSON.stringify(w.metar) !== was) changed = true;
+    } catch(e){ mAt[ic] = Date.now() - 240000; }
+  }
+  if (changed) { render(); padsChanged(); }
+}
+setInterval(refreshWx, 15000);
+/* A tablet woken with CLR or ARR already open reads at once, not on the next tick (C2). */
+document.addEventListener('visibilitychange', () => refreshWx());
+window.efbWx = { refresh: () => { vAt = 0; mAt = {}; return refreshWx(true); }, wx, parseAtis, parseMetar };   // for testing
 
 /* ---- render ---------------------------------------------------- */
-let canv = [];
-/* Re-pick (D2, 2026-10-05): 'ARR|star' while that badge's alternatives are open.
-   This tablet only — never saved, never sent — so opening the list mid-call changes
-   nothing anywhere; only the final pick goes through chg(). Before D2 a tap on the
-   chosen badge deselected it, and that clear crossed the link at once. */
-let picking = null;
+let focus = null, buf = '';                    // 'CLR|sq' while a box is open, and what has been typed
+const fParts = id => id ? id.split('|') : [null, null];
+const view = () => { const v = window.efbShell ? window.efbShell.cur() : 'CLR'; return VIEWS[v] ? v : null; };
+const host = k => window.efbShell ? window.efbShell.page(k) : null;
 const ro = ('ResizeObserver' in window) ? new ResizeObserver(es => es.forEach(e => paint(e.target))) : null;
+let canv = [], act = null, dirty = false;
+
+const tray = document.createElement('div');
+tray.className = 'kt'; tray.hidden = true;
+tray.innerHTML = '<div class="kt-in"></div>';
+document.body.appendChild(tray);
+const tin = tray.firstChild;
+tray.addEventListener('contextmenu', e => e.preventDefault());
+
+function boxHtml(n, F){
+  const f = fs(n, F.id), id = n + '|' + F.id, foc = focus === id, s = specOf(n, F);
+  const p = predOf(n, F), v = val(n, F.id), struck = f.s.length > 0;
+  let h = '', g = '', src = '';
+  if (F.k !== 'ink') {
+    if (foc && buf) {
+      const stt = s.status(buf);
+      if (stt.state === 'must') h = '<span class="v">' + esc(s.fmt(stt.value)) + '</span>';
+      else { const sh = s.show(buf); h = '<span class="v">' + esc(sh.text) + '</span>'; g = sh.ghost; }
+    } else if (v) {
+      h = '<span class="v' + (struck ? ' x' : '') + '">' + esc(s.fmt(v)) + '</span>';
+    } else if (p) {
+      h = '<span class="v pred' + (struck ? ' x' : '') + '">' + esc(s.fmt(p)) + '</span>'; src = srcOf(n, F);
+    } else if (foc) {
+      const sh = s.show(''); g = sh.ghost;
+    }
+  }
+  /* The ATIS has moved on since this letter was taken, or expected: say so, in the
+     source's corner. An expectation is the crew's, so it stays; the flag says it is old. */
+  const now = F.live ? F.live() : '', held = v || f.x;
+  const stale = now && held && held !== now ? '<span class="src warn">NOW ' + esc(now) + '</span>' : '';
+  if (stale) src = '';
+  const ink = inkable(n, F);
+  return '<div class="kb' + (F.heavy ? ' heavy' : '') + (F.tall ? ' tall' : '') + (F.k === 'ink' ? ' ink' : '') + (foc ? ' focus' : '') +
+    (ink ? ' inkable' : '') + '" style="flex-grow:' + (F.w || 1) + '" data-p="' + n + '" data-f="' + F.id + '">' +
+    (F.l ? '<label>' + esc(F.l) + '</label>' : '') + (src ? '<span class="src">' + esc(src) + '</span>' : '') + stale +
+    h + (g ? '<span class="gh">' + esc(g) + '</span>' : '') + '<canvas data-p="' + n + '" data-f="' + F.id + '"></canvas></div>';
+}
+
+/* K5: a slot the EFB knows shows its value in green; a slot spoken live stays a yellow word. */
+const SLOT = {
+  ACFT: () => st.plan.cs, TYPE: () => st.plan.type || null, DEST: () => st.plan.arr, DEPT: () => st.plan.dep,
+  ATIS: () => val('ATIS', 'info'), AATIS: () => val('AATIS', 'info'),
+  RWY: () => val('CLR', 'rwy') || val('ATIS', 'rwy'), ARWY: () => val('ARR', 'rwy') || val('AATIS', 'rwy'),
+  FIX: () => st.plan.via,
+  CLIMB: () => st.plan.fl ? (st.plan.fl >= 11000 ? 'FL' + String(Math.round(st.plan.fl / 100)).padStart(3, '0') : String(st.plan.fl)) : null
+};
+function say(who, tpl){
+  return '<div class="kp-say"><b>' + esc(who) + '</b><span>' + esc(tpl).replace(/\[([A-Z]+)(?::([A-Z]+))?\]/g, (m, word, key) => {
+    const fn = SLOT[key || word], v = fn ? fn() : null;
+    return v ? '<span class="kn">' + esc(v) + '</span>' : '<span class="ph">' + word + '</span>';
+  }) + '</span></div>';
+}
 
 function render(){
+  renderRo(); renderCs(); status();
+  const vk = view();
+  if (!vk) { tray.hidden = true; return; }
+  if (act) { dirty = true; return; }               // never rebuild a canvas mid-stroke
   dirty = false;
-  const n = st.tab, S = SPEC[n], P = pad(n), locked = !!P.lock;
-  ep.classList.toggle('locked', locked);
-  fDep.value = st.plan.dep || ''; fArr.value = st.plan.arr || '';
-  status();
-
-  tabsEl.innerHTML = NAMES.map(k => '<button type="button" data-t="' + k + '" aria-pressed="' + (k === n) + '"' +
-    (pad(k).lock ? ' class="lk"' : '') + '>' + k + (pad(k).lock ? ' ✓' : '') + '</button>').join('');
-
-  renderTools();
-
+  const V = VIEWS[vk], el = host(vk); if (!el) return;
   if (ro) canv.forEach(c => ro.unobserve(c));
   canv = [];
-  /* Rows keep their own height; the sheet's spare height goes BETWEEN them, and the
-     strips sit at the foot — room for a resting hand instead of a block at the top
-     over an empty bottom half (v21; v20 grew the boxes instead, and Neil preferred
-     the original heights). */
-  let h = '<div class="ep-grid" style="grid-template-columns:repeat(' + S.cols + ',minmax(0,1fr));grid-template-areas:' +
-          S.areas.map(a => "'" + a + "'").join(' ') + '">';
-  S.f.forEach(F => {
-    const f = fs(n, F.id), inked = f.s.length > 0;
-    const o = F.badge ? opts(n, F.badge) : null;
-    const pk = !!(o && picking === n + '|' + F.id && f.sel && o.list.length > 1);
-    h += '<div class="ep-f' + (F.key ? ' key' : '') + (F.big ? ' big' : '') + (pk ? ' picking' : '') + '" style="grid-area:' + F.id + '" data-f="' + F.id + '">';
-    if (F.l) h += '<span class="ep-l">' + esc(F.l) + '</span>';
-    if (F.badge) {
-      let list;
-      if (pk) list = [f.sel].concat(o.list.filter(v => v !== f.sel));   // the chosen one stays first, where the finger is
-      else if (f.sel) list = [f.sel];
-      else list = o.list.length ? o.list : (o.plan ? [o.plan] : []);
-      if (list.length) {
-        h += '<div class="ep-row">' + list.map(v => {
-          const cls = f.sel && v === f.sel ? 'sel' + (inked ? ' x' : '') + (pk ? ' cur' : '')
-                    : (same(v, o.plan) ? 'plan' : '');
-          return '<button type="button" class="ep-b ' + cls + '" data-b="' + esc(v) + '">' + esc(v) + '</button>';
-        }).join('') + (pk ? '<button type="button" class="ep-b none" data-none="1">None</button>' +
-                            '<span class="ep-more">tap the new one · tap elsewhere to keep</span>'
-                      : f.sel && o.list.length > 1 ? '<span class="ep-more">tap to change</span>' : '') + '</div>';
-      }
+  let h = '<div class="tp-h"><h2>' + V.h + '</h2><div class="kp-tools">' +
+    '<button type="button" data-a="undo" title="Undo on this tablet">↶</button>' +
+    (mode === 'pen' ? '<button type="button" data-a="erase" aria-pressed="' + erasing + '" title="Strokes the pen passes over are removed whole">Erase</button>' : '') +
+    '<button type="button" data-a="clear" title="Empty this page (↶ undoes it)">Clear</button></div></div>' +
+    '<p class="tp-sub">' + V.sub() + '</p>';
+  V.blocks().forEach(b => {
+    if (b[0] === 'sec') h += '<div class="kp-sec">' + b[1] + '<em>' + b[2] + '</em></div>';
+    else if (b[0] === 'say') h += say(b[1], b[2]);
+    else if (b[0] === 'hint') h += '<p class="kp-hint">' + b[1] + '</p>';
+    else if (b[0] === 'rows') {
+      const rows = b[2] === undefined ? SPEC[b[1]].rows : [SPEC[b[1]].rows[b[2]]];
+      rows.forEach(r => { h += '<div class="kp-row">' + r.map(F => boxHtml(b[1], F)).join('') + '</div>'; });
     }
-    /* Chips beside the ink, not above it (v18): with them stacked, the box under
-       the chip row was the only place to write, and the eye says the space to the
-       chip's right is the box. Badge fields keep the stack — a dozen SIDs need the width. */
-    const side = F.chips && !F.noink;
-    if (side) h += '<div class="ep-side">';
-    if (F.chips) h += '<div class="ep-row">' + F.chips.map(c =>
-      '<button type="button" class="ep-c c' + (f.ch[c.id] || 0) + '" data-c="' + c.id + '">' + esc(c.t) + '</button>').join('') + '</div>';
-    if (!F.noink) {
-      const pre = F.pre ? F.pre(st.plan) : '';
-      h += '<div class="ep-ink">' + (pre ? '<span class="ep-pre' + (inked ? ' x' : f.ok ? ' ok' : '') + '">' + esc(pre) + '</span>' : '') +
-           '<canvas data-f="' + F.id + '"></canvas></div>';
-    }
-    if (side) h += '</div>';
-    h += '</div>';
   });
-  h += '</div>';
-  const strip = (key, tag, items) => items ? '<div class="ep-strip">' + (tag ? '<span class="tag">' + tag + '</span>' : '') +
-    items.map(([id, t]) => '<button type="button" class="ep-c c' + (P[key][id] ? 1 : 0) + '" data-' + key + '="' + id + '">' + esc(t) + '</button>').join('') + '</div>' : '';
-  h += '<div class="ep-foot">' + strip('rb', '', S.rb) + strip('set', 'SET', S.set);
-  h += '<p class="ep-hint">Tap a dull value as ATC says it. Write over anything that differs. ' +
-       (locked ? 'Locked — tap the <b>' + n + ' ✓</b> tab again to edit.' : '<b>Done</b> locks the pad and pins it to the header.') + '</p></div>';
-  body.innerHTML = h;
-
-  body.querySelectorAll('canvas').forEach(c => {
-    canv.push(c); bindInk(c);
-    if (ro) ro.observe(c); else paint(c);
-  });
-}
-
-/* The toolbar on its own, so opening the Clear menu never rebuilds the canvases.
-   Clear is one tap; Erase and the pen setting sit in a menu behind its ▾ (v19).
-   Erase is a mode, so while it is on the ▾ says so in --warn. */
-let menuOpen = false;
-function renderTools(){
-  const n = st.tab, P = pad(n);
-  if (P.lock) menuOpen = false;
-  toolsEl.innerHTML = P.lock
-    ? '<span class="unl">Locked ' + esc(P.lock) + ' · tap ' + n + ' ✓ to edit</span>' +
-      '<button type="button" data-a="close">Close</button>'
-    : '<button type="button" data-a="undo" title="Undo">↶</button>' +
-      '<span class="ep-split"><button type="button" data-a="clear" title="Empty this pad (↶ undoes it)">Clear</button>' +
-        '<button type="button" class="more' + (erasing ? ' on' : '') + '" data-a="more" aria-haspopup="true" aria-expanded="' + menuOpen + '" title="Erase, pen">' +
-          (erasing ? 'Erase ' : '') + '▾</button>' +
-        (menuOpen ? '<div class="ep-menu" role="menu">' +
-          '<button type="button" data-a="erase" aria-pressed="' + erasing + '" title="Strokes the pen passes over are removed whole">Erase' + (erasing ? ' — on' : '') + '</button>' +
-          (pen ? '<button type="button" data-a="pen" aria-pressed="' + (pen === 'pen') + '" title="Ink from the pen only, or from fingers too">Pen only' + (pen === 'pen' ? ' ✓' : '') + '</button>' : '') +
-        '</div>' : '') +
-      '</span>' +
-      '<button type="button" class="done" data-a="done">Done</button>' +
-      '<button type="button" data-a="close">Close</button>';
-}
-/* A tap anywhere else shuts the menu. It removes the menu rather than redrawing
-   the toolbar: a redraw on pointerdown would swap out the button being tapped
-   (Done, say) before its click lands. */
-document.addEventListener('pointerdown', e => {
-  if (!menuOpen || e.target.closest('.ep-split')) return;
-  menuOpen = false;
-  const m = toolsEl.querySelector('.ep-menu'); if (m) m.remove();
-  const b = toolsEl.querySelector('.more'); if (b) b.setAttribute('aria-expanded', 'false');
-}, true);
-
-/* ---- taps: tabs, tools, badges, chips --------------------------- */
-/* A tap on another tab shows that pad. A second tap on the tab of the pad already
-   showing, when it is locked, unlocks it — two deliberate taps on the same spot,
-   which a bump does not produce. Replaced a press-and-hold (v17). */
-tabsEl.addEventListener('click', e => {
-  const b = e.target.closest('[data-t]'); if (!b) return;
-  if (b.dataset.t === st.tab && pad(st.tab).lock) { chg(st.tab + '|lock', ''); renderChips(); }
-  st.tab = b.dataset.t; erasing = false; picking = null; render(); save();
-});
-
-toolsEl.addEventListener('click', e => {
-  const b = e.target.closest('[data-a]'); if (!b) return;
-  picking = null;
-  const n = st.tab, P = pad(n);
-  switch (b.dataset.a) {
-    case 'close': menuOpen = false; close(); return;
-    case 'more': menuOpen = !menuOpen; renderTools(); return;
-    case 'undo': undoOne(n); break;
-    case 'erase': erasing = !erasing; menuOpen = false; renderTools(); return;
-    case 'clear':
-      menuOpen = false;
-      stack(n).push({t:'clear', snap: JSON.stringify(P)});
-      clearPads([n]);
-      break;
-    case 'pen': pen = pen === 'pen' ? 'finger' : 'pen'; put(PENKEY, pen); menuOpen = false; renderTools(); return;
-    case 'done': {
-      const d = new Date();
-      chg(n + '|lock', String(d.getUTCHours()).padStart(2, '0') + String(d.getUTCMinutes()).padStart(2, '0') + 'Z');
-      erasing = false; renderChips(); break;
+  el.innerHTML = h;
+  el.classList.add('kp');
+  el.querySelectorAll('canvas').forEach(c => { canv.push(c); bindInk(c); if (ro) ro.observe(c); else paint(c); });
+  renderTray();
+  if (focus) {
+    const fe = el.querySelector('.kb[data-p="' + fParts(focus)[0] + '"][data-f="' + fParts(focus)[1] + '"]');
+    if (fe && !tray.hidden) {
+      const r = fe.getBoundingClientRect(), top = tray.getBoundingClientRect().top;
+      const hdr = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--shtop')) || 0;
+      if (r.bottom > top - 8) window.scrollBy(0, r.bottom - top + 16);
+      else if (r.top < hdr) window.scrollBy(0, r.top - hdr - 16);
     }
-    default: return;
   }
-  render(); save();
-});
-
-/* Tap-away closes an open re-pick list and keeps the choice. Capture phase, so it
-   runs first; the tap then does whatever it would have done anyway. A tap that
-   does nothing else still needs the list folded, hence the deferred render. */
-ep.addEventListener('click', e => {
-  if (!picking) return;
-  const fid = picking.split('|')[1];
-  if (e.target.closest('.ep-body [data-f="' + fid + '"] [data-b], .ep-body [data-f="' + fid + '"] [data-none]')) return;   // a pick, keep or None — the body handler decides
-  picking = null;
-  setTimeout(() => { if (!picking && !ep.hidden && !act && body.querySelector('.ep-f.picking')) render(); }, 0);
-}, true);
-
-body.addEventListener('click', e => {
-  const n = st.tab, P = pad(n);
-  if (P.lock) return;
-  const t = e.target;
-  const fEl = t.closest('[data-f]'), fid = fEl && fEl.dataset.f;
-  const bb = t.closest('[data-b]'), cc = t.closest('[data-c]'), ss = t.closest('[data-set]'), rr = t.closest('[data-rb]');
-  if (t.closest('[data-none]') && fid && picking === n + '|' + fid) {
-    /* None: ATC gave no STAR (vectors, a visual) or no SID. One clean clear. A
-       transition belongs to its procedure and goes with it; the runway stays. */
-    picking = null;
-    chg(fk(n, fid, 'sel'), null); chg(fk(n, fid, 'chart'), null);
-    if (n === 'CLR' && fid === 'sid')  chg(fk(n, 'trans', 'sel'), null);
-    if (n === 'ARR' && fid === 'star') chg(fk(n, 'trans', 'sel'), null);
-  } else if (bb && fid) {
-    const f = fs(n, fid), v = bb.dataset.b, me = n + '|' + fid;
-    if (f.sel && picking !== me) {
-      /* tap the chosen badge: offer the others, change nothing */
-      if (opts(n, SPEC[n].f.find(x => x.id === fid).badge).list.length > 1) { picking = me; render(); }
-      return;
-    }
-    picking = null;
-    if (v === f.sel) { render(); return; }          // the chosen one again: keep it
-    chg(fk(n, fid, 'sel'), v); if (f.chart) chg(fk(n, fid, 'chart'), null);
-    /* a new SID or STAR invalidates a transition or runway it does not have */
-    if (n === 'CLR' && fid === 'sid') { reconcile(n, 'trans', 'sidTrans'); reconcile(n, 'rwy', 'depRwy'); }
-    if (n === 'ARR' && fid === 'star') { reconcile(n, 'trans', 'starTrans'); reconcile(n, 'rwy', 'arrRwy'); }
-    if (n === 'ARR' && (fid === 'star' || fid === 'rwy')) reconcile(n, 'app', 'app');   // an approach to the old runway goes
-  } else if (cc && fid) {
-    const F = SPEC[n].f.find(x => x.id === fid), c = F.chips.find(x => x.id === cc.dataset.c), f = fs(n, fid);
-    const v = f.ch[c.id] || 0;
-    if (c.grp) F.chips.forEach(o => { if (o.grp === c.grp && o.id !== c.id && f.ch[o.id]) chg(fk(n, fid, 'ch|' + o.id), 0); });
-    chg(fk(n, fid, 'ch|' + c.id), c.cyc ? (v + 1) % 3 : (v ? 0 : 1));
-  } else if (ss) { chg(n + '|set|' + ss.dataset.set, P.set[ss.dataset.set] ? 0 : 1); }
-  else if (rr) { chg(n + '|rb|' + rr.dataset.rb, P.rb[rr.dataset.rb] ? 0 : 1); }
-  else return;
-  render(); save();
-});
-function reconcile(n, fid, kind){
-  const f = fs(n, fid); if (!f.sel) return;
-  const o = opts(n, kind);
-  if (o.list.length && !o.list.some(v => same(v, f.sel))) { chg(fk(n, fid, 'sel'), null); if (f.chart) chg(fk(n, fid, 'chart'), null); }
 }
+
+const key = (label, k, cls) => '<button type="button" class="k ' + (cls || '') + '" data-key="' + esc(k) + '">' + label + '</button>';
+const blank = '<button type="button" class="k blank" tabindex="-1"></button>';
+/* The tray: on CLR, ARR and HOLD always there in Keys mode (P9), at one height, a chip
+   row plus four rows of keys with ⌫ and CLR fixed on the right. In Pen mode it comes
+   up only while a choice is open. */
+function renderTray(){
+  const vk = view(), hasKeys = vk && vk !== 'OTHER';
+  const on = !!hasKeys && (mode === 'keys' || !!focus);
+  tray.hidden = !on;
+  const el = vk && host(vk);
+  const pad_ = () => { if (el) el.style.paddingBottom = on ? (tray.offsetHeight + 12) + 'px' : ''; };
+  if (!on) return pad_();
+  if (!focus) { tin.innerHTML = '<div class="kt-idle">Select a box above to enter it</div>'; return pad_(); }
+  const [n, id] = fParts(focus), F = FD[n][id], s = specOf(n, F), p = predOf(n, F), v = val(n, id);
+  let sg = '<div class="kt-l"><b>' + esc(F.l) + '</b><span>' + esc(s.hint || HINT[s.kind] || '') + '</span></div>';
+  if (p && !buf && v !== p && s.kind !== 'opts') sg += '<button type="button" class="sg" data-pick="' + esc(p) + '"><small>' + esc(srcOf(n, F)) + '</small>' + esc(s.fmt(p)) + '</button>';
+  for (const x of F.extra || []) sg += '<button type="button" class="sg tok" data-pick="' + x + '">' + x + '</button>';
+  const chips = s.chips || [], side = (s.tokens || []).filter(t => !chips.includes(t)), many = side.length > 2;
+  for (const t of [...chips, ...(many ? side : [])]) sg += '<button type="button" class="sg tok" data-key="' + t + '">' + t + '</button>';
+  let grid, editing = true;
+  if (s.kind === 'opts') {
+    editing = false;
+    const o = optsOf(n, F);
+    grid = '<div class="kt-p op">' + s.options.map(x => '<button type="button" class="k' + (v === x ? ' sel' : same(x, p || o.plan) ? ' plan' : '') +
+      '" data-pick="' + esc(x) + '">' + esc(x) + '</button>').join('') +
+      (F.none && v ? '<button type="button" class="k none" data-pick="">None</button>' : '') + '</div>';
+  } else if (s.kind === 'letter') {
+    grid = '<div class="kt-p lt">' + s.keys.map(L => key(L, L)).join('') + blank + blank + '</div>';
+  } else if (s.kind === 'text') {
+    grid = '<div class="kt-p tx">' + s.keys.map(L => key(L, L)).join('') + '</div>';
+  } else {
+    const [tl, tr] = many ? [] : side;
+    const tok = t => t ? key((s.labels || {})[t] || t, t, 'tk') : blank;
+    grid = '<div class="kt-p dg">' + ['1','2','3','4','5','6','7','8','9'].map(d => key(d, d)).join('') + tok(tl) + key('0', '0') + tok(tr) + '</div>';
+  }
+  /* EXPECTED takes the third slot of the right-hand column: the one slot free on every
+     tray. The top right is not: ⌫ holds it, and CLOUD's chips fill the chip row. */
+  const ex = '<button type="button" class="k f exp' + (expectable(n, F) ? '' : ' off') + '" data-key="EXP" title="Keep what is entered as expected: dull, like a prediction">EXPECTED</button>';
+  const fn = '<div class="kt-fn">' + (editing ? key('⌫', 'BK', 'f') + key('CLR', 'CLR', 'f') : blank + blank) + ex +
+    (mode === 'pen' ? key('⌄', 'HIDE', 'f') : blank) + '</div>';
+  tin.innerHTML = '<div class="kt-s">' + sg + '</div><div class="kt-b">' + grid + fn + '</div>';
+  pad_();
+}
+
+/* ---- entry: open, settle, commit ------------------------------- */
+const vkOf = n => Object.keys(VIEWS).find(k => VIEWS[k].pads.includes(n)) || n;
+/* Store a value. A value replaces the box's ink; a new pick drops a hand-picked chart. */
+function setVal(n, F, v){
+  const f = fs(n, F.id);
+  gesture(vkOf(n), () => {
+    op(fk(n, F.id, F.k === 'opts' ? 'sel' : 'v'), v || null);
+    if (f.x) op(fk(n, F.id, 'x'), null);           // a value, taken or new, ends the expectation
+    f.s.slice().forEach(t => op(fk(n, F.id, 's|' + t.id), null));
+    if (F.k === 'opts' && f.chart) op(fk(n, F.id, 'chart'), null);
+    linked(n, F.id);
+    cascade(n, F.id, v);
+  });
+  save();
+}
+/* A new SID or STAR, taken or expected, invalidates a transition or runway it does not
+   have; a cleared one takes its transition. Picked and expected alike: an expected
+   transition the new STAR lacks goes, and the box falls back to what the page seeds. */
+function cascade(n, id, v){
+  if (n === 'CLR' && id === 'sid') { if (!v) { op(fk(n, 'trans', 'sel'), null); op(fk(n, 'trans', 'x'), null); } reconcile(n, 'trans', 'sidTrans'); reconcile(n, 'rwy', 'depRwy'); }
+  if (n === 'ARR' && id === 'star') { if (!v) { op(fk(n, 'trans', 'sel'), null); op(fk(n, 'trans', 'x'), null); } reconcile(n, 'trans', 'starTrans'); reconcile(n, 'rwy', 'arrRwy'); }
+  if (n === 'ARR' && (id === 'star' || id === 'rwy')) reconcile(n, 'app', 'app');
+}
+function reconcile(n, fid, kind){
+  const f = fs(n, fid); if (!f.sel && !f.x) return;
+  const o = opts(n, kind); if (!o.list.length) return;
+  const ok = v => o.list.some(y => same(y, v));
+  if (f.sel && !ok(f.sel)) { op(fk(n, fid, 'sel'), null); if (f.chart) op(fk(n, fid, 'chart'), null); }
+  if (f.x && !ok(f.x)) op(fk(n, fid, 'x'), null);
+}
+/* CAVOK replaces visibility and cloud, so it fills the other; moving either off it clears a CAVOK left in the other. */
+function linked(n, id){
+  if (n !== 'ATIS' && n !== 'AATIS') return;
+  const o = id === 'vis' ? 'cld' : id === 'cld' ? 'vis' : null; if (!o) return;
+  const k = fk(n, o, o === 'vis' ? 'sel' : 'v');
+  if (val(n, id) === 'CAVOK') { if (val(n, o) !== 'CAVOK') op(k, 'CAVOK'); }
+  else if (val(n, o) === 'CAVOK') op(k, null);
+}
+/* Tapping outside the tray is Enter (P6): whatever was typed is kept, parsed if legal
+   and as typed if not. Every way of leaving a box comes through here (rev 6). */
+function settle(){
+  if (!focus) return;
+  const [n, id] = fParts(focus), F = FD[n][id];
+  if (buf) setVal(n, F, specOf(n, F).status(buf).value);
+  buf = '';
+}
+/* A second tap on the open box, with nothing typed, takes its prediction, the same as
+   the chip in the tray (Neil, 2026-10-08). With something typed it keeps the typing
+   (rev 6), and a box holding its prediction already is left alone. */
+function open(id){
+  if (id && id === focus && !buf) {
+    const [n, fid] = fParts(id), F = FD[n][fid], p = predOf(n, F);
+    if (p && val(n, fid) !== p) { setVal(n, F, p); render(); return; }
+  }
+  settle(); focus = id; buf = ''; render();
+}
+function close(){ if (!focus) return; settle(); focus = null; render(); }
+/* EXPECTED, the last key: what was typed, else the value the box holds (a STAR just
+   picked), becomes the box's own dull prediction. The box stays open, as after any
+   other key, so a second tap on it takes the expectation like any prediction. */
+function expectable(n, F){ return buf ? specOf(n, F).status(buf).value || null : val(n, F.id); }
+function expect(){
+  const [n, id] = fParts(focus), F = FD[n][id], x = expectable(n, F), f = fs(n, id);
+  if (!x) return;
+  gesture(vkOf(n), () => {
+    op(fk(n, id, 'x'), x);
+    op(fk(n, id, F.k === 'opts' ? 'sel' : 'v'), null);
+    f.s.slice().forEach(t => op(fk(n, id, 's|' + t.id), null));
+    if (f.chart) op(fk(n, id, 'chart'), null);
+    linked(n, id);
+    cascade(n, id, x);
+  });
+  buf = ''; save(); render();
+}
+function press(k){
+  if (!focus) return;
+  const [n, id] = fParts(focus), F = FD[n][id], s = specOf(n, F);
+  if (k === 'HIDE') return close();
+  if (k === 'EXP') return expect();
+  if (k === 'BK') { buf = buf.slice(0, -1); render(); return; }
+  /* CLR clears only what is being typed (P11). */
+  if (k === 'CLR') { buf = ''; render(); return; }
+  if (k === 'NEXT') {                            // a physical keyboard's Enter or Tab
+    if (!buf && !val(n, id) && predOf(n, F)) setVal(n, F, predOf(n, F));
+    const row = SPEC[n].rows.flat(), i = row.indexOf(F), nx = row.slice(i + 1).find(x => x.k !== 'ink');
+    return nx ? open(n + '|' + nx.id) : close();
+  }
+  if (s.kind === 'opts') return;
+  if (s.kind === 'letter') { buf = k; render(); return; }   // one letter: another tap replaces it
+  if (!s.enabled(buf).has(k)) return;              // only at the length cap
+  buf = s.push(buf, k);                            // nothing moves on by itself (P4)
+  render();
+}
+
+/* Any tap that isn't in the tray or on a box settles the open box and closes it. */
+document.addEventListener('click', e => {
+  /* The page's ↶ / Erase / Clear close the box themselves: closing here would redraw the
+     page and detach the button before its own handler saw the tap. */
+  if (!focus || e.target.closest('.kt') || e.target.closest('.kp-tools')) return;
+  const b = e.target.closest('.kb[data-f]');
+  if (b && !b.classList.contains('ink')) return;
+  close();
+}, true);
+document.addEventListener('pointerdown', e => {
+  if (!focus || mode !== 'pen' || e.target.closest('.kt')) return;
+  const b = e.target.closest('.kb[data-f]');
+  if (!b || FD[b.dataset.p][b.dataset.f].k !== 'opts') close();   // pen down elsewhere: the choice folds away
+}, true);
+tray.addEventListener('click', e => {
+  const p = e.target.closest('[data-pick]');
+  if (p && focus) {
+    const [n, id] = fParts(focus);
+    buf = ''; setVal(n, FD[n][id], p.dataset.pick || null);
+    if (mode === 'pen' && FD[n][id].k === 'opts') { focus = null; }
+    render(); return;
+  }
+  const k = e.target.closest('[data-key]');
+  if (k) press(k.dataset.key);
+});
+document.addEventListener('click', e => {
+  const vk = view(); if (!vk) return;
+  const el = host(vk); if (!el || !el.contains(e.target)) return;
+  const a = e.target.closest('[data-a]');
+  if (a) {
+    if (a.dataset.a === 'undo') { close(); undoOne(vk); }
+    else if (a.dataset.a === 'erase') { close(); erasing = !erasing; }
+    else if (a.dataset.a === 'clear') {
+      close();
+      const names = VIEWS[vk].pads;
+      stack(vk).push({t:'clear', names, snap: JSON.stringify(Object.fromEntries(names.map(n => [n, pad(n)])))});
+      clearPads(names);
+    }
+    save(); render(); return;
+  }
+  /* An inkable box works through the pointer handlers below; anything else opens in the tray. */
+  const b = e.target.closest('.kb[data-f]');
+  if (b && !b.classList.contains('inkable')) open(b.dataset.p + '|' + b.dataset.f);
+});
+addEventListener('keydown', e => {
+  if (!focus || e.target.closest('input')) return;
+  const k = e.key;
+  if (/^[0-9]$/.test(k)) press(k);
+  else if (k === 'Backspace') press('BK');
+  else if (k === 'Enter' || k === 'Tab') press('NEXT');
+  else if (k === 'Escape') press('HIDE');
+  else if (/^[a-z]$/i.test(k)) {
+    const [n, id] = fParts(focus), s = specOf(n, FD[n][id]), K = k.toUpperCase();
+    const tok = s.kind === 'letter' || s.kind === 'text' ? K : (s.tokens || []).find(t => t[0] === K);
+    if (tok) press(tok);
+  } else return;
+  e.preventDefault();
+});
+window.addEventListener('efb-view', () => { focus = null; buf = ''; erasing = false; render(); if (view() && !procs) loadProcs(); refreshWx(); });
 
 /* ---- ink -------------------------------------------------------- */
 /* Strokes are CSS px ×10 relative to their own box, so a rotate or a resize
-   redraws from the vectors and never scales a bitmap. Pressure 0–255.
-
-   Each stroke also records the box it was written in (bw × bh, CSS px). Drawn
-   in a SMALLER box — the other tablet, or this one rotated, since boxes stretch
-   to the screen (v20) — it shrinks uniformly to fit, so a squawk written low in
-   a tall box is never cut off. In a larger box it stays at its written size.
-   Strokes from before v20 carry no box and draw 1:1. */
+   redraws from the vectors. Pressure 0–255. Each stroke records the box it was
+   written in (bw × bh); drawn in a smaller box (the other tablet's, or a keyed
+   tablet's 60 px box) it shrinks uniformly to fit. */
 const fitK = (s, r) => (s.bw && s.bh) ? Math.min(1, r.width / s.bw, r.height / s.bh) : 1;
 function inkColor(){ return getComputedStyle(document.documentElement).getPropertyValue('--ep-ink').trim() || '#9fe8ff'; }
 
@@ -3703,13 +4628,12 @@ function paint(c){
   const x = c.getContext('2d');
   x.setTransform(d, 0, 0, d, 0, 0); x.clearRect(0, 0, r.width, r.height);
   x.strokeStyle = x.fillStyle = inkColor(); x.lineCap = x.lineJoin = 'round';
-  fs(st.tab, c.dataset.f).s.forEach(s => drawStroke(x, s, 0.1 * fitK(s, r)));
+  fs(c.dataset.p, c.dataset.f).s.forEach(s => drawStroke(x, s, 0.1 * fitK(s, r)));
 }
 function wAt(s, i){ return s.w * (s.pen ? 0.55 + (s.p[i * 3 + 2] / 255) * 0.9 : 1); }
 function drawStroke(x, s, k){
   const p = s.p, n = p.length / 3;
   if (n === 1) { x.beginPath(); x.arc(p[0] * k, p[1] * k, wAt(s, 0) * 0.6, 0, 7); x.fill(); return; }
-  /* quadratic through the midpoints — smooth without a library */
   let mx = p[0] * k, my = p[1] * k;
   for (let i = 1; i < n; i++) {
     const cx = p[(i - 1) * 3] * k, cy = p[(i - 1) * 3 + 1] * k;
@@ -3720,36 +4644,37 @@ function drawStroke(x, s, k){
   }
   x.beginPath(); x.lineWidth = wAt(s, n - 1); x.moveTo(mx, my); x.lineTo(p[(n - 1) * 3] * k, p[(n - 1) * 3 + 1] * k); x.stroke();
 }
-
-let act = null;
 function bindInk(c){
+  if (!c.closest('.inkable')) return;
   /* iOS: without these the page scrolls, zooms, or Scribble eats the stroke */
   c.addEventListener('touchstart', e => e.preventDefault(), {passive:false});
   c.addEventListener('touchmove', e => e.preventDefault(), {passive:false});
   c.addEventListener('pointerdown', e => down(e, c));
   c.addEventListener('pointermove', e => move(e, c));
   c.addEventListener('pointerup', e => up(e, c));
-  c.addEventListener('pointercancel', e => { if (act && act.id === e.pointerId) { act = null; settle(c); } });
+  c.addEventListener('pointercancel', e => { if (act && act.id === e.pointerId) { act = null; if (grp0) endErase(); settleInk(c); } });
+  c.addEventListener('contextmenu', e => e.preventDefault());
 }
 function pt(e, c){
   const r = c.getBoundingClientRect();
   return [Math.round((e.clientX - r.left) * 10), Math.round((e.clientY - r.top) * 10),
           e.pointerType === 'pen' ? Math.round((e.pressure || 0.5) * 255) : 128];
 }
+let grp0 = null;                                   // an erase drag is one undo step
+function endErase(){ const g = grp0; grp0 = null; if (g && g.ops.length) stack(g.vk).push({t:'g', ops: g.ops}); }
 function down(e, c){
-  if (pad(st.tab).lock || act) return;               // one inking pointer at a time
-  if (e.pointerType === 'pen' && !pen) { pen = 'pen'; put(PENKEY, pen); }      // shows its toggle on the next render
+  if (act) return;                                 // one inking pointer at a time
+  if (e.pointerType === 'pen' && !pen) { pen = 'pen'; put(PENKEY, pen); paintSettings(); }
   if (e.pointerType === 'touch' && (e.width > PALM_PX || e.height > PALM_PX)) return;   // a palm
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   e.preventDefault();
-  if (picking) { picking = null; dirty = true; }     // writing elsewhere keeps the choice; the list folds when the pen lifts
   try { c.setPointerCapture(e.pointerId); } catch(_){}
   const ink = !(e.pointerType === 'touch' && pen === 'pen');   // with a pen about, fingers tap but never ink
   const box = c.getBoundingClientRect();
   act = {id:e.pointerId, c, x0:e.clientX, y0:e.clientY, t0:performance.now(), ink, moved:false,
          s:{w: e.pointerType === 'pen' ? 2.4 : 3.4, pen: e.pointerType === 'pen' ? 1 : 0, p:[],
             bw: Math.round(box.width), bh: Math.round(box.height)}};
-  if (erasing) { eraseAt(c, pt(e, c)); return; }
+  if (erasing) { grp0 = {vk: vkOf(c.dataset.p), ops: []}; eraseAt(c, pt(e, c)); return; }
   act.s.p.push(...pt(e, c));
 }
 function move(e, c){
@@ -3770,51 +4695,48 @@ function move(e, c){
 function up(e, c){
   if (!act || act.id !== e.pointerId) return;
   const a = act; act = null;
-  const n = st.tab, fid = c.dataset.f, f = fs(n, fid);
-  if (erasing) { render(); save(); return; }
+  const n = c.dataset.p, fid = c.dataset.f, f = fs(n, fid), F = FD[n][fid];
+  if (erasing) { endErase(); save(); render(); return; }
   const tap = !a.moved && performance.now() - a.t0 < TAP_MS;
-  if (tap && !f.s.length) {
-    /* an untouched box: a tap confirms its pre-fill, and is otherwise nothing */
-    const F = SPEC[n].f.find(x => x.id === fid);
-    if (F.pre && F.pre(st.plan)) { chg(fk(n, fid, 'ok'), f.ok ? 0 : 1); render(); save(); } else settle(c);
-    return;
+  if (tap && F.k !== 'ink') {
+    /* A choice opens its list. An untouched box with a prediction takes it, or gives it
+       back. Otherwise a tap in a box with ink is the decimal point. */
+    if (F.k === 'opts') { open(n + '|' + fid); return; }
+    if (!f.s.length) {
+      const p = predOf(n, F);
+      if (p) { gesture(vkOf(n), () => op(fk(n, fid, 'v'), f.v ? null : p)); save(); render(); } else settleInk(c);
+      return;
+    }
   }
-  if (!a.ink) { settle(c); return; }
-  if (tap) a.s.p = a.s.p.slice(0, 3);          // a dot — the decimal point
+  if (!a.ink) { settleInk(c); return; }
+  if (tap && !f.s.length && F.k === 'ink') { settleInk(c); return; }   // a stray tap on an empty ink box
+  if (tap) a.s.p = a.s.p.slice(0, 3);              // a dot: the decimal point
   const id = rid();
-  chg(fk(n, fid, 's|' + id), a.s); stack(n).push({t:'add', f:fid, id});
-  render(); save();                             // re-render: pre-fills and badges strike themselves
+  gesture(vkOf(n), () => op(fk(n, fid, 's|' + id), a.s));
+  save(); render();                                // re-render: a prediction or value strikes itself
 }
 function eraseAt(c, q){
-  const n = st.tab, fid = c.dataset.f, f = fs(n, fid), R = ERASE_PX * 10, r = c.getBoundingClientRect();
+  const n = c.dataset.p, fid = c.dataset.f, f = fs(n, fid), R = ERASE_PX * 10, r = c.getBoundingClientRect();
   for (let i = f.s.length - 1; i >= 0; i--) {
-    const p = f.s[i].p, k = fitK(f.s[i], r);              // hit-test where it is drawn
+    const p = f.s[i].p, k = fitK(f.s[i], r);
     for (let j = 0; j < p.length; j += 3) {
       if (Math.abs(p[j] * k - q[0]) < R && Math.abs(p[j + 1] * k - q[1]) < R) {
-        const t = f.s[i]; stack(n).push({t:'del', f:fid, s:t}); chg(fk(n, fid, 's|' + t.id), null); paint(c); break;
+        const t = f.s[i], key = fk(n, fid, 's|' + t.id);
+        if (grp0) grp0.ops.push([key, wire(t)]);
+        chg(key, null); paint(c); break;
       }
     }
   }
 }
-/* Undo is this tablet's own history. It names strokes by id, so undoing my
-   stroke never takes back one the other seat drew since. */
-function undoOne(n){
-  const op = stack(n).pop(); if (!op) return;
-  if (op.t === 'add') chg(fk(n, op.f, 's|' + op.id), null);
-  else if (op.t === 'del') chg(fk(n, op.f, 's|' + op.s.id), op.s);
-  else if (op.t === 'clear') { st.pads[n] = JSON.parse(op.snap); Object.entries(flat(n)).forEach(([k, v]) => tx(k, v)); }
-}
-/* A render the other seat asked for while this one was mid-stroke waits for
-   the pen to lift: rebuilding the canvases would drop the stroke. */
-function settle(c){ if (dirty) render(); else paint(c); }
+/* A render the other seat asked for while this one was mid-stroke waits for the pen to lift. */
+function settleInk(c){ if (dirty) render(); else paint(c); }
 
 /* ---- the link: pads and plan ride the crew layer's socket --------
-   Keys:  CLR|lock · CLR|set|sq · CLR|rb|pdc · CLR|f|sq|ok · CLR|f|sid|sel
-          CLR|f|lvl|ch|via · CLR|f|sq|s|<stroke id> · ~plan
+   Keys:  CLR|f|sq|v · CLR|f|sid|sel · CLR|f|sid|chart · CLR|f|sq|s|<stroke id> · ~plan
    A falsy value is sent as null and deletes the key. "~" keys survive the
    relay's reset. Unlinked, tx is a no-op and the pads are exactly as before. */
 const L = window.efbLink || null;
-let outbox = null, dirty = false, syncing = null;
+let outbox = null, syncing = null;
 const fk = (n, fid, k) => n + '|f|' + fid + '|' + k;
 const wire = t => { const o = {w:t.w, pen:t.pen, p:t.p}; if (t.bw && t.bh) { o.bw = t.bw; o.bh = t.bh; } return o; };
 function flush(){ const k = outbox; outbox = null; if (L && k && Object.keys(k).length) L.send({t:'pad', k}); }
@@ -3826,66 +4748,57 @@ function tx(k, v){
 function txNow(m){ flush(); if (L) L.send(m); }
 
 /* Apply one key to the local state. Unknown pads and shapes are ignored, so a
-   newer page's keys cannot break an older one. */
+   newer page's keys cannot break an older one (and an older page's lock keys
+   are simply not used here). */
 function apply(key, v){
   const a = key.split('|'), n = a[0];
-  if (!SPEC[n]) return;
-  const P = pad(n);
-  if (a[1] === 'lock' && a.length === 2) P.lock = v || '';
-  else if ((a[1] === 'set' || a[1] === 'rb') && a.length === 3) P[a[1]][a[2]] = v ? 1 : 0;
-  else if (a[1] === 'f' && a.length >= 4) {
-    const f = fs(n, a[2]);
-    if (a[3] === 'ok' && a.length === 4) f.ok = v ? 1 : 0;
-    else if (a[3] === 'sel' && a.length === 4) f.sel = v || null;
-    else if (a[3] === 'chart' && a.length === 4) f.chart = v || null;
-    else if (a[3] === 'ch' && a.length === 5) f.ch[a[4]] = +v || 0;
-    else if (a[3] === 's' && a.length === 5) {
-      const i = f.s.findIndex(t => t.id === a[4]);
-      if (v && Array.isArray(v.p)) { const t = Object.assign(wire(v), {id:a[4]}); if (i < 0) f.s.push(t); else f.s[i] = t; }
-      else if (i >= 0) f.s.splice(i, 1);
-    }
+  if (!SPEC[n] || a[1] !== 'f' || a.length < 4) return;
+  const f = fs(n, a[2]);
+  if (a[3] === 'v' && a.length === 4) f.v = (v == null ? null : String(v)) || null;
+  else if (a[3] === 'sel' && a.length === 4) f.sel = (v == null ? null : String(v)) || null;
+  else if (a[3] === 'x' && a.length === 4) f.x = (v == null ? null : String(v)) || null;
+  else if (a[3] === 'chart' && a.length === 4) f.chart = v || null;
+  else if (a[3] === 'ch' && a.length === 5) f.ch[a[4]] = +v || 0;
+  else if (a[3] === 's' && a.length === 5) {
+    const i = f.s.findIndex(t => t.id === a[4]);
+    if (v && Array.isArray(v.p)) { const t = Object.assign(wire(v), {id:a[4]}); if (i < 0) f.s.push(t); else f.s[i] = t; }
+    else if (i >= 0) f.s.splice(i, 1);
   }
 }
 /* Every local change goes through here: state now, the other seat next. */
 function chg(key, v){ if (!v) v = null; if (key !== '~plan') apply(key, v); tx(key, v); }
 function clearPads(names, fromPeer){
-  names.forEach(n => { st.pads[n] = {lock:'', f:{}, set:{}, rb:{}}; });
+  names.forEach(n => { st.pads[n] = blankPad(); });
+  if (focus && names.includes(fParts(focus)[0])) { focus = null; buf = ''; }
   if (!fromPeer) txNow({t:'padclr', p: names.map(n => n + '|')});
 }
 /* A pad as keys — for the union on join, and for undoing a Clear. */
 function flat(n){
   const P = st.pads[n], o = {}; if (!P) return o;
-  if (P.lock) o[n + '|lock'] = P.lock;
-  ['set', 'rb'].forEach(g => Object.entries(P[g] || {}).forEach(([id, v]) => { if (v) o[n + '|' + g + '|' + id] = 1; }));
   Object.entries(P.f || {}).forEach(([fid, f]) => {
-    if (f.ok) o[fk(n, fid, 'ok')] = 1;
+    if (f.v) o[fk(n, fid, 'v')] = f.v;
     if (f.sel) o[fk(n, fid, 'sel')] = f.sel;
+    if (f.x) o[fk(n, fid, 'x')] = f.x;
     if (f.chart) o[fk(n, fid, 'chart')] = f.chart;
     Object.entries(f.ch || {}).forEach(([c, v]) => { if (v) o[fk(n, fid, 'ch|' + c)] = v; });
     (f.s || []).forEach(t => { o[fk(n, fid, 's|' + t.id)] = wire(t); });
   });
   return o;
 }
-function after(){
-  save(); renderChips();
-  if (ep.hidden) return;
-  if (act) dirty = true; else render();
-}
-/* Union on join, the same rule as ticks: the room's keys land here, then
-   whatever only this tablet holds is pushed. A stroke erased on the other seat
-   while this one was offline therefore comes back — as a tick does.
-
-   A CLEAR does not come back. st.gen remembers, per room, the clear count this
-   tablet last saw for each pad ('*' = resets). A pad whose count moved while we
-   were away is dropped on join rather than pushed — otherwise a tablet asleep
-   through the turn would put leg 1's clearance back on both screens. */
+function after(){ save(); render(); }
+/* Union on join, the same rule as ticks. A CLEAR does not come back: st.gen
+   remembers, per room, the clear count this tablet last saw for each pad
+   ('*' = resets). A pad whose count moved while we were away is dropped on join
+   rather than pushed — otherwise a tablet asleep through the turn would put
+   leg 1's clearance back on both screens. */
 function genSeen(g){ if (g && typeof g === 'object' && L.room) st.gen = {room: L.room(), g: Object.assign({}, g)}; save(); }
 function dropMissed(g){
   if (!g || typeof g !== 'object' || !L.room || !st.gen || st.gen.room !== L.room()) return;
   const was = st.gen.g || {};
   NAMES.forEach(n => {
-    if ((was['*'] || 0) !== (g['*'] || 0) || (was[n] || 0) !== (g[n] || 0)) { st.pads[n] = {lock:'', f:{}, set:{}, rb:{}}; delete undo[n]; }
+    if ((was['*'] || 0) !== (g['*'] || 0) || (was[n] || 0) !== (g[n] || 0)) { st.pads[n] = blankPad(); }
   });
+  Object.keys(undo).forEach(k => delete undo[k]);
 }
 function union(){
   const seen = syncing || {}; syncing = null;
@@ -3915,126 +4828,28 @@ if (L) L.on(m => {
   if (m.t === 'padsync') { union(); return; }
   if (m.t === 'padclr' && Array.isArray(m.p)) {
     const ns = m.p.map(x => String(x).replace(/\|$/, '')).filter(n => SPEC[n]);
-    clearPads(ns, true); ns.forEach(n => delete undo[n]); genSeen(m.gen); after(); return;
+    clearPads(ns, true); Object.keys(undo).forEach(k => delete undo[k]); genSeen(m.gen); after(); return;
   }
   if (m.t === 'reset') {
-    st.pads = {}; staleFrom = ''; Object.keys(undo).forEach(k => delete undo[k]);
+    st.pads = {}; staleFrom = ''; focus = null; buf = ''; Object.keys(undo).forEach(k => delete undo[k]);
     genSeen(m.gen); saveNow(); after();
   }
 });
 
-/* ---- recall chips in the header --------------------------------- */
-/* fitW: shrink the whole line to fit that width (OTHER) rather than show the
-   first 52 px of it at full height. */
-function thumb(n, fid, fitW){
-  const s = fs(n, fid).s; if (!s.length) return null;
-  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
-  s.forEach(t => { for (let j = 0; j < t.p.length; j += 3) {
-    x0 = Math.min(x0, t.p[j]); x1 = Math.max(x1, t.p[j]); y0 = Math.min(y0, t.p[j + 1]); y1 = Math.max(y1, t.p[j + 1]); } });
-  const pad_ = 40, H = 22, wU = x1 - x0 + pad_ * 2, hU = y1 - y0 + pad_ * 2;
-  let k = H / Math.max(200, hU), oy = 0;
-  if (fitW && wU * k > fitW) { k = fitW / wU; oy = (H - hU * k) / 2; }
-  const W = fitW ? Math.max(12, Math.min(fitW, wU * k)) : Math.min(52, Math.max(12, wU * k)), d = window.devicePixelRatio || 1;
-  const c = document.createElement('canvas'); c.width = Math.round(W * d); c.height = Math.round(H * d); c.style.width = W + 'px';
-  const x = c.getContext('2d'); x.setTransform(d * k, 0, 0, d * k, d * k * (pad_ - x0), d * (oy + k * (pad_ - y0)));
-  x.strokeStyle = x.fillStyle = inkColor(); x.lineCap = x.lineJoin = 'round';
-  s.forEach(t => drawStroke(x, Object.assign({}, t, {w: Math.max(1.2, t.w * 0.45) / k}), 1));
-  return c;
-}
-/* A tap folds a chip to its name and back — this tablet only, never stored,
-   so every load starts unfolded. A hold opens the pad. A change to what the
-   chip shows (lock, SID/STAR, key ink) unfolds it again, on both tablets,
-   because each one sees the change arrive. */
-const chipCol = new Set(), chipSig = {};
-let chipKey = '', chipHoldT = null;
-function sig(n){
-  const P = pad(n), S = SPEC[n].sum;
-  return [P.lock, S.badge ? fs(n, S.badge).sel || '' : '',
-          (S.ink || []).map(id => fs(n, id).s.map(t => t.id).join(',')).join('/')].join('#');
-}
-function chipHold(b, n){
-  let fired = false;
-  b.addEventListener('pointerdown', () => {
-    fired = false; clearTimeout(chipHoldT); b.classList.add('hold');
-    chipHoldT = setTimeout(() => { chipHoldT = null; fired = true; b.classList.remove('hold'); open(n); }, 700);
-  });
-  ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => b.addEventListener(t, () => {
-    if (chipHoldT) { clearTimeout(chipHoldT); chipHoldT = null; }
-    b.classList.remove('hold');
-  }));
-  b.addEventListener('click', () => {
-    if (fired) { fired = false; return; }
-    if (chipCol.has(n)) chipCol.delete(n); else chipCol.add(n);
-    renderChips();
-  });
-  b.addEventListener('contextmenu', e => e.preventDefault());
-}
-function renderChips(){
-  NAMES.forEach(n => {
-    if (!pad(n).lock) { delete chipSig[n]; chipCol.delete(n); return; }
-    const g = sig(n);
-    if (chipSig[n] !== undefined && chipSig[n] !== g) chipCol.delete(n);
-    chipSig[n] = g;
-  });
-  /* Remote edits re-render often; rebuild only when a chip would look different,
-     so a hold in progress is not cut off by an unrelated stroke. */
-  const key = JSON.stringify([chipSig, [...chipCol], chips.clientWidth, document.documentElement.dataset.theme || '']);
-  if (key === chipKey) return;
-  chipKey = key;
-  if (chipHoldT) { clearTimeout(chipHoldT); chipHoldT = null; }
-  chips.innerHTML = '';
-  let fill = null;
-  NAMES.forEach(n => {
-    const P = pad(n); if (!P.lock) return;
-    const S = SPEC[n].sum, col = chipCol.has(n), b = document.createElement('button');
-    b.type = 'button'; b.className = 'ep-chip' + (col ? ' col' : '');
-    b.title = 'Tap to fold or unfold · hold to open the ' + n + ' pad — locked ' + P.lock;
-    /* No timestamp here — it costs header width; it is on the pad's Locked button. */
-    b.innerHTML = '<span>' + n + (col ? '' : ' ✓') + '</span>';
-    if (!col) {
-      /* Parts are dot-separated, so ATIS Info K and QNH 1011 read "K · 1011", not "K1011". */
-      const parts = [];
-      if (S.badge) { const v = fs(n, S.badge).sel; if (v) { const x = document.createElement('span'); x.className = 'x'; x.textContent = v; parts.push(x); } }
-      if (S.fill) fill = {b, n, id: S.ink[0]};
-      else (S.ink || []).forEach(id => { const c = thumb(n, id); if (c) parts.push(c); });
-      parts.forEach((p, i) => {
-        if (i) { const d = document.createElement('span'); d.className = 'sep'; d.textContent = '·'; b.appendChild(d); }
-        b.appendChild(p);
-      });
-    }
-    chipHold(b, n);
-    chips.appendChild(b);
-  });
-  /* OTHER's line takes the row's leftover width, measured once the rest are in. */
-  if (fill) {
-    const kids = Array.from(chips.children), gap = 6;
-    const used = kids.reduce((w, k) => w + k.offsetWidth, 0) + gap * (kids.length - 1);
-    const room = chips.clientWidth - used - 7 - 2;           // the chip's own gap and border
-    const c = thumb(fill.n, fill.id, Math.max(52, room)); if (c) fill.b.appendChild(c);
-  }
-  const locked = NAMES.filter(n => pad(n).lock);
-  if (chipSeen && locked.some(n => !chipSeen.includes(n))) chipsShown(true);
-  chipSeen = locked;
-  caret.hidden = !chips.children.length;
-  caret.innerHTML = chips.children.length + '<span class="car">▼</span>';
-  relayout();
-}
-
-/* ---- Reset is a new flight: pads go, the plan and username stay --- */
+/* ---- Reset is a new flight: pads go, the plan and the Pilot ID stay --- */
 document.getElementById('reset').addEventListener('click', () => {
-  st.pads = {}; staleFrom = ''; Object.keys(undo).forEach(k => delete undo[k]);
-  saveNow(); renderChips(); if (!ep.hidden) render();
+  st.pads = {}; staleFrom = ''; focus = null; buf = ''; Object.keys(undo).forEach(k => delete undo[k]);
+  saveNow(); render(); padsChanged();
 });
 
-/* OTHER fills to the row's width, so the chips follow it. */
-if ('ResizeObserver' in window) { let w = 0;
-  new ResizeObserver(() => { if (chips.clientWidth !== w) { w = chips.clientWidth; renderChips(); } }).observe(chips); }
-renderChips(); renderCs();
-/* Prefetch for an already-planned route, so the first badge tap is instant. */
-if (st.plan.dep || st.plan.arr) setTimeout(loadProcs, 2500);
+render(); renderCs();
+/* Prefetch for an already-planned route, so the first choice is instant. */
+if (st.plan.dep || st.plan.arr) setTimeout(loadProcs, 1500);
+announcePlan();
 
 } catch(e){ try { console.warn('entry pads disabled:', e); } catch(_){} }
 })();
+
 /* ================================================================
    VATSIM FREQUENCIES — added 2026-10-04
 
@@ -4213,10 +5028,10 @@ const el = document.createElement('div');
 el.className = 'vf'; el.hidden = true;
 let open = false;
 function mount(){
-  /* For now: under the Pads sheet's plan row. Moving the panel means changing this. */
-  const row = document.querySelector('.ep .ep-plan');
-  if (!row) return false;
-  row.insertAdjacentElement('afterend', el); return true;
+  /* On the Setup tab (branch efb-tabs). Moving the panel means changing this. */
+  const slot = document.getElementById('slot-vf');
+  if (!slot) return false;
+  slot.appendChild(el); return true;
 }
 el.addEventListener('click', e => { if (e.target.closest('.vf-more')) { open = !open; paint(); } });
 
@@ -4328,9 +5143,10 @@ el.className = 'rc'; el.hidden = true;
 let plan = null, open = false, key = '', done = new Set();
 
 function mount(){
-  const after = document.querySelector('.ep .vf') || document.querySelector('.ep .ep-plan');
-  if (!after) return false;
-  after.insertAdjacentElement('afterend', el); return true;
+  /* Under the Prep checklist (branch efb-tabs). */
+  const slot = document.getElementById('slot-rc');
+  if (!slot) return false;
+  slot.appendChild(el); return true;
 }
 
 /* Runs of the same airway become one group, headed the way the GTC heads
@@ -4492,7 +5308,8 @@ const ki = document.createElement('input');
 ki.id = 'epCk'; ki.type = 'password'; ki.placeholder = 'Chart key'; ki.autocomplete = 'off';
 ki.setAttribute('autocapitalize', 'off'); ki.spellcheck = false; ki.value = bound.k;
 ki.title = 'Chart key — typed once on this tablet. Ask Neil.';
-if (plan) plan.insertBefore(ki, plan.querySelector('#epDep'));
+const ckSlot = document.getElementById('slot-ck');      // ⚙ This tablet, on the Setup tab
+if (ckSlot) ckSlot.appendChild(ki); else if (plan) plan.insertBefore(ki, plan.querySelector('#epDep'));
 ki.addEventListener('keydown', e => { if (e.key === 'Enter') ki.blur(); });
 ki.addEventListener('change', () => {
   key = ki.value.trim(); bound = {o: origin(), k: key}; put(KEYK, key ? JSON.stringify(bound) : ''); keyState = '';
@@ -4616,20 +5433,25 @@ function refOf(t){ return t ? (sub[t.id] || t.refs[0] || null) : null; }
 function paint(){
   const T = tabs();
   if (active !== 'EFB' && !T.some(t => t.id === active)) { active = 'EFB'; listFor = null; }
-  const on = T.length > 0;
+  const on = T.length > 0 || !!window.efbShell;      // with the tabs, the bar also carries ⋯
   bar.hidden = !on; document.body.classList.toggle('ct-on', on);
   bar.innerHTML = on ? '<button type="button" data-tab="EFB" aria-pressed="' + (active === 'EFB') + '"><small>&nbsp;</small>EFB</button>' +
-    T.map(t => {
+    /* With the tabs (branch efb-tabs) every chart kind has a fixed slot, equal width,
+       so DEP, SID, STAR, IAP and DEST are always in the same place: an unavailable one
+       is a blank, not a gap the others slide into (Neil, 2026-10-08, muscle memory). */
+    (window.efbShell ? ['DEP', 'SID', 'STAR', 'IAP', 'DEST'].map(id => T.find(t => t.id === id) || {id, none: 1}) : T).map(t => {
+      if (t.none) return '<span class="ct-slot" aria-hidden="true"></span>';
       const r = refOf(t), cls = (!t.refs.length && !sub[t.id] ? 'q' : '') + (r && r.startsWith('p/') ? ' p' : '');
       return '<button type="button" data-tab="' + esc(t.id) + '" class="' + cls + '" aria-pressed="' + (active === t.id) + '">' +
         '<small>' + t.id + '</small>' + esc(t.label) + (t.refs.length || sub[t.id] ? '' : ' ?') + '</button>';
-    }).join('') : '';
+    }).join('') + (window.efbShell ? '<button type="button" class="sh-dots" data-more="1" aria-label="More">⋯</button>' : '') : '';
   show();
 }
 
 function show(){
   const t = active === 'EFB' ? null : curTab();
   cv.hidden = !t;
+  try { window.dispatchEvent(new Event('efb-chartview')); } catch(e){}
   if (!t) return;
   const ref = refOf(t);
   if (!ref || listFor === t.id) { header(t, ref); list(t, ref); return; }
@@ -4826,6 +5648,7 @@ function zoomAt(cx, cy, s){
 
 /* ---- taps: the bar, the header, the list ---- */
 bar.addEventListener('click', e => {
+  if (e.target.closest('[data-more]')) { window.efbShell.more(); return; }
   const b = e.target.closest('[data-tab]'); if (!b) return;
   active = b.dataset.tab; if (listFor !== active) listFor = null;
   paint();
@@ -4871,6 +5694,7 @@ window.addEventListener('efb-plan', () => refresh());
 /* For the pads' approach badge, and for the link test. */
 window.efbCharts = {
   approaches,
+  home: () => { if (active !== 'EFB') { active = 'EFB'; listFor = null; paint(); } },
   debug: () => ({ key: !!key, keyState, active, tabs: tabs().map(t => t.id + ':' + t.label + ':' + (refOf(t) || '-') + ':' + t.how),
     shown, view: shown && view[shown] ? Object.assign({}, view[shown]) : null,
     drawn: shown && wraps[shown] ? wraps[shown].drawn : 0, open: !cv.hidden })
