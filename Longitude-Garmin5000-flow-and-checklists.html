@@ -760,10 +760,11 @@
   .sh-menu button{display:block;width:100%;text-align:left;border:0;border-radius:0;background:transparent;padding:10px 14px;
     color:var(--ink-dim);font-size:14px;min-height:42px}
   .sh-menu button.ref{padding-left:24px;font-size:13.5px}
-  /* fixed slots: EFB and ⋯ at the ends, the five chart kinds equal between them */
+  /* fixed slots: VATSIM and ⋯ at the ends, the five chart kinds equal between them */
   body.shell #ctabs{overflow-x:hidden}
   body.shell #ctabs > *{flex:1 1 0;min-width:0}
-  body.shell #ctabs > [data-tab="EFB"],body.shell #ctabs > .sh-dots{flex:0 0 64px;padding:1px 4px}
+  body.shell #ctabs > [data-tab="VATSIM"]{flex:0 0 84px;padding:1px 4px}
+  body.shell #ctabs > .sh-dots{flex:0 0 64px;padding:1px 4px}
   body.shell #ctabs > button{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:1px 4px;font-size:13px}
   #ctabs .sh-dots{font-size:20px}
   .ct-slot{box-sizing:border-box;border:1px solid transparent;padding:1px 4px}   /* sized exactly like a tab, so nothing shifts */
@@ -911,7 +912,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v30</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v31</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -2865,7 +2866,6 @@ const su = page('setup');
 su.innerHTML =
   '<div class="tp-h"><h2>Setup</h2></div><p class="tp-sub">This flight</p>' +
   '<div class="st-card" id="slot-plan"></div>' +
-  '<div class="st-card st-slot" id="slot-vf"></div>' +
   '<div class="st-card">' +
     '<div class="st-row"><span class="st-k">Link tablets</span><span class="st-v" id="stLink"></span><button type="button" id="stLinkGo">Link…</button></div>' +
     '<div class="st-row"><span class="st-k">Seat</span><div class="st-seg" id="stSeat">' +
@@ -5027,27 +5027,37 @@ function resolve(p, data, txBy){
 const el = document.createElement('div');
 el.className = 'vf'; el.hidden = true;
 let open = false;
+/* With the tabs it has a page of its own, VATSIM on the chart bar (Neil, 2026-10-09):
+   the chart tabs move el into it, and the nearest list is always open there. On
+   Setup it was out of sight in flight, and opening Setup never restarted its poll. */
+const ownPage = () => !!window.efbShell;
 function mount(){
-  /* On the Setup tab (branch efb-tabs). Moving the panel means changing this. */
-  const slot = document.getElementById('slot-vf');
-  if (!slot) return false;
-  slot.appendChild(el); return true;
+  if (ownPage()) return true;
+  const row = document.querySelector('.ep .ep-plan');
+  if (!row) return false;
+  row.insertAdjacentElement('afterend', el); return true;
 }
 el.addEventListener('click', e => { if (e.target.closest('.vf-more')) { open = !open; paint(); } });
 
 let cs = '', state = 'idle', ans = null, msg = '', feedAt = '', timer = null, busy = false;
 function visible(){ return !!el.offsetParent && document.visibilityState === 'visible'; }
 function paint(){
-  el.hidden = !cs;
-  if (!cs) return;
+  const own = ownPage();
+  if (own) open = true;
+  el.hidden = !cs && !own;
+  if (!cs) {
+    if (own) el.innerHTML = '<div class="vf-row"><span class="vf-why">No callsign yet. Load the SimBrief plan on <b>Setup</b>: ' +
+      'the frequencies follow that callsign once it is connected to VATSIM.</span></div>';
+    return;
+  }
   const age = feedAt ? Math.max(0, Math.round((Date.now() - Date.parse(feedAt)) / 1000)) : null;
-  let h = '<div class="vf-row"><span class="vf-tag">VATSIM</span>';
+  let h = '<div class="vf-row"><span class="vf-tag">' + (own ? esc(cs) : 'VATSIM') + '</span>';
   if (state === 'live' && ans) {
     const a = ans.first;
     h += '<span class="vf-call" title="First contact: who to call from where ' + esc(cs) + ' is now">' +
          '<b>' + esc(a.unicom ? '122.8' : show(a.f)) + '</b><span>' + esc(a.name) + '</span></span>' +
          '<span class="vf-why">' + esc(a.why) + (age != null ? ' · ' + age + ' s ago' : '') + (msg ? ' · ' + esc(msg) : '') + '</span>' +
-         '<button type="button" class="vf-more" aria-expanded="' + open + '">Nearest ' + (open ? '▴' : '▾') + '</button>';
+         (own ? '' : '<button type="button" class="vf-more" aria-expanded="' + open + '">Nearest ' + (open ? '▴' : '▾') + '</button>');
   } else if (state === 'wait') {
     h += '<span class="vf-why">Waiting for <b>' + esc(cs) + '</b> to connect — checking every 15 s' +
          (msg ? ' · ' + esc(msg) : '') + '</span>';
@@ -5112,7 +5122,9 @@ let lastShown = false;
 const kick = () => { const v = visible(); if (v && !lastShown && cs && !busy) tick(true); lastShown = v; };
 const sheet = el.closest('.ep');
 if (sheet) new MutationObserver(kick).observe(sheet, {attributes: true, attributeFilter: ['hidden']});
+window.addEventListener('efb-chartview', kick);     // the VATSIM page opening or closing
 document.addEventListener('visibilitychange', kick);
+if (ownPage()) window.efbVatsim = { el, debug: () => ({cs, state, msg, rows: ans ? ans.list.length : 0}) };
 onPlan(window.efbPlan ? window.efbPlan() : null);
 
 } catch(e){ try { console.warn('VATSIM frequencies disabled:', e); } catch(_){} }
@@ -5279,6 +5291,9 @@ css.textContent = `
   .cv-w canvas{display:block}
   .cv-m{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;
     color:var(--ink-dim);font-size:15px;line-height:1.5}
+  .cv-s[hidden],.cv-v[hidden]{display:none}
+  .cv-v{flex:1 1 auto;overflow:auto;padding:4px 12px 20px}
+  .cv-v .vf{border-bottom:0;font-size:14px}
   .cv-l{position:absolute;inset:0;overflow:auto;background:var(--bg);padding:8px 10px 20px;z-index:2}
   .cv-l h4{margin:12px 2px 6px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
   .cv-l button{display:block;width:100%;text-align:left;margin:0 0 5px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);
@@ -5298,9 +5313,9 @@ const bar = document.createElement('nav');
 bar.id = 'ctabs'; bar.hidden = true; bar.setAttribute('aria-label', 'Chart tabs');
 const cv = document.createElement('div');
 cv.id = 'cview'; cv.hidden = true; cv.setAttribute('role', 'dialog'); cv.setAttribute('aria-label', 'Chart');
-cv.innerHTML = '<div class="cv-h"></div><div class="cv-s"></div>';
+cv.innerHTML = '<div class="cv-h"></div><div class="cv-s"></div><div class="cv-v" hidden></div>';
 document.body.appendChild(cv); document.body.appendChild(bar);
-const head = cv.querySelector('.cv-h'), stage = cv.querySelector('.cv-s');
+const head = cv.querySelector('.cv-h'), stage = cv.querySelector('.cv-s'), vv = cv.querySelector('.cv-v');
 
 /* ---- the chart key, on the Pads sheet beside the SimBrief Pilot ID ---- */
 const plan = document.querySelector('.ep-plan');
@@ -5432,10 +5447,15 @@ function refOf(t){ return t ? (sub[t.id] || t.refs[0] || null) : null; }
 /* ---- painting ---- */
 function paint(){
   const T = tabs();
-  if (active !== 'EFB' && !T.some(t => t.id === active)) { active = 'EFB'; listFor = null; }
+  if (active !== 'EFB' && active !== 'VATSIM' && !T.some(t => t.id === active)) { active = 'EFB'; listFor = null; }
   const on = T.length > 0 || !!window.efbShell;      // with the tabs, the bar also carries ⋯
   bar.hidden = !on; document.body.classList.toggle('ct-on', on);
-  bar.innerHTML = on ? '<button type="button" data-tab="EFB" aria-pressed="' + (active === 'EFB') + '"><small>&nbsp;</small>EFB</button>' +
+  /* With the tabs, the strip above stays visible over a chart and is the way back,
+     so the bar's EFB button became VATSIM (Neil, 2026-10-09). 'EFB' is still the
+     name of "no layer open". Without the tabs, EFB stays: nothing else closes a chart. */
+  bar.innerHTML = on ? (window.efbShell
+      ? '<button type="button" data-tab="VATSIM" aria-pressed="' + (active === 'VATSIM') + '"><small>&nbsp;</small>VATSIM</button>'
+      : '<button type="button" data-tab="EFB" aria-pressed="' + (active === 'EFB') + '"><small>&nbsp;</small>EFB</button>') +
     /* With the tabs (branch efb-tabs) every chart kind has a fixed slot, equal width,
        so DEP, SID, STAR, IAP and DEST are always in the same place: an unavailable one
        is a blank, not a gap the others slide into (Neil, 2026-10-08, muscle memory). */
@@ -5449,8 +5469,14 @@ function paint(){
 }
 
 function show(){
-  const t = active === 'EFB' ? null : curTab();
-  cv.hidden = !t;
+  const vat = active === 'VATSIM' && !!window.efbVatsim;
+  const t = active === 'EFB' || active === 'VATSIM' ? null : curTab();
+  cv.hidden = !t && !vat;
+  stage.hidden = vat; vv.hidden = !vat;
+  if (vat) {
+    head.innerHTML = '<b>VATSIM</b><span class="t">Frequencies from where the aeroplane is on the network</span>';
+    if (window.efbVatsim.el.parentNode !== vv) vv.appendChild(window.efbVatsim.el);
+  }
   try { window.dispatchEvent(new Event('efb-chartview')); } catch(e){}
   if (!t) return;
   const ref = refOf(t);
