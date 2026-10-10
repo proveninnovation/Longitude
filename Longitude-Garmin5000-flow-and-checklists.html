@@ -940,7 +940,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v35</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v36</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -5314,9 +5314,10 @@ window.efbRoute = { el, open: v => { open = !!v; paint(); } };
    LOAD SHEET — added 2026-10-10 (Nic, issue #24). The SimBrief load,
    worked to Nic's house figures, on the PLAN page under the route:
    84 kg a passenger, one a seat from the front; the bags into the
-   baggage station; 200 kg of crew and stores, half in each crew seat;
-   block fuel half in each wing tank. SimBrief's own totals (its
-   passenger weight, no crew line) sit underneath for comparison.
+   baggage station; block fuel half in each wing tank. SimBrief's OEW
+   already holds the crew (Nic, #24, 2026-10-10), so there is no crew
+   line: until v35 a 200 kg crew-and-stores line counted them twice.
+   SimBrief's own totals (its passenger weight) sit underneath.
    Read-only: nothing reaches the sim yet. That half needs a bridge on
    FS01 and waits for its rig capture. No PHASES row and no c:/ev:.
 ================================================================ */
@@ -5324,7 +5325,7 @@ window.efbRoute = { el, open: v => { open = !!v; paint(); } };
 'use strict';
 try {
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const PAX_KG = 84, CREW_KG = 200, LB = 2.20462;
+const PAX_KG = 84, LB = 2.20462;
 const css = document.createElement('style');
 css.textContent = `
   .ls{margin:14px 0 0}
@@ -5350,17 +5351,16 @@ function paint(p){
   const k = d.u === 'lbs' ? LB : 1, u = d.u === 'lbs' ? 'lb' : 'kg';
   const f = n => Math.round(n).toLocaleString('en-AU');
   const half = n => (n / 2).toLocaleString('en-AU', {maximumFractionDigits: 1});     // 3,045 → 1,522.5, so the halves add up
-  const pw = PAX_KG * k, crew = CREW_KG * k, pax = d.pax * pw, pay = pax + d.cargo + crew;
+  const pw = PAX_KG * k, pax = d.pax * pw, pay = pax + d.cargo;
   const zfw = d.oew + pay, ramp = zfw + d.ramp, tow = ramp - d.taxi, ldw = tow - d.trip;
   const lim = (v, m) => '<td class="v' + (m && v > m ? ' over' : '') + '">' + f(v) + '</td><td class="w">' +
     (m ? (v > m ? 'over ' : 'max ') + f(m) : '') + '</td>';
   const row = (a, v, w) => '<tr><td>' + a + '</td><td class="v">' + f(v) + '</td><td class="w">' + (w || '') + '</td></tr>';
   el.innerHTML = '<div class="ls-h">LOAD · ' + u + ' · Nic&rsquo;s figures</div><table>' +
-    row('Empty weight', d.oew, 'SimBrief OEW') +
+    row('Empty weight', d.oew, 'SimBrief OEW, crew included') +
     row('Passengers', pax, d.pax + ' × ' + f(pw) + ', one a seat from the front' +
       (d.maxPax && d.pax > d.maxPax ? ' · <span class="over">more than the ' + d.maxPax + ' seats</span>' : '')) +
     row('Baggage', d.cargo, 'baggage station') +
-    row('Crew and stores', crew, half(crew) + ' each crew seat') +
     '<tr class="t"><td>Zero fuel</td>' + lim(zfw, d.max.zfw) + '</tr>' +
     row('Block fuel', d.ramp, half(d.ramp) + ' each wing tank') +
     '<tr class="t"><td>Take-off</td>' + lim(tow, d.max.tow) + '</tr>' +
@@ -5368,7 +5368,7 @@ function paint(p){
     '</table>' +
     '<p class="ls-sb">Fuel: taxi ' + f(d.taxi) + ' · trip ' + f(d.trip) + ' · contingency ' + f(d.cont) +
       ' · alternate ' + f(d.altn) + ' · reserve ' + f(d.res) + ' · extra ' + f(d.extra) + '. Take-off is block less taxi; landing is take-off less trip.</p>' +
-    '<p class="ls-sb">SimBrief&rsquo;s own, with passengers at ' + f(d.paxW) + ' and no crew line: zero fuel ' + f(d.sb.zfw) +
+    '<p class="ls-sb">SimBrief&rsquo;s own, with passengers at ' + f(d.paxW) + ': zero fuel ' + f(d.sb.zfw) +
       ' · take-off ' + f(d.sb.tow) + ' · landing ' + f(d.sb.ldw) + '.</p>' +
     '<p class="ls-note">Shown only. Set it in the sim&rsquo;s Weight &amp; Balance by hand for now: loading it into the sim waits for FS01 (issue #24).</p>';
 }
