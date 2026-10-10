@@ -210,11 +210,10 @@
   .item .who{margin-top:0;position:relative;top:1px;flex:0 0 auto;margin-left:2px}
   .item.done .who{opacity:.35}
 
-  /* role dimming — BOTH never dims */
+  /* role dimming — BOTH never dims. Flow steps only: checklist items stay in full until
+     ticked, because the PM reads every challenge (Nic, issue #25, 2026-10-10). */
   body[data-role="PF"] .row[data-who="PM"],
-  body[data-role="PF"] .item[data-who="PM"],
-  body[data-role="PM"] .row[data-who="PF"],
-  body[data-role="PM"] .item[data-who="PF"]{opacity:.4}
+  body[data-role="PM"] .row[data-who="PF"]{opacity:.4}
 
   footer{color:var(--ink-faint);font-size:12.5px;padding:22px 0 8px;border-top:1px solid var(--line);margin-top:22px}
   /* lets the last phases scroll to the top, so a jump always lands exactly */
@@ -779,6 +778,7 @@
   body.shell #ctabs > *{flex:1 1 0;min-width:0}
   body.shell #ctabs > [data-tab="VATSIM"]{flex:0 0 84px;padding:1px 4px}
   body.shell #ctabs > [data-tab="PLAN"]{flex:0 0 70px;padding:1px 4px}
+  body.shell #ctabs > [data-tab="OFP"]{flex:0 0 62px;padding:1px 4px}
   body.shell #ctabs > .sh-dots{flex:0 0 64px;padding:1px 4px}
   body.shell #ctabs > button{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:1px 4px;font-size:13px}
   #ctabs .sh-dots{font-size:20px}
@@ -927,7 +927,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v32</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v33</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -1106,7 +1106,7 @@ const PHASES = [
   ['Landing gear handle','Down','PF',{c:'vhigh', ev:'Operators Guide §XVII p.17-2 Cockpit Inspection 3, verbatim.'}],
   ['BATTERIES left &amp; right','ON, volts checked','PF',{c:'full', ev:'CHANGED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”), was “BATT buttons — both — On, volts checked”. Operators Guide §XVII p.17-2 Cockpit Inspection 4, verbatim. Corroborated on camera — VS-003 (New York–London) @ 0:59 — “Batteries are on.” — so this item is a Longitude document AND the real crew running it.'}],
   ['EIS / CAS','Checked','BOTH',{c:'full', ev:'Operators Guide §XVII p.17-2 Cockpit Inspection 5, verbatim. Corroborated on camera — VS-003 (New York–London) @ 1:01 — “EIS and CAS.” / “Is checked.” — so this item is a Longitude document AND the real crew running it.'}],
-  ['External power / APU','On — batteries zero or charging','PM',{c:'full', ev:'Operators Guide §XVII p.17-2 Cockpit Inspection 6a–6e, condensed to one line. Corroborated on camera — VS-003 (New York–London) @ 1:10–1:13 — “APU.” / “Is on.” then “External power.” / “Not required.” Back to back, which is the either/or Nic described being exercised rather than described.'}],
+  ['External power / APU','On — batteries zero or charging','PF',{c:'full', ev:'ANSWERED BY PF at NIC’S REQUEST 2026-10-10 (issue #25), was PM. Operators Guide §XVII p.17-2 Cockpit Inspection 6a–6e, condensed to one line. Corroborated on camera — VS-003 (New York–London) @ 1:10–1:13 — “APU.” / “Is on.” then “External power.” / “Not required.” Back to back, which is the either/or Nic described being exercised rather than described.'}],
   ['Exterior and interior lights','As required','PM',{c:'vhigh', ev:'CHANGED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”), was “On, checked, set”. Operators Guide §XVII p.17-2 Cockpit Inspection 7, verbatim.'}],
   ['Covers &amp; chocks','Removed','PM',{c:'full', ev:'ADDED at NIC’S REQUEST 2026-10-02 (the Longitude repo issue #1, “Changes to checklist items 02-10-26”): “COVERS & CHOCKS - REMOVE (there is a Streamdeck button for this)”. Not an Operators Guide Cockpit Inspection item — the Guide leaves covers and chocks to the exterior inspection. On Nic’s rig it is one Streamdeck button, so it earns a tick here.'}]
  ]},
@@ -1144,11 +1144,11 @@ const PHASES = [
 {kind:'list', short:'Prep', title:'Cockpit Preparation', mode:'When PF requests · challenge &amp; response',
  items:[
   ['ATIS and clearance','Copied and set','PM',{c:'vhigh', ev:'Operators Guide §XVII p.17-3 Cockpit Preparation 6, verbatim.'}],
-  ['Fuel quantity &amp; balance','Verified','PM',{c:'full', ev:'MOVED and CHANGED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”) from 2.i to sit above the INIT line, was “Fuel quantity and balance — Figure stated, and balanced”. Operators Guide §XVII Cockpit Preparation 12 (Fuel Quantity and Balance — Check). CHANGED 2026-09-13: NIC QUERIED (v3 review, item 2.K) “Stated fuel amount?” — the response used to read “10,380 and balanced”, the reference crew’s figure from VS-001, illustrative only and easily mistaken for a target. The response now asks for the figure to be SPOKEN rather than quoting someone else’s. Saying the number aloud is the whole point of the item, and that part is the crew’s, verbatim: “10,380 and we are balanced.” Flow step 2.10 keeps their figure as a spoken example.'}],
-  ['INIT weight &amp; fuel, flight plan, takeoff data','Complete','PM',['initialisation','weight-fuel','takeoff-data'],{c:'vhigh', ev:'COLLAPSED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”) from two lines, “Weight and fuel — Completed” and “Takeoff data — Completed” (was 2.e, removed), with the flight plan added. Wording is Nic’s; INIT names the Working Title initialisation page that walks through all three (flow step 2.5). Operators Guide §XVII p.17-3 Cockpit Preparation 8, verbatim. The takeoff-data half: Operators Guide §XVII p.17-3 Cockpit Preparation 9, verbatim.'}],
+  ['Fuel quantity &amp; balance','Verified','PF',{c:'full', ev:'ANSWERED BY PF at NIC’S REQUEST 2026-10-10 (issue #25), was PM. MOVED and CHANGED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”) from 2.i to sit above the INIT line, was “Fuel quantity and balance — Figure stated, and balanced”. Operators Guide §XVII Cockpit Preparation 12 (Fuel Quantity and Balance — Check). CHANGED 2026-09-13: NIC QUERIED (v3 review, item 2.K) “Stated fuel amount?” — the response used to read “10,380 and balanced”, the reference crew’s figure from VS-001, illustrative only and easily mistaken for a target. The response now asks for the figure to be SPOKEN rather than quoting someone else’s. Saying the number aloud is the whole point of the item, and that part is the crew’s, verbatim: “10,380 and we are balanced.” Flow step 2.10 keeps their figure as a spoken example.'}],
+  ['INIT weight &amp; fuel, flight plan, takeoff data','Complete','PF',['initialisation','weight-fuel','takeoff-data'],{c:'vhigh', ev:'ANSWERED BY PF at NIC’S REQUEST 2026-10-10 (issue #25), was PM. COLLAPSED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”) from two lines, “Weight and fuel — Completed” and “Takeoff data — Completed” (was 2.e, removed), with the flight plan added. Wording is Nic’s; INIT names the Working Title initialisation page that walks through all three (flow step 2.5). Operators Guide §XVII p.17-3 Cockpit Preparation 8, verbatim. The takeoff-data half: Operators Guide §XVII p.17-3 Cockpit Preparation 9, verbatim.'}],
   ['V-speeds','Set and crosschecked','BOTH',{c:'full', ev:'CHANGED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”), was “Stated aloud — V1, VR, V2, enroute — set and crosschecked”. Operators Guide §XVII Cockpit Preparation 10 (V Speeds — Verify/Set), verbatim. CHANGED 2026-09-13: NIC QUERIED (v3 review, item 2.I) “Stated V-speeds?” — the response used to read “99, 115, 120, 185”, which were the REFERENCE CREW’S numbers at their weight from VS-001, illustrative only. Read on the tablet mid-flow they looked like values to set, which is exactly the trap. The response now names the four speeds to be spoken instead of quoting four that are not yours. The mechanic — PM states them aloud, PF answers off their own tape — is unchanged and is the crew’s (VS-001, “Speeds are posted” / “99, 115, 120, 185”); it is the numbers that have gone. Flow steps 2.8 and 2.9 still carry them as a spoken EXAMPLE, where the context makes that obvious. VS-003 (New York–London) @ 6:12 adds a second data point at the other end of the weight range — “123, 124, 134, 185” on a full-fuel transatlantic — which is the clearest demonstration available of why the numbers on this page are illustrative and Nic was right to query them.'}],
   ['Trims ×3','Set','PF',{c:'full', ev:'CHANGED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”), was “Trims — Checked, set for takeoff”. Nic wrote “Trims x 3” — read here as the three trims, stab, aileron and rudder, which is also how the reference crew answers it (VS-003 @ 6:05). MOVED at NIC’S REQUEST 2026-10-02 (the Longitude repo issue #1, “Changes to checklist items 02-10-26”) from 2.f to follow the V-speeds — “makes more sense there”. The Guide has it before Weight and Fuel; Nic’s order puts it after the figures it depends on. Operators Guide §XVII p.17-3 Cockpit Preparation 7, verbatim.'}],
-  ['Pressurisation LDG ELEV','Verified','PM',{c:'vhigh', ev:'Operators Guide §XVII p.17-3 Cockpit Preparation 11, verbatim.'}],
+  ['Pressurisation LDG ELEV','Verified','PF',{c:'vhigh', ev:'ANSWERED BY PF at NIC’S REQUEST 2026-10-10 (issue #25), was PM. Operators Guide §XVII p.17-3 Cockpit Preparation 11, verbatim.'}],
   ['A/P engage/disengage','Checked','PF',{c:'vhigh', ev:'CHANGED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”), was “Autopilot — Engaged and disengaged”. Operators Guide §XVII p.17-3 Cockpit Preparation 13, verbatim.'}]
  ]},
 
@@ -1221,15 +1221,15 @@ const PHASES = [
 
 {kind:'list', short:'Before taxi', title:'Before Taxi', mode:'When PF requests · challenge &amp; response',
  items:[
-  ['Engine indications','Checked','BOTH',{c:'full', ev:'ADDED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”): “add new line at top Engine indications - Checked”. Not an Operators Guide Before Taxi item; it closes the start, whose own checklist (old section 4) Nic removed in the same pass.'}],
+  ['Engine indications','Checked','PF',{c:'full', ev:'ANSWERED BY PF at NIC’S REQUEST 2026-10-10 (issue #25), was BOTH. ADDED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”): “add new line at top Engine indications - Checked”. Not an Operators Guide Before Taxi item; it closes the start, whose own checklist (old section 4) Nic removed in the same pass.'}],
   ['Flight controls','Free and correct','PF',{c:'full', ev:'Operators Guide §XVII p.17-4 Before Taxi 1, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 1:37 — “before taxi, flight controls” / “flight controls are all set” — so this item is a Longitude document AND the real crew running it.'}],
   ['Speedbrakes','Checked, retracted','PF',{c:'full', ev:'Operators Guide §XVII p.17-4 Before Taxi 2, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 1:59 — “speed brakes” / “[full] up” / “and retracted” — so this item is a Longitude document AND the real crew running it.'}],
   ['Flaps','Set','PF',{c:'vhigh', ev:'CHANGED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”), was “Set for takeoff — one / two”. Operators Guide §XVII p.17-4 Before Taxi 3, verbatim; flaps 1 or 2 from JayDee MSFS checklist v1.32.3.'}],
-  ['Attitude, heading, air data','Aligned, no flags','PM',{c:'full', ev:'Operators Guide §XVII p.17-4 Before Taxi 4a, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 2:07 — “flight instruments and avionics are all set” — so this item is a Longitude document AND the real crew running it.'}],
+  ['Attitude, heading, air data','Aligned, no flags','BOTH',{c:'full', ev:'ANSWERED BY BOTH at NIC’S REQUEST 2026-10-10 (issue #25), was PM. Operators Guide §XVII p.17-4 Before Taxi 4a, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 2:07 — “flight instruments and avionics are all set” — so this item is a Longitude document AND the real crew running it.'}],
   ['Altimeters','Verified','BOTH',{c:'vhigh', ev:'CHANGED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”), was “Confirmed and compared — 75 and 50”. Operators Guide §XVII p.17-4 Before Taxi 4b, verbatim.'}],
   ['ENGINE ICE PROTECTION','As required','PF',{c:'full', ev:'Operators Guide §XVII p.17-4 Before Taxi 5, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 2:09 — “engine ice protection” / “it’s not needed” — so this item is a Longitude document AND the real crew running it.'}],
-  ['A/P HDG, ALT, SPD','Set &amp; verified','PM',{c:'full', ev:'COLLAPSED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”) from the three lines split at his request on 2026-10-02 — A/P HDG selector (runway heading), A/P ALT selector (cleared altitude), A/P SPD selector (verify FMS). Not an Operators Guide Before Taxi item: JayDee MSFS checklist v1.32.3 has the selectors in its After Engine Start block. What each is set to is still spelled out in the flow step above.'}],
-  ['Flight director','Cycle — verify FMA','PM',{c:'full', ev:'CHANGED at NIC’S REQUEST 2026-10-02 (the Longitude repo issue #1, “Changes to checklist items 02-10-26”), was “TO / TO green, ALTS white”. Cycling the flight director is Nic’s; the FMA it should then show is below. ADDED to the Operators Guide list. JayDee MSFS checklist v1.32.3 — verify TO / TO (green) and ALTS (white) in FMA.'}],
+  ['A/P HDG, ALT, SPD','Set &amp; verified','PF',{c:'full', ev:'ANSWERED BY PF at NIC’S REQUEST 2026-10-10 (issue #25), was PM. COLLAPSED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”) from the three lines split at his request on 2026-10-02 — A/P HDG selector (runway heading), A/P ALT selector (cleared altitude), A/P SPD selector (verify FMS). Not an Operators Guide Before Taxi item: JayDee MSFS checklist v1.32.3 has the selectors in its After Engine Start block. What each is set to is still spelled out in the flow step above.'}],
+  ['Flight director','Cycle — verify FMA','PF',{c:'full', ev:'ANSWERED BY PF at NIC’S REQUEST 2026-10-10 (issue #25), was PM. CHANGED at NIC’S REQUEST 2026-10-02 (the Longitude repo issue #1, “Changes to checklist items 02-10-26”), was “TO / TO green, ALTS white”. Cycling the flight director is Nic’s; the FMA it should then show is below. ADDED to the Operators Guide list. JayDee MSFS checklist v1.32.3 — verify TO / TO (green) and ALTS (white) in FMA.'}],
   ['TAXI LIGHT','On','PM',{c:'full', ev:'MOVED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”) to the end of the list. SPLIT at NIC’S REQUEST 2026-10-02 (the Longitude repo issue #1, “Changes to checklist items 02-10-26”) from the combined line “Altitude select · SPD knob · heading · taxi light”. Not an Operators Guide Before Taxi item: JayDee MSFS checklist v1.32.3 has the selectors and taxi light in its After Engine Start block. Wording is Nic’s.'}]
  ]},
 
@@ -1248,7 +1248,7 @@ const PHASES = [
 
 {kind:'list', short:'Taxi', title:'During Taxi', mode:'When PF requests · challenge &amp; response',
  items:[
-  ['Exterior lights','As required','PF',{c:'full', ev:'Operators Guide §XVII p.17-5 Taxi 1, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 3:06 — “exterior lights are as required” — so this item is a Longitude document AND the real crew running it.'}],
+  ['Exterior lights','As required','PM',{c:'full', ev:'ANSWERED BY PM at NIC’S REQUEST 2026-10-10 (issue #25), was PF. Operators Guide §XVII p.17-5 Taxi 1, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 3:06 — “exterior lights are as required” — so this item is a Longitude document AND the real crew running it.'}],
   ['Brakes','Checked','PF',{c:'full', ev:'Operators Guide §XVII p.17-5 Taxi 3, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 3:06 — “brakes?” / “checked” — so this item is a Longitude document AND the real crew running it.'}],
   ['Nosewheel steering','Checked','PF',{c:'full', ev:'Operators Guide §XVII p.17-5 Taxi 4, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 3:10 — “nosewheel steering” / “is working” — so this item is a Longitude document AND the real crew running it. VS-003 (New York–London) @ 5:32 answers it “is definitely working” — same item, different adverb. The response is not a fixed phrase and should not be written as one.'}],
   ['Thrust reversers','Checked','PF',{c:'full', ev:'CHANGED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”), was “Deployed, green — stowed, indications clear”. Operators Guide §XVII p.17-5 Taxi 5a and 5b, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 3:12 — “thrust reversers” / “checking in a sec”, closed out @ 3:50 “TR check was good” — so this item is a Longitude document AND the real crew running it.'}],
@@ -1289,7 +1289,7 @@ const PHASES = [
   ['EIS / CAS','Checked — no messages','BOTH',{c:'full', ev:'MOVED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”) up to sit under Flight controls. Operators Guide §XVII p.17-5 CLEARED FOR TAKEOFF 4, verbatim, with Operators Guide §I Limitations — item 4 behind it (takeoff with any abnormal message prohibited). Corroborated on camera — VS-003 (New York–London) @ 8:13 — “EIS and CAS, no final messages, checked”. Note their word: FINAL messages — the last look before the brakes come off.'}],
   ['Takeoff clearance','Received','PM',{c:'full', ev:'ADDED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”): “between what was lines 8.b and 8.c add new line Takeoff clearance - Received”. Not an Operators Guide item; it is the event the Guide’s CLEARED FOR TAKEOFF divider is named for, and the landing lights in the next line go on with it.'}],
   ['A/T ARM','Armed','PF',{c:'full', ev:'MOVED at NIC’S REQUEST 2026-10-05 (issue #20, his reply on v24) below Takeoff clearance — “put 7.i A/T ARM after the clearance in the checklist”. That settles the caution below: the list, the flow and the Guide’s limitation now agree. ADDED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”): “add new line 7.i A/T ARM - Armed”. It replaces the old Cleared for Takeoff 8.e (Autothrottle — Armed, TO white), removed in the same pass. CAUTION, put back to Nic: Operators Guide §I Limitations says the autothrottle may not be armed before takeoff clearance is received, and this line now sits ABOVE “Takeoff clearance — Received”. The flow still arms it after the clearance.'}],
-  ['FMA','VERIFY (TO &amp; ALTS armed)','PM',{c:'full', ev:'MOVED at NIC’S REQUEST 2026-10-05 (issue #20, his reply on v24) with A/T ARM, below Takeoff clearance — “7.j FMA also needs to move down with 7.i”. ADDED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”): “add new line 7.j FMA - VERIFY (TO & ALTS armed)”. JayDee MSFS checklist v1.32.3: TO / TO green and ALTS white after TO/GA, and AT FMA TO white on arming.'}],
+  ['FMA','VERIFY (TO &amp; ALTS armed)','BOTH',{c:'full', ev:'ANSWERED BY BOTH at NIC’S REQUEST 2026-10-10 (issue #25), was PM. MOVED at NIC’S REQUEST 2026-10-05 (issue #20, his reply on v24) with A/T ARM, below Takeoff clearance — “7.j FMA also needs to move down with 7.i”. ADDED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”): “add new line 7.j FMA - VERIFY (TO & ALTS armed)”. JayDee MSFS checklist v1.32.3: TO / TO green and ALTS white after TO/GA, and AT FMA TO white on arming.'}],
   ['Exterior lights','Set','PM',{c:'full', ev:'CHANGED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”), was “Set — pulse and anti-collision on, taxi off, landing on with the clearance”. The breakdown stays in the line-up step of the flow. Operators Guide §XVII p.17-5 CLEARED FOR TAKEOFF 3, verbatim; the breakdown is JayDee MSFS checklist v1.32.3 (Landing Lights ON, Anti-Collision ON, Taxi Light OFF). CHANGED 2026-09-13 — NIC (v3 review, item 8): pulse light on whenever on or crossing a runway, and it “replaces ‘Strobes’”. The old response said “landing and strobes on”: there is no strobe on the Longitude (the white flashing light is the ANTI COLL — Operators Guide §XVI p.16-4), and pulse is the light that marks runway occupancy. Same page notes pulse and landing lights share the belly fixtures and cannot both be selected, so selecting landing on the clearance drops pulse. Corroborated on camera — VS-003 (New York–London) @ 7:57 and @ 8:13, where the lights are answered twice: “exterior lights will be set, second” on entering, then “exterior lights are checked, are all set” with the clearance — which is the two-stage selection this response describes.'}]
  ]},
 
@@ -1393,7 +1393,7 @@ const PHASES = [
   ['Altimeters','Preset — landing QNH','BOTH',{c:'full', ev:'MOVED at NIC’S REQUEST 2026-10-02 (the Longitude repo issue #1, his reply of 13:15) from 12.c to 12.b. CHANGED at NIC’S REQUEST 2026-10-02 (the Longitude repo issue #1, “Changes to checklist items 02-10-26”), was “Set at transition level” (Guide wording). Nic’s: preset the landing QNH before descent; it is set and said at transition in flow step 13.2. Former evidence: Operators Guide §XVII p.17-7 Descent 3, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 17:04 — “altimeters” — so this item is a Longitude document AND the real crew running it.'}],
   ['APU','On at or below FL310, as desired','PM',{c:'full', ev:'MOVED at NIC’S REQUEST 2026-10-02 (the Longitude repo issue #1, his reply of 13:15) from 12.b to 12.c — “flip positions of 12.b and 12.c”. Operators Guide §XVII p.17-7 Descent 2, verbatim (at or below FL310, ON/START as desired).'}],
   ['Exterior lights','As required','PM',{c:'vhigh', ev:'Operators Guide §XVII p.17-7 Descent 4, verbatim.'}],
-  ['Landing data and minimums','Set','PM',['landing-data','minimums'],{c:'high', ev:'ADDED to the Operators Guide Descent list. JayDee MSFS checklist v1.32.3 — LATEST 20 NM BEFORE TOD — landing data, speed bugs, minimums. The Operators Guide has these under Approach instead.'}],
+  ['Landing data and minimums','Set','PF',['landing-data','minimums'],{c:'high', ev:'ANSWERED BY PF at NIC’S REQUEST 2026-10-10 (issue #25), was PM. ADDED to the Operators Guide Descent list. JayDee MSFS checklist v1.32.3 — LATEST 20 NM BEFORE TOD — landing data, speed bugs, minimums. The Operators Guide has these under Approach instead.'}],
   ['Approach briefing','Complete','BOTH',{c:'low', ev:'ADDED. Not an Operators Guide Descent item — the Operators Guide has Crew Briefing under Approach. Placed here so the briefing precedes the descent, which is CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B.'}]
  ]},
 
@@ -1457,9 +1457,9 @@ const PHASES = [
 
 {kind:'list', short:'Before ldg', title:'Before Landing', mode:'When PF requests · challenge &amp; response, held on flaps',
  items:[
-  ['Landing gear','Down, three green','PM',{c:'full', ev:'Operators Guide §XVII p.17-8 Before Landing 1, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 30:41 — “landing gear down, three green” — so this item is a Longitude document AND the real crew running it. Run again in full on VS-003 (New York–London) @ 31:12–31:31 — the whole Before Landing list, items 1 to 7 in Operators Guide order, which is now the second complete reading of it on camera.'}],
+  ['Landing gear','Down, three green','PF',{c:'full', ev:'ANSWERED BY PF at NIC’S REQUEST 2026-10-10 (issue #25), was PM. Operators Guide §XVII p.17-8 Before Landing 1, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 30:41 — “landing gear down, three green” — so this item is a Longitude document AND the real crew running it. Run again in full on VS-003 (New York–London) @ 31:12–31:31 — the whole Before Landing list, items 1 to 7 in Operators Guide order, which is now the second complete reading of it on camera.'}],
   ['Speedbrakes','Retracted','PF',{c:'full', ev:'Operators Guide §XVII p.17-8 Before Landing 4, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 30:50 — “speed brakes” / “retracted” — so this item is a Longitude document AND the real crew running it.'}],
-  ['EIS / CAS','Checked','BOTH',{c:'full', ev:'Operators Guide §XVII p.17-8 Before Landing 5, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 30:52 — “EIS and CAS” / “are clear” — so this item is a Longitude document AND the real crew running it. VS-003 (New York–London) @ 31:21 answers it “are as expected” rather than “are clear” — a better answer on a night when something may legitimately be showing, and another reminder that the responses on this page are patterns, not scripts.'}],
+  ['EIS / CAS','Checked','PM',{c:'full', ev:'ANSWERED BY PM at NIC’S REQUEST 2026-10-10 (issue #25), was BOTH. Operators Guide §XVII p.17-8 Before Landing 5, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 30:52 — “EIS and CAS” / “are clear” — so this item is a Longitude document AND the real crew running it. VS-003 (New York–London) @ 31:21 answers it “are as expected” rather than “are clear” — a better answer on a night when something may legitimately be showing, and another reminder that the responses on this page are patterns, not scripts.'}],
   ['Landing clearance','Received','PM',{c:'high', ev:'CHANGED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”), was “Received — or said not to be”. ADDED — not an Operators Guide item. Now evidenced on BOTH recorded flights: VS-001 @ 32:57 “no landing clearance yet”, and VS-002 (Innsbruck–London) @ 30:36–31:08, where the crew continues a fully configured approach explicitly noting “no landing clearance” until it arrives. Two flights make this the crew’s habit rather than one busy arrival, so: low → high. VS-003 (New York–London) is the negative case and it behaves correctly: the clearance came at 30:46, ahead of the checklist, so nothing needed saying. The item is about tracking it, not about announcing its absence.'}],
   ['Exterior lights','As required','PM',{c:'full', ev:'MOVED at NIC’S REQUEST 2026-10-05 (issue #20, his reply on v24) from 13.b to below Landing clearance. Operators Guide §XVII p.17-8 Before Landing 3, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 30:47 — “exterior lights” / “are set for now” — so this item is a Longitude document AND the real crew running it.'}],
   ['Flaps','Full','PM',{c:'full', ev:'MOVED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”) to the end of the list, which is where the list is held anyway. Operators Guide §XVII p.17-8 Before Landing 2, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 30:45 — “flaps are full” — so this item is a Longitude document AND the real crew running it.'}]
@@ -1501,7 +1501,7 @@ const PHASES = [
 
 {kind:'list', short:'After ldg', title:'After Landing', mode:'When PF requests · challenge &amp; response',
  items:[
-  ['Thrust reversers','Stowed','PF',{c:'full', ev:'Operators Guide §XVII p.17-9 After Landing 1, verbatim. Corroborated on camera — VS-003 (New York–London) @ 34:15 — “thrust reversers are stowed”, opening a complete After Landing reading at 34:15–34:25.'}],
+  ['Thrust reversers','Stowed','PM',{c:'full', ev:'ANSWERED BY PM at NIC’S REQUEST 2026-10-10 (issue #25), was PF. Operators Guide §XVII p.17-9 After Landing 1, verbatim. Corroborated on camera — VS-003 (New York–London) @ 34:15 — “thrust reversers are stowed”, opening a complete After Landing reading at 34:15–34:25.'}],
   ['Flaps','Up','PM',{c:'full', ev:'CHANGED at NIC’S REQUEST 2026-10-02 (the Longitude repo issue #1, “Changes to checklist items 02-10-26”), was “As desired — up”. Operators Guide §XVII p.17-9 After Landing 2, verbatim. Corroborated on camera — VS-003 (New York–London) @ 34:15 — “flaps are up”.'}],
   ['ICE PROTECTION','All off','PM',{c:'full', ev:'COLLAPSED at NIC’S REQUEST 2026-10-02 (the Longitude repo issue #1, “Changes to checklist items 02-10-26”) from three lines — engine, wing and stab (Operators Guide §XVII p.17-9 After Landing 3a–3c; the Guide has engine “as required”, “all off” is Nic’s). The crew already said it as one: VS-002 (Innsbruck–London) @ 34:42 — “ice protection is all off”.'}],
   ['Exterior lights','As required','PM',{c:'full', ev:'Operators Guide §XVII p.17-9 After Landing 4, verbatim. Corroborated on camera — VS-003 (New York–London) @ 34:22 — “exterior lights are as required”, and the list is closed the standard way: “after landing is done”.'}],
@@ -4081,7 +4081,9 @@ async function loadSimBrief(){
       /* The airframe's name in the SimBrief profile ("Longitude" on Nic's), spoken as the type in a
          request call. It is the owner's to rename, so the page never supplies one of its own. */
       type: String((d.aircraft && d.aircraft.name) || '').trim(), src: 'SimBrief',
-      ld: loadOf(d)
+      ld: loadOf(d),
+      /* The OFP PDF's file name (issue #19). The OFP page fetches it from SimBrief's own directory. */
+      ofp: (/^[A-Za-z0-9_-]+\.pdf$/.test(String(d.files && d.files.pdf && d.files.pdf.link || '')) ? d.files.pdf.link : '')
     });
   } catch(e){ sbMsg = 'SimBrief: ' + esc(e.message || 'fetch failed') + '. The pads still work by hand.'; status(); }
 }
@@ -5426,6 +5428,10 @@ css.textContent = `
   .cv-h a.ext{display:inline-flex;align-items:center;min-height:34px;padding:3px 12px;border-radius:7px;border:1px solid var(--pm);
     color:var(--pm);font-weight:700;font-size:13px;text-decoration:none;touch-action:manipulation}
   .cv-p .rc{border-top:0}
+  .cv-o{padding:8px 6px 24px;background:var(--panel-2)}
+  .cv-o .op{margin:0 auto 10px;background:#fff;box-shadow:0 1px 8px rgba(0,0,0,.35)}
+  .cv-o .op canvas{display:block;width:100%;height:100%}
+  .cv-o .ofp-m{padding:30px 16px;text-align:center;color:var(--ink-dim);font-size:15px;line-height:1.5}
   .cv-l{position:absolute;inset:0;overflow:auto;background:var(--bg);padding:8px 10px 20px;z-index:2}
   .cv-l h4{margin:12px 2px 6px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
   .cv-l button{display:block;width:100%;text-align:left;margin:0 0 5px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);
@@ -5445,9 +5451,11 @@ const bar = document.createElement('nav');
 bar.id = 'ctabs'; bar.hidden = true; bar.setAttribute('aria-label', 'Chart tabs');
 const cv = document.createElement('div');
 cv.id = 'cview'; cv.hidden = true; cv.setAttribute('role', 'dialog'); cv.setAttribute('aria-label', 'Chart');
-cv.innerHTML = '<div class="cv-h"></div><div class="cv-s"></div><div class="cv-v" hidden></div><div class="cv-v cv-p" hidden></div>';
+cv.innerHTML = '<div class="cv-h"></div><div class="cv-s"></div><div class="cv-v" hidden></div><div class="cv-v cv-p" hidden></div>' +
+  '<div class="cv-v cv-o" hidden></div>';
 document.body.appendChild(cv); document.body.appendChild(bar);
-const head = cv.querySelector('.cv-h'), stage = cv.querySelector('.cv-s'), vv = cv.querySelector('.cv-v'), pv = cv.querySelector('.cv-p');
+const head = cv.querySelector('.cv-h'), stage = cv.querySelector('.cv-s'), vv = cv.querySelector('.cv-v'), pv = cv.querySelector('.cv-p'),
+  ov = cv.querySelector('.cv-o');
 /* PLAN (Neil and Nic, 2026-10-09): the route check moves here from Prep, opened, with the
    load sheet under it. Without the tab shell they stay where they were. */
 if (window.efbShell) {
@@ -5585,7 +5593,7 @@ function refOf(t){ return t ? (sub[t.id] || t.refs[0] || null) : null; }
 /* ---- painting ---- */
 function paint(){
   const T = tabs();
-  if (!['EFB', 'VATSIM', 'PLAN'].includes(active) && !T.some(t => t.id === active)) { active = 'EFB'; listFor = null; }
+  if (!['EFB', 'VATSIM', 'PLAN', 'OFP'].includes(active) && !T.some(t => t.id === active)) { active = 'EFB'; listFor = null; }
   const on = T.length > 0 || !!window.efbShell;      // with the tabs, the bar also carries ⋯
   bar.hidden = !on; document.body.classList.toggle('ct-on', on);
   /* With the tabs, the strip above stays visible over a chart and is the way back,
@@ -5593,7 +5601,8 @@ function paint(){
      name of "no layer open". Without the tabs, EFB stays: nothing else closes a chart. */
   bar.innerHTML = on ? (window.efbShell
       ? '<button type="button" data-tab="VATSIM" aria-pressed="' + (active === 'VATSIM') + '"><small>&nbsp;</small>VATSIM</button>' +
-        '<button type="button" data-tab="PLAN" aria-pressed="' + (active === 'PLAN') + '"><small>&nbsp;</small>PLAN</button>'
+        '<button type="button" data-tab="PLAN" aria-pressed="' + (active === 'PLAN') + '"><small>&nbsp;</small>PLAN</button>' +
+        '<button type="button" data-tab="OFP" aria-pressed="' + (active === 'OFP') + '"><small>&nbsp;</small>OFP</button>'
       : '<button type="button" data-tab="EFB" aria-pressed="' + (active === 'EFB') + '"><small>&nbsp;</small>EFB</button>') +
     /* With the tabs (branch efb-tabs) every chart kind has a fixed slot, equal width,
        so DEP, SID, STAR, IAP and DEST are always in the same place: an unavailable one
@@ -5609,10 +5618,10 @@ function paint(){
 }
 
 function show(){
-  const vat = active === 'VATSIM' && !!window.efbVatsim, pln = active === 'PLAN';
-  const t = ['EFB', 'VATSIM', 'PLAN'].includes(active) ? null : curTab();
-  cv.hidden = !t && !vat && !pln;
-  stage.hidden = vat || pln; vv.hidden = !vat; pv.hidden = !pln;
+  const vat = active === 'VATSIM' && !!window.efbVatsim, pln = active === 'PLAN', ofpOn = active === 'OFP';
+  const t = ['EFB', 'VATSIM', 'PLAN', 'OFP'].includes(active) ? null : curTab();
+  cv.hidden = !t && !vat && !pln && !ofpOn;
+  stage.hidden = vat || pln || ofpOn; vv.hidden = !vat; pv.hidden = !pln; ov.hidden = !ofpOn;
   if (vat) {
     /* VATSIM Radar opens in its own tab (Neil, 2026-10-10). It can't be framed here: it sends
        frame-ancestors 'self' to every site but its own list (localhost is on it, so a local
@@ -5626,6 +5635,13 @@ function show(){
     const p = (window.efbPlan && window.efbPlan()) || {};
     head.innerHTML = '<b>PLAN</b><span class="t">' + (p.dep || p.arr ? esc((p.dep || '····') + ' → ' + (p.arr || '····')) +
       (p.cs ? ' · ' + esc(p.cs) : '') + (p.src ? ' · from ' + esc(p.src) : '') : 'No plan loaded') + '</span>';
+  }
+  if (ofpOn) {
+    const p = (window.efbPlan && window.efbPlan()) || {};
+    head.innerHTML = '<b>OFP</b><span class="t">' + (ofpFile() ? esc((p.dep || '') + ' → ' + (p.arr || '')) + ' · SimBrief' : 'SimBrief flight plan') +
+      '</span><span class="sp"></span>' + [[1, 'Fit'], [1.5, '1.5×'], [2, '2×']].map(([z, l]) =>
+      '<button type="button" data-oz="' + z + '" class="' + (ofp.zoom === z ? 'on' : '') + '">' + l + '</button>').join('');
+    ofpShow();
   }
   try { window.dispatchEvent(new Event('efb-chartview')); } catch(e){}
   if (!t) return;
@@ -5865,7 +5881,75 @@ window.addEventListener('resize', () => {
   draw(shown);
 });
 window.addEventListener('efb-pads', () => { refresh(); paint(); });
-window.addEventListener('efb-plan', () => { refresh(); if (active === 'PLAN') show(); soon(); });
+window.addEventListener('efb-plan', () => { refresh(); if (active === 'PLAN' || active === 'OFP') show(); soon(); });
+
+/* ---- OFP (Nic, issue #19, 2026-10-10): SimBrief's own OFP PDF, every page stacked and
+   scrolled, fit to width or zoomed 1.5× and 2×. The file name rides in the plan
+   (plan.ofp), so it reaches the other tablet; the bytes come straight from SimBrief, which
+   sends Access-Control-Allow-Origin: *, so no relay and no chart key. Pages are drawn as
+   they near the screen. Shown unaltered, like the charts. ---- */
+const SB_OFP = 'https://www.simbrief.com/ofp/flightplans/', OFP_RE = /^[A-Za-z0-9_-]+\.pdf$/;
+const ofp = {file: '', d: null, zoom: 1, laid: ''};
+function ofpFile(){ const p = (window.efbPlan && window.efbPlan()) || {}; return OFP_RE.test(p.ofp || '') ? p.ofp : ''; }
+function ofpDoc(file){
+  if (ofp.file !== file || !ofp.d) {
+    ofp.file = file; ofp.laid = '';
+    ofp.d = (async () => {
+      const m = await pdfjs();
+      const r = await fetch(SB_OFP + file);
+      if (!r.ok) throw new Error('SimBrief no longer has this OFP (HTTP ' + r.status + '). Load the plan again on Setup.');
+      return m.getDocument({data: new Uint8Array(await r.arrayBuffer())}).promise;
+    })();
+    ofp.d.catch(() => { ofp.d = null; });
+  }
+  return ofp.d;
+}
+const oio = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { oio.unobserve(e.target); ofpDraw(e.target); } }),
+  {root: ov, rootMargin: '800px 0px'});
+async function ofpShow(){
+  const file = ofpFile();
+  if (!file) {
+    ofp.laid = '';
+    ov.innerHTML = '<div class="ofp-m">No OFP yet. <b>Load from SimBrief</b> on <b>Setup</b> brings it here.<br>' +
+      'A plan loaded before v33 needs loading again.</div>';
+    return;
+  }
+  const lay = file + '@' + ofp.zoom + '@' + ov.clientWidth;
+  if (ofp.laid === lay) return;
+  ofp.laid = lay; oio.disconnect();
+  ov.innerHTML = '<div class="ofp-m">Loading the OFP…</div>';
+  try {
+    const d = await ofpDoc(file);
+    if (ofp.laid !== lay) return;
+    const W = Math.max(200, ov.clientWidth - 12) * ofp.zoom, frag = document.createDocumentFragment();
+    for (let i = 1; i <= d.numPages; i++) {
+      const vp1 = (await d.getPage(i)).getViewport({scale: 1}), w = document.createElement('div');
+      w.className = 'op'; w.dataset.p = i; w.style.width = W + 'px'; w.style.height = (W * vp1.height / vp1.width) + 'px';
+      frag.appendChild(w);
+    }
+    if (ofp.laid !== lay) return;
+    ov.innerHTML = ''; ov.appendChild(frag); ov.scrollTop = 0;
+    ov.querySelectorAll('.op').forEach(w => oio.observe(w));
+  } catch(e) {
+    if (ofp.laid === lay) { ofp.laid = ''; ov.innerHTML = '<div class="ofp-m">' + esc(e && e.message || 'OFP unavailable') + '</div>'; }
+  }
+}
+async function ofpDraw(w){
+  try {
+    const pg = await (await ofp.d).getPage(+w.dataset.p), vp1 = pg.getViewport({scale: 1});
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const k = Math.min(parseFloat(w.style.width) * dpr / vp1.width, Math.sqrt(8e6 / (vp1.width * vp1.height)));
+    const vp = pg.getViewport({scale: k}), c = document.createElement('canvas');
+    c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+    await pg.render({canvas: c, canvasContext: c.getContext('2d'), viewport: vp}).promise;
+    if (w.isConnected) w.appendChild(c);
+  } catch(e){}
+}
+head.addEventListener('click', e => {
+  const b = e.target.closest('[data-oz]'); if (!b || active !== 'OFP') return;
+  ofp.zoom = +b.dataset.oz; show();
+});
+window.addEventListener('resize', () => { if (active === 'OFP') ofpShow(); });
 
 /* ---- preload (Neil and Nic, 2026-10-09): the first open of each chart waited on the relay
    and the parse. Each tab's chart is fetched and parsed in the background once it has
@@ -5875,7 +5959,9 @@ window.addEventListener('efb-plan', () => { refresh(); if (active === 'PLAN') sh
 function editing(){ try { return (P.editing && P.editing()) || ''; } catch(e){ return ''; } }
 function preload(){
   clearTimeout(pT); pT = 0;
-  if (pOff || !key || document.visibilityState !== 'visible') return;
+  if (document.visibilityState !== 'visible') return;
+  const of = ofpFile(); if (of) ofpDoc(of).catch(() => {});      // the OFP needs no key and no relay
+  if (pOff || !key) return;
   const ed = editing(); let wait = false;
   tabs().forEach(t => {
     const ref = refOf(t); if (!ref) return;
@@ -5892,7 +5978,8 @@ document.addEventListener('visibilitychange', soon);
 window.efbCharts = {
   approaches,
   home: () => { if (active !== 'EFB') { active = 'EFB'; listFor = null; paint(); } },
-  debug: () => ({ key: !!key, keyState, active, loaded: Object.keys(docs), tabs: tabs().map(t => t.id + ':' + t.label + ':' + (refOf(t) || '-') + ':' + t.how),
+  debug: () => ({ key: !!key, keyState, active, loaded: Object.keys(docs),
+    ofp: {file: ofp.file, pages: ov.querySelectorAll('.op').length, drawn: ov.querySelectorAll('.op canvas').length, msg: (ov.querySelector('.ofp-m') || {}).textContent || ''}, tabs: tabs().map(t => t.id + ':' + t.label + ':' + (refOf(t) || '-') + ':' + t.how),
     shown, view: shown && view[shown] ? Object.assign({}, view[shown]) : null,
     drawn: shown && wraps[shown] ? wraps[shown].drawn : 0, open: !cv.hidden })
 };
