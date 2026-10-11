@@ -703,6 +703,18 @@
   .sh-ro small{font:700 9.5px system-ui,sans-serif;letter-spacing:.08em;color:var(--ink-faint)}
   .sh-ro .dim{color:var(--ink-faint)}
   body.shell .bar{margin-left:0;flex-wrap:nowrap}
+  /* The page row (Nic, #27, agreed by Neil 2026-10-11): pages switch here, at the top; the
+     checklist strip under it shows only on CHECKLISTS. The chart buttons stay in the bottom bar.
+     To undo: revert the one commit that added .pg-tabs (see EFB-Internals, "v40"). */
+  .pg-tabs{display:flex;gap:2px;margin:0 -8px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+  .pg-tabs::-webkit-scrollbar{display:none}
+  .pg-tab{flex:1 1 auto;min-width:0;min-height:0;height:42px;padding:0 8px;border:0;border-radius:0;background:transparent;box-shadow:none;
+    font:700 13.5px/1 system-ui,-apple-system,sans-serif;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;
+    color:var(--ink);touch-action:manipulation}
+  .pg-tab:active{transform:none}
+  .pg-tab[aria-current="page"]{color:var(--pm);box-shadow:inset 0 -3px 0 var(--pm)}
+  body.pg:not(.pg-cl) .sh-tabw{display:none}
+  body.pg .sh-menu{top:calc(var(--shtop,0px) + 4px);bottom:auto}
   .sh-tabs{display:flex;gap:3px;margin:0 -8px}
   .sh-tab{flex:1 1 0;min-width:0;min-height:0;height:50px;padding:0 2px 3px;border:0;border-radius:9px 9px 0 0;position:relative;
     background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -944,7 +956,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v39</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v40</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -2865,6 +2877,16 @@ arrL.textContent = '‹'; arrR.textContent = '›';
 arrL.setAttribute('aria-label', 'Earlier tabs'); arrR.setAttribute('aria-label', 'Later tabs');
 stripW.append(arrL, strip, arrR);
 hdrWrap.appendChild(stripW);
+/* The page row (Nic, #27, agreed by Neil 2026-10-11). DISPATCH, FLIGHT-PLAN and ATC are the
+   chart layer's PLAN, OFP and VATSIM, which were on the bottom bar; REFERENCE opens what ⋯ did.
+   The bottom bar keeps the chart buttons only (Neil). */
+document.body.classList.add('pg');
+const pgRow = document.createElement('nav');
+pgRow.className = 'pg-tabs'; pgRow.setAttribute('aria-label', 'Pages');
+hdrWrap.insertBefore(pgRow, stripW);
+const PGS = [['SETUP', 'Setup'], ['DISPATCH', 'Dispatch'], ['FLIGHT-PLAN', 'Flight-plan'], ['CHECKLISTS', 'Checklists'],
+  ['ATC', 'ATC'], ['INSTRUCTOR', 'Instructor'], ['REFERENCE', 'Reference']];
+const LAYER = {'DISPATCH': 'PLAN', 'FLIGHT-PLAN': 'OFP', 'ATC': 'VATSIM'};
 function arrows(){
   const m = strip.scrollWidth - strip.clientWidth;
   arrL.hidden = strip.scrollLeft <= 2; arrR.hidden = strip.scrollLeft >= m - 2;
@@ -2937,6 +2959,10 @@ if (pending.length && lastPage) fileFlows(lastPage);
 if (!TABS.some(t => t.k === 'CLR')) TABS.splice(1, 0, {k:'CLR'});
 if (!TABS.some(t => t.k === 'ARR')) TABS.push({k:'ARR'});
 
+/* INSTRUCTOR (Nic, #27): a new page, its contents still to be decided. */
+page('instructor').innerHTML = '<div class="tp-h"><h2>Instructor</h2></div>' +
+  '<p class="tp-sub">A new page from Nic&rsquo;s issue #27. What it holds is still to be decided.</p>';
+
 /* The reference page */
 const ref = page('ref');
 ref.insertAdjacentHTML('afterbegin', '<div class="tp-h"><h2>Reference</h2></div><p class="tp-sub">Doctrine, not running items. Nothing here is ticked.</p>');
@@ -3000,12 +3026,44 @@ paintSetup();
 
 /* ---- the strip ---------------------------------------------------- */
 let cur = get(VIEWK);
-if (!TABS.some(t => t.k === cur) && !['ref', 'HOLD', 'OTHER'].includes(cur)) cur = 'setup';
+if (!TABS.some(t => t.k === cur) && !['ref', 'HOLD', 'OTHER', 'instructor'].includes(cur)) cur = 'setup';
+
+/* ---- the page row ------------------------------------------------- */
+const CLK = 'c700-lastcl';      // the checklist tab CHECKLISTS returns to
+function lastCl(){
+  const k = get(CLK);
+  return TABS.some(t => t.k === k && k !== 'setup') ? k : (TABS.find(t => t.k !== 'setup') || {k: 'setup'}).k;
+}
+function layer(){ try { return window.efbCharts && window.efbCharts.active ? window.efbCharts.active() : 'EFB'; } catch(e){ return 'EFB'; } }
+function pgNow(){
+  const a = layer();
+  for (const p in LAYER) if (LAYER[p] === a) return p;
+  if (cur === 'setup') return 'SETUP';
+  if (cur === 'instructor') return 'INSTRUCTOR';
+  if (['ref', 'HOLD', 'OTHER'].includes(cur)) return 'REFERENCE';
+  return 'CHECKLISTS';
+}
+function renderPg(){
+  const now = pgNow();
+  pgRow.innerHTML = PGS.map(([k, l]) => '<button type="button" class="pg-tab" data-pg="' + k + '"' +
+    (k === 'REFERENCE' ? ' data-more="1"' : '') + (k === now ? ' aria-current="page"' : '') + '>' + l + '</button>').join('');
+  document.body.classList.toggle('pg-cl', now === 'CHECKLISTS');
+}
+pgRow.addEventListener('click', e => {
+  const b = e.target.closest('[data-pg]'); if (!b) return;
+  const p = b.dataset.pg;
+  if (p === 'REFERENCE') { more(); return; }
+  closeMenu();
+  if (LAYER[p]) { if (window.efbCharts && window.efbCharts.tab) window.efbCharts.tab(LAYER[p]); renderTabs(); return; }
+  show(p === 'SETUP' ? 'setup' : p === 'INSTRUCTOR' ? 'instructor' : lastCl());
+});
 
 function chartOpen(){ try { return !!(window.efbCharts && window.efbCharts.debug().open); } catch(e){ return false; } }
 function renderTabs(){
   const co = chartOpen();
-  strip.innerHTML = TABS.map(t => {
+  renderPg();
+  /* SETUP lives in the page row now (Nic, #27). */
+  strip.innerHTML = TABS.filter(t => t.k !== 'setup').map(t => {
     const c = t.k === cur && !co ? ' cur' : '';
     if (t.k === 'CLR' || t.k === 'ARR') {
       const info = (window.efbPads && window.efbPads.tabInfo) ? window.efbPads.tabInfo(t.k) : '';
@@ -3023,6 +3081,7 @@ function renderTabs(){
 function show(k, keepScroll){
   if (!pages[k] && !['CLR', 'ARR', 'HOLD', 'OTHER'].includes(k)) k = 'setup';
   cur = k; put(VIEWK, k);
+  if (k !== 'setup' && TABS.some(t => t.k === k)) put(CLK, k);
   page(k);
   Object.keys(pages).forEach(x => { pages[x].hidden = x !== k; });
   try { if (window.efbCharts && window.efbCharts.home) window.efbCharts.home(); } catch(e){}
@@ -3088,10 +3147,12 @@ function shtop(){ document.documentElement.style.setProperty('--shtop', header.g
 try { new ResizeObserver(shtop).observe(header); } catch(e){ window.addEventListener('resize', shtop); }
 shtop();
 
-window.efbShell = { page, show, cur: () => cur, more, refresh: renderTabs };
+/* pg: the page row is on, so the chart bar carries the chart buttons only (Nic, #27). */
+window.efbShell = { page, show, cur: () => cur, more, refresh: renderTabs, pg: true };
 show(cur);
-/* If the chart tabs are missing, ⋯ still needs a home. */
+/* If the chart tabs are missing, ⋯ still needs a home. With the page row, REFERENCE is its home. */
 setTimeout(() => {
+  if (document.body.classList.contains('pg')) return;
   if (document.querySelector('#ctabs [data-more]')) return;
   const b = document.createElement('button'); b.type = 'button'; b.className = 'sh-tab sh-more'; b.dataset.more = '1'; b.textContent = '⋯';
   b.dataset.fallback = '1';
@@ -5497,6 +5558,8 @@ css.textContent = `
   #epCk{width:7.5em;text-transform:none}
   #epCk.ok{border-color:var(--list-accent)}
   #epCk.bad{border-color:var(--warn)}
+  #ctabs[hidden]{display:none}
+  body:not(.ct-on) #cview{bottom:0}
   body.ct-on{padding-bottom:${BAR_H}px}
   body.ct-on .ep{bottom:${BAR_H}px}
 `;
@@ -5649,12 +5712,17 @@ function refOf(t){ return t ? (sub[t.id] || t.refs[0] || null) : null; }
 function paint(){
   const T = tabs();
   if (!['EFB', 'VATSIM', 'PLAN', 'OFP'].includes(active) && !T.some(t => t.id === active)) { active = 'EFB'; listFor = null; }
-  const on = T.length > 0 || !!window.efbShell;      // with the tabs, the bar also carries ⋯
+  const PG = !!(window.efbShell && window.efbShell.pg);
+  /* With the tabs the bar also carried ⋯, so it always showed. With the page row it holds the
+     chart buttons only, so with none to show (no key, no plan) it gets out of the way. */
+  const on = T.length > 0 || (!!window.efbShell && !PG);
   bar.hidden = !on; document.body.classList.toggle('ct-on', on);
   /* With the tabs, the strip above stays visible over a chart and is the way back,
      so the bar's EFB button became VATSIM (Neil, 2026-10-09). 'EFB' is still the
      name of "no layer open". Without the tabs, EFB stays: nothing else closes a chart. */
-  bar.innerHTML = on ? (window.efbShell
+  /* With the page row (Nic, #27) VATSIM, PLAN and OFP are ATC, DISPATCH and FLIGHT-PLAN up there,
+     and ⋯ is REFERENCE: the bar keeps the chart buttons only (Neil, 2026-10-11). */
+  bar.innerHTML = on ? (PG ? '' : window.efbShell
       ? '<button type="button" data-tab="VATSIM" aria-pressed="' + (active === 'VATSIM') + '"><small>&nbsp;</small>VATSIM</button>' +
         '<button type="button" data-tab="PLAN" aria-pressed="' + (active === 'PLAN') + '"><small>&nbsp;</small>PLAN</button>' +
         '<button type="button" data-tab="OFP" aria-pressed="' + (active === 'OFP') + '"><small>&nbsp;</small>OFP</button>'
@@ -5667,7 +5735,7 @@ function paint(){
       const r = refOf(t), cls = (!t.refs.length && !sub[t.id] ? 'q' : '') + (r && r.startsWith('p/') ? ' p' : '');
       return '<button type="button" data-tab="' + esc(t.id) + '" class="' + cls + '" aria-pressed="' + (active === t.id) + '">' +
         '<small>' + t.id + '</small>' + esc(t.label) + (t.refs.length || sub[t.id] ? '' : ' ?') + '</button>';
-    }).join('') + (window.efbShell ? '<button type="button" class="sh-dots" data-more="1" aria-label="More">⋯</button>' : '') : '';
+    }).join('') + (window.efbShell && !PG ? '<button type="button" class="sh-dots" data-more="1" aria-label="More">⋯</button>' : '') : '';
   show();
   soon();
 }
@@ -5682,18 +5750,18 @@ function show(){
        frame-ancestors 'self' to every site but its own list (localhost is on it, so a local
        test frames it and the live page wouldn't), and signing in to it inside a frame takes a
        partner token. In its own tab the sign-in and everything behind it work as normal. */
-    head.innerHTML = '<b>VATSIM</b><span class="t">Frequencies from where the aeroplane is on the network</span><span class="sp"></span>' +
+    head.innerHTML = '<b>' + (window.efbShell && window.efbShell.pg ? 'ATC' : 'VATSIM') + '</b><span class="t">VATSIM frequencies from where the aeroplane is on the network</span><span class="sp"></span>' +
       '<a class="ext" href="https://vatsim-radar.com/" target="_blank" rel="noopener">VATSIM Radar ↗</a>';
     if (window.efbVatsim.el.parentNode !== vv) vv.appendChild(window.efbVatsim.el);
   }
   if (pln) {
     const p = (window.efbPlan && window.efbPlan()) || {};
-    head.innerHTML = '<b>PLAN</b><span class="t">' + (p.dep || p.arr ? esc((p.dep || '····') + ' → ' + (p.arr || '····')) +
+    head.innerHTML = '<b>' + (window.efbShell && window.efbShell.pg ? 'DISPATCH' : 'PLAN') + '</b><span class="t">' + (p.dep || p.arr ? esc((p.dep || '····') + ' → ' + (p.arr || '····')) +
       (p.cs ? ' · ' + esc(p.cs) : '') + (p.src ? ' · from ' + esc(p.src) : '') : 'No plan loaded') + '</span>';
   }
   if (ofpOn) {
     const p = (window.efbPlan && window.efbPlan()) || {};
-    head.innerHTML = '<b>OFP</b><span class="t">' + (ofpFile() ? esc((p.dep || '') + ' → ' + (p.arr || '')) + ' · SimBrief' : 'SimBrief flight plan') +
+    head.innerHTML = '<b>' + (window.efbShell && window.efbShell.pg ? 'FLIGHT-PLAN' : 'OFP') + '</b><span class="t">' + (ofpFile() ? esc((p.dep || '') + ' → ' + (p.arr || '')) + ' · SimBrief' : 'SimBrief flight plan') +
       '</span><span class="sp"></span>' + [[1, 'Fit'], [1.5, '1.5×'], [2, '2×']].map(([z, l]) =>
       '<button type="button" data-oz="' + z + '" class="' + (ofp.zoom === z ? 'on' : '') + '">' + l + '</button>').join('');
     ofpShow();
@@ -6033,6 +6101,9 @@ document.addEventListener('visibilitychange', soon);
 window.efbCharts = {
   approaches,
   home: () => { if (active !== 'EFB') { active = 'EFB'; listFor = null; paint(); } },
+  /* The page row's DISPATCH, FLIGHT-PLAN and ATC (Nic, #27): the same as a tap on the old bar button. */
+  tab: id => { active = id; if (listFor !== active) listFor = null; paint(); },
+  active: () => active,
   debug: () => ({ key: !!key, keyState, active, loaded: Object.keys(docs),
     ofp: {file: ofp.file, pages: ov.querySelectorAll('.op').length, drawn: ov.querySelectorAll('.op canvas').length, msg: (ov.querySelector('.ofp-m') || {}).textContent || ''}, tabs: tabs().map(t => t.id + ':' + t.label + ':' + (refOf(t) || '-') + ':' + t.how),
     shown, view: shown && view[shown] ? Object.assign({}, view[shown]) : null,
