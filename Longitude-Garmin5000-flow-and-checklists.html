@@ -961,7 +961,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v42</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v43</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -2964,9 +2964,9 @@ if (pending.length && lastPage) fileFlows(lastPage);
 if (!TABS.some(t => t.k === 'CLR')) TABS.splice(1, 0, {k:'CLR'});
 if (!TABS.some(t => t.k === 'ARR')) TABS.push({k:'ARR'});
 
-/* INSTRUCTOR (Nic, #27): a new page, its contents still to be decided. */
+/* INSTRUCTOR (Nic, #27; contents #29): the instructorPage IIFE fills it. This is what shows if that can't run. */
 page('instructor').innerHTML = '<div class="tp-h"><h2>Instructor</h2></div>' +
-  '<p class="tp-sub">A new page from Nic&rsquo;s issue #27. What it holds is still to be decided.</p>';
+  '<p class="tp-sub">Drives the sim through RigBridge on FS01 (#29). It needs the sim link, which isn&rsquo;t available here.</p>';
 
 /* The reference page */
 const ref = page('ref');
@@ -5057,6 +5057,7 @@ const SRC = {
   bounds: 'https://raw.githubusercontent.com/vatsimnetwork/vatspy-data-project/master/Boundaries.geojson'
 };
 const POLL_WAIT = 15000, POLL_LIVE = 30000;   // the feed itself refreshes every 15 s
+const STALE_S = 300;                          // older than this, the feed has stalled at VATSIM's end
 const REACH_NM = 300, LIST_NM = 600, LIST_N = 5;
 const FAC = {1:'Radio', 2:'Delivery', 3:'Ground', 4:'Tower', 5:'Approach', 6:'Centre'};
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -5240,6 +5241,12 @@ function paint(){
          '<b>' + esc(a.unicom ? '122.8' : show(a.f)) + '</b><span>' + esc(a.name) + '</span></span>' +
          '<span class="vf-why">' + esc(a.why) + (age != null ? ' · ' + age + ' s ago' : '') + (msg ? ' · ' + esc(msg) : '') + '</span>' +
          (own ? '' : '<button type="button" class="vf-more" aria-expanded="' + open + '">Nearest ' + (open ? '▴' : '▾') + '</button>');
+  } else if (state === 'wait' && age != null && age > STALE_S) {
+    /* VATSIM's feed stops updating now and then (11 Oct 2026: frozen at 03:08Z for over an hour).
+       A pilot who connected since then is missing from it, so don't call that "not connected". */
+    const at = new Date(Date.parse(feedAt)).toISOString().slice(11, 16);
+    h += '<span class="vf-why warn">VATSIM’s data hasn’t updated since <b>' + at + 'Z</b> (' + Math.round(age / 60) +
+         ' min ago). That’s at VATSIM’s end, so <b>' + esc(cs) + '</b> may well be connected. Still checking every 15 s.</span>';
   } else if (state === 'wait') {
     h += '<span class="vf-why">Waiting for <b>' + esc(cs) + '</b> to connect — checking every 15 s' +
          (msg ? ' · ' + esc(msg) : '') + '</span>';
@@ -5502,9 +5509,16 @@ window.efbLoads = { el, sim, args };
      arrive that way (load, ping). A relayed request carries NO figures: it
      says "load the plan you hold", and the key-holding tablet builds them
      from its own plan, so the room can trigger a load but never steer it.
-   - The room carries three pad keys the pads ignore: SIM|req (the other
-     tablet's press), SIM|res (the result line, shown on both tablets) and
-     SIM|op (which tablet operates the sim, and whether FS01 is connected).
+   - The room carries five pad keys the pads ignore: SIM|req (the other
+     tablet's press), SIM|res (the result line, shown on both tablets),
+     SIM|op (which tablet operates the sim, and whether FS01 is connected),
+     and for the INSTRUCTOR page (#29) SIM|ireq / SIM|ires.
+   - INSTRUCTOR verbs DO carry their figures through the room (fail at
+     118 kt, a 10 nm final): any tablet in the room may drive that page,
+     either pilot or an observer (Neil, 2026-10-11). They only change the
+     sim and can all be undone; the bridge checks every value. The room
+     code is their lock. Nothing that ends a flight or touches a PC is in
+     that list, and the bridge refuses such a verb from the room anyway.
      A request seen while joining (the room's snapshot) is never acted on.
    - Inert with no key: no socket, and nothing drawn unless the room says a
      tablet operates the sim. Any throw leaves the page as it was.
@@ -5515,6 +5529,7 @@ try {
 const L = window.efbLink, LS = window.efbLoads;
 if (!L || !L.relay || !LS || !window.crypto || !crypto.subtle) return;
 const KEYK = 'c700-simkey', RELAYABLE = ['load', 'ping'], STALE = 14 * 3600 * 1000;
+const INSTR = ['instructor', 'fail', 'simctl', 'move', 'ground', 'fuel'];      // relayed WITH their args
 const get = k => { try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } };
 const put = (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch(e){} };
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -5606,10 +5621,11 @@ function advertise(){
   if (!v && !adv) return;                       // never claimed it: nothing to withdraw
   adv = s; roomSend({'SIM|op': v ? Object.assign(v, {at: Date.now()}) : null});
 }
-function viaRoom(verb){
+function viaRoom(verb, args){
   if (!L.room()) return Promise.resolve({ok: false, error: 'Not linked. Link the tablets, or type the sim key on this one.'});
   const id = rid();
-  roomSend({'SIM|req': {id, verb, ts: Date.now(), by: seat()}});
+  if (INSTR.includes(verb)) roomSend({'SIM|ireq': {id, verb, a: args || {}, ts: Date.now(), by: seat()}});
+  else roomSend({'SIM|req': {id, verb, ts: Date.now(), by: seat()}});
   return new Promise(res => {
     const t = setTimeout(() => { delete waiting[id]; res({ok: false, error: 'No answer from the tablet that operates the sim.'}); }, 30000);
     waiting[id] = v => { clearTimeout(t); delete waiting[id]; res(v); };
@@ -5617,8 +5633,12 @@ function viaRoom(verb){
 }
 async function call(verb, args, o){
   o = o || {};
-  if (key()) return direct(verb, args, o);
-  if (RELAYABLE.includes(verb)) return viaRoom(verb);
+  if (key()) {
+    const r = await direct(verb, args, o);
+    if (INSTR.includes(verb) && verb !== 'instructor') instrShare(rid(), verb, r, seat());
+    return r;
+  }
+  if (RELAYABLE.includes(verb) || INSTR.includes(verb)) return viaRoom(verb, args);
   return {ok: false, error: '“' + verb + '” can only be pressed on the tablet that operates the sim.'};
 }
 
@@ -5666,6 +5686,29 @@ async function relayed(v){
   busy = ''; publish(v.id, v.verb, r, 'room', v.by);
 }
 
+/* INSTRUCTOR: the other tablet's press, with its figures; only the key-holder acts, once,
+   and only on a live request. Every write's board goes back to the room, so each tablet's
+   INSTRUCTOR page shows the same thing. A poll ('instructor') answers only the asker. */
+async function instrRelayed(v){
+  if (!key() || !v || typeof v.id !== 'string' || seen[v.id]) return;
+  seen[v.id] = 1;
+  if (Math.abs(Date.now() - (+v.ts || 0)) > 120000) return;
+  const bad = !INSTR.includes(v.verb) ? '“' + v.verb + '” cannot be relayed.'
+    : (!v.a || typeof v.a !== 'object' || Array.isArray(v.a) || JSON.stringify(v.a).length > 2000) ? 'bad arguments' : '';
+  const r = bad ? {ok: false, error: bad} : await direct(v.verb, v.a, {via: 'room'});
+  instrShare(v.id, v.verb, r, v.by);
+}
+function instrShare(id, verb, r, by){
+  const v = {id, verb, by, at: Date.now(), ok: !!r.ok, error: r.ok ? '' : String(r.error || 'refused').slice(0, 300),
+    host: r.host || '', board: r.ok ? r.result : null};
+  if (L.room()) roomSend({'SIM|ires': v});
+  instrSeen(v);
+}
+function instrSeen(v){
+  if (waiting[v.id]) waiting[v.id]({ok: v.ok, host: v.host, result: v.board, error: v.error});
+  try { window.dispatchEvent(new CustomEvent('efb-instructor', {detail: v})); } catch(e){}
+}
+
 L.on(m => {
   if (m.t === 'snap') { synced = false; adv = ''; return; }
   if (m.t === 'padsync') { synced = true; advertise(); return; }
@@ -5679,6 +5722,8 @@ L.on(m => {
         if (waiting[v.id]) waiting[v.id](v);
       }
       else if (k === 'SIM|req' && synced) relayed(v);
+      else if (k === 'SIM|ireq' && synced) instrRelayed(v);
+      else if (k === 'SIM|ires' && synced && v && typeof v === 'object' && typeof v.id === 'string') instrSeen(v);
     });
     if (any) paint();
   }
@@ -5747,11 +5792,243 @@ ki.addEventListener('change', () => {
   advertise(); paint();
 });
 
-window.efbSim = { call, load, holds: () => !!key(), bridges: () => bridges.slice(), debug: { hmac, channel, reqText, resText } };
+window.efbSim = { call, load, holds: () => !!key(), bridges: () => bridges.slice(),
+  op: () => fresh(opInfo) ? opInfo : null, linked: () => !!L.room(), debug: { hmac, channel, reqText, resText } };
 if (key()) connect();
 paint();
 
 } catch(e){ try { console.warn('sim link disabled:', e); } catch(_){} }
+})();
+/* ================================================================
+   INSTRUCTOR — added 2026-10-11 (#29). Design: Reference/EFB-Sim-Bridge.md
+   §"The INSTRUCTOR page".
+
+   Drives the sim through RigBridge's instructor verbs (fail, simctl, move,
+   ground, fuel, and the read-only board 'instructor'), by efbSim.call.
+   ANY tablet in the room may use it: the tablet holding the sim key sends
+   direct, every other one relays through it, figures and all.
+
+   - The bridge keeps the state (armed failures, marks, landings), so an
+     armed failure fires with every tablet asleep. The page only paints
+     the board each answer carries, and polls it every 10 s while shown.
+   - Each write's board reaches every tablet's page through the room. The
+     ARMED list stays folded until tapped, so a pilot glancing at this
+     page is not told what is coming.
+   - Inert without the link: no requests unless a tablet operates the sim.
+================================================================ */
+(function instructorPage(){
+'use strict';
+try {
+const S = window.efbSim, pg = document.querySelector('section.tp[data-tab="instructor"]');
+if (!S || !pg) return;
+const get = k => { try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } };
+const put = (k, v) => { try { localStorage.setItem(k, v); } catch(e){} };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const hhmm = t => { const d = new Date(t); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+const FAILS = [['eng1', 'Engine failure — left'], ['eng2', 'Engine failure — right'], ['fire1', 'Engine fire — left'],
+  ['fire2', 'Engine fire — right'], ['elec', 'Electrical failure'], ['hyd', 'Hydraulic failure'],
+  ['pitot', 'Pitot blocked'], ['static', 'Static port blocked'], ['brakes', 'Brake failure']];
+const TIMES = [['Dawn', 6, 0], ['Day', 12, 0], ['Dusk', 18, 30], ['Night', 22, 0]];
+
+let board = null, boardAt = 0, last = null, busy = '', armFor = '', showArmed = false, pollT = 0;
+
+const css = document.createElement('style');
+css.textContent = `
+  .ins{max-width:760px}
+  .ins .in-st{color:var(--ink-faint);font-size:13px;margin:0 0 10px}
+  .ins .in-st b{color:var(--ink-dim)}
+  .ins .in-res{margin:0 0 12px;font-size:14px;color:var(--comm);min-height:20px}
+  .ins .in-res.in-bad{color:var(--warn)}
+  .ins .in-res small{color:var(--ink-faint);font-size:12px;margin-left:6px}
+  .ins .in-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin:0 0 12px}
+  .ins h3{font-size:15px;margin:0 0 8px;letter-spacing:.3px;color:var(--ink-dim);text-transform:uppercase}
+  .ins .in-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0}
+  .ins .in-row .in-k{flex:1 1 180px;font-size:15px}
+  .ins .in-row .in-k.in-on{color:var(--warn);font-weight:700}
+  .ins button{min-height:40px;padding:6px 13px;border-radius:9px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);
+    font-weight:600;font-size:14px;touch-action:manipulation}
+  .ins button.in-cur{border-color:var(--both);color:var(--both)}
+  .ins button.in-hot{border-color:var(--warn);color:var(--warn)}
+  .ins button:disabled{opacity:.4}
+  .ins input{min-height:40px;width:84px;padding:4px 8px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:15px}
+  .ins .in-arm{margin:4px 0 10px 0;padding:8px 10px;border:1px dashed var(--both);border-radius:10px}
+  .ins .in-note{color:var(--ink-faint);font-size:12.5px;margin:6px 0 0}
+  .ins table{border-collapse:collapse;font-size:14px;width:100%}
+  .ins td,.ins th{padding:4px 6px;text-align:right;border-bottom:1px solid var(--line)}
+  .ins td:first-child,.ins th:first-child{text-align:left}
+  .ins th{color:var(--ink-faint);font-weight:600;font-size:12.5px}
+`;
+document.head.appendChild(css);
+
+const can = () => S.holds() || (S.linked() && !!S.op());
+const shown = () => !pg.hidden && document.visibilityState !== 'hidden';
+
+function status(){
+  if (S.holds()) {
+    const b = S.bridges();
+    return b.length ? '<b>' + esc(b[0].host) + '</b> connected' + (b[0].ver ? ' · RigBridge ' + esc(b[0].ver) : '') + ' · this tablet operates the sim'
+      : 'This tablet operates the sim · the sim PC is not connected';
+  }
+  const op = S.op();
+  if (S.linked() && op) return 'Through the ' + esc(op.seat === 'BOTH' ? 'operating' : op.seat) + ' tablet' + (op.host ? ' · <b>' + esc(op.host) + '</b> connected' : ' · sim PC not connected');
+  return 'No tablet here operates the sim. Link to the tablet that holds the sim key, or type the key in ⚙ This tablet on Setup.';
+}
+
+function btn(label, act, args, o){
+  o = o || {};
+  return '<button type="button" data-v="' + act + '" data-a="' + esc(JSON.stringify(args || {})) + '"' +
+    (o.cls ? ' class="' + o.cls + '"' : '') + (!can() || busy ? ' disabled' : '') + '>' + label + '</button>';
+}
+
+/* A repaint keeps whatever was typed, and waits while someone is typing. */
+let held = false;
+function paint(){
+  const ae = document.activeElement;
+  if (ae && ae.tagName === 'INPUT' && pg.contains(ae)) { if (!held) { held = true; ae.addEventListener('blur', () => { held = false; setTimeout(paint, 0); }, {once: true}); } return; }
+  const typed = {};
+  pg.querySelectorAll('input[data-in]').forEach(i => { if (i.value !== '') typed[i.dataset.in] = i.value; });
+  draw();
+  pg.querySelectorAll('input[data-in]').forEach(i => { if (typed[i.dataset.in] != null) i.value = typed[i.dataset.in]; });
+}
+function draw(){
+  const b = board || {}, failed = new Set((b.failed || []).map(x => x.f)), armed = b.armed || [];
+  const rate = b.rate || 1, marks = b.marks || {};
+  let h = '<div class="tp-h"><h2>Instructor</h2></div><div class="ins">' +
+    '<p class="in-st">' + (busy ? esc(busy) : status()) + (board ? ' · board ' + hhmm(boardAt) : '') + '</p>' +
+    (last ? '<p class="in-res' + (last.ok ? '' : ' in-bad') + '">' + esc(last.line) + '<small>' + hhmm(last.at) + '</small></p>' : '<p class="in-res"></p>');
+
+  /* Sim */
+  h += '<div class="in-card"><h3>Sim</h3><div class="in-row">' +
+    (b.paused ? btn('Resume', 'simctl', {op: 'resume'}, {cls: 'in-hot'}) : btn('Pause', 'simctl', {op: 'pause'})) +
+    '<span class="in-k" style="flex:0 0 auto;margin-left:10px">Rate</span>' +
+    [[.25, '¼×'], [.5, '½×'], [1, '1×'], [2, '2×'], [4, '4×']].map(([v, l]) => btn(l, 'simctl', {op: 'rate', v}, {cls: board && rate === v ? 'in-cur' : ''})).join('') +
+    '</div><div class="in-row"><span class="in-k" style="flex:0 0 auto">Time' + (b.local ? ' <b>' + esc(b.local) + '</b>' : '') + '</span>' +
+    TIMES.map(([l, hh, mm]) => btn(l, 'simctl', {op: 'time', h: hh, m: mm})).join('') + '</div></div>';
+
+  /* Failures */
+  h += '<div class="in-card"><h3>Failures</h3>';
+  FAILS.forEach(([f, name]) => {
+    h += '<div class="in-row"><span class="in-k' + (failed.has(f) ? ' in-on' : '') + '">' + name + (failed.has(f) ? ' — FAILED' : '') + '</span>' +
+      (failed.has(f) ? btn('Clear', 'fail', {f, act: 'clear'}) : btn('Fail now', 'fail', {f, act: 'now'}, {cls: 'in-hot'}) +
+        '<button type="button" data-arm="' + f + '"' + (!can() || busy ? ' disabled' : '') + '>Arm…</button>') + '</div>';
+    if (armFor === f) {
+      const v1 = get('c700-instr-v1') || '';
+      h += '<div class="in-arm"><div class="in-row">' +
+        '<span class="in-k" style="flex:0 0 auto">At V1</span><input type="number" inputmode="numeric" data-in="v1" placeholder="kt" value="' + esc(v1) + '">' + btnArm(f, 'v1', 'Arm at V1') + '</div>' +
+        '<div class="in-row"><span class="in-k" style="flex:0 0 auto">At a speed</span><input type="number" inputmode="numeric" data-in="ias" placeholder="kt">' + btnArm(f, 'ias', 'Arm') + '</div>' +
+        '<div class="in-row"><span class="in-k" style="flex:0 0 auto">Through an altitude</span><input type="number" inputmode="numeric" data-in="alt" placeholder="ft">' + btnArm(f, 'alt', 'Arm') + '</div>' +
+        '<div class="in-row"><span class="in-k" style="flex:0 0 auto">In</span><input type="number" inputmode="decimal" data-in="min" placeholder="min">' + btnArm(f, 'min', 'Arm') + '</div>' +
+        '<p class="in-note">The sim PC watches for it, so it fires even with every tablet asleep.</p></div>';
+    }
+  });
+  h += '<div class="in-row"><button type="button" data-show="1">' + (showArmed ? 'Hide armed' : 'Show armed (' + armed.length + ')') + '</button>' +
+    btn('Clear all', 'fail', {act: 'clearall'}) + '</div>';
+  if (showArmed) h += armed.length ? armed.map(a => '<div class="in-row"><span class="in-k">' + esc(a.name) + ' — ' + esc(a.when) + '</span>' +
+    btn('Disarm', 'fail', {act: 'disarm', id: a.id}) + '</div>').join('') : '<p class="in-note">Nothing armed.</p>';
+  h += '<p class="in-note">Armed failures stay hidden here until tapped, so a pilot glancing at this page isn’t told what is coming.</p></div>';
+
+  /* Position */
+  h += '<div class="in-card"><h3>Position</h3><div class="in-row">' +
+    btn('Back to the gate', 'move', {to: 'gate'}) + btn('Line up', 'move', {to: 'lineup'}) +
+    '</div><div class="in-row"><span class="in-k" style="flex:0 0 auto">Final</span><input type="number" data-in="nm" value="10"> nm' +
+    '<input type="number" data-in="ft" value="3000"> ft' + '<button type="button" data-final="1"' + (!can() || busy ? ' disabled' : '') + '>Go</button></div>' +
+    '<div class="in-row">' + btn('Mark gate here', 'move', {to: 'mark', as: 'gate'}) + btn('Mark runway here', 'move', {to: 'mark', as: 'runway'}) + '</div>' +
+    '<p class="in-note">Gate: ' + (marks.gate ? 'marked ' + hhmm(marks.gate.at) : 'not yet (where the aircraft last sat still, engines off)') +
+    ' · Runway: ' + (marks.runway ? 'heading ' + esc(marks.runway.hdg) + '°, marked ' + hhmm(marks.runway.at) : 'not yet (marked on each takeoff roll at 40 kt)') +
+    '. The final is flown to the marked runway, with its height above it.</p></div>';
+
+  /* Ground */
+  h += '<div class="in-card"><h3>Ground</h3><div class="in-row"><span class="in-k" style="flex:0 0 auto">Pushback</span>' +
+    [['Straight', 'straight'], ['Tail left', 'left'], ['Tail right', 'right'], ['Stop', 'stop']].map(([l, d]) =>
+      btn(l, 'ground', {op: 'pushback', dir: d}, {cls: board && b.pushback === ({straight: 'straight', left: 'tailleft', right: 'tailright', stop: 'off'})[d] ? 'in-cur' : ''})).join('') +
+    '</div><div class="in-row"><span class="in-k" style="flex:0 0 auto">External power' + (b.extPower == null ? '' : b.extPower ? ' <b>on</b>' : ' <b>off</b>') + '</span>' +
+    btn('On', 'ground', {op: 'extpower', on: true}) + btn('Off', 'ground', {op: 'extpower', on: false}) + '</div>' +
+    '<div class="in-row"><span class="in-k" style="flex:0 0 auto">Slew' + (b.slew ? ' <b>on</b>' : '') + '</span>' +
+    btn('On', 'simctl', {op: 'slew', on: true}) + btn('Off', 'simctl', {op: 'slew', on: false}) + btn('Stop moving', 'simctl', {op: 'freeze'}) + '</div></div>';
+
+  /* Fuel */
+  h += '<div class="in-card"><h3>Fuel</h3><div class="in-row"><input type="number" data-in="kg" placeholder="kg" style="width:110px"> kg total' +
+    '<button type="button" data-fuel="1"' + (!can() || busy ? ' disabled' : '') + '>Set fuel</button></div>' +
+    '<p class="in-note">Split evenly between the wing tanks. Works in flight, for a low-fuel exercise.</p></div>';
+
+  /* Landings */
+  const L = b.landings || [];
+  h += '<div class="in-card"><h3>Landings</h3>' + (L.length ? '<table><tr><th>Time</th><th>fpm</th><th>g</th><th>kt</th><th>Past mark</th><th>Right of line</th></tr>' +
+    L.map(l => '<tr><td>' + hhmm(l.at) + '</td><td>' + esc(l.fpm) + '</td><td>' + esc(l.g) + '</td><td>' + esc(l.iasKt) + '</td><td>' +
+      (l.pastMarkM == null ? '—' : esc(l.pastMarkM) + ' m') + '</td><td>' + (l.rightM == null ? '—' : esc(l.rightM) + ' m') + '</td></tr>').join('') + '</table>'
+    : '<p class="in-note">None yet. Each touchdown is recorded on the sim PC.</p>') +
+    '<p class="in-note">Distances are from the runway mark (where the takeoff roll passed 40 kt), not the threshold, and only when the landing is on that runway.</p></div>';
+
+  pg.innerHTML = h + '</div>';
+}
+
+function btnArm(f, k, label){
+  return '<button type="button" data-armgo="' + f + '" data-k="' + k + '"' + (!can() || busy ? ' disabled' : '') + '>' + label + '</button>';
+}
+
+/* A board can come from any tablet in the room, so its shape is checked before draw() reads it:
+   lists must be lists of objects and the rate a number, or a crafted board could inject markup. */
+function clean(x){
+  if (!x || typeof x !== 'object' || Array.isArray(x)) return null;
+  const objs = a => Array.isArray(a) ? a.filter(o => o && typeof o === 'object' && !Array.isArray(o)) : [];
+  return Object.assign({}, x, {
+    failed: objs(x.failed), armed: objs(x.armed), landings: objs(x.landings),
+    marks: x.marks && typeof x.marks === 'object' && !Array.isArray(x.marks) ? x.marks : {},
+    rate: typeof x.rate === 'number' && isFinite(x.rate) ? x.rate : 1,
+  });
+}
+function took(r, verb){
+  const nb = r && r.ok ? clean(r.result) : null;
+  if (nb) { board = nb; boardAt = Date.now(); }
+  if (verb !== 'instructor') last = {ok: !!(r && r.ok), at: Date.now(), line: r && r.ok ? (r.result && r.result.did ? cap(r.result.did) : 'Done.') : 'Not done: ' + ((r && r.error) || 'no answer')};
+}
+const cap = s => String(s).charAt(0).toUpperCase() + String(s).slice(1) + '.';
+
+async function send(verb, args){
+  if (busy || !can()) return;
+  busy = 'Sending to the sim…'; paint();
+  let r; try { r = await S.call(verb, args); } catch(e){ r = {ok: false, error: String(e)}; }
+  busy = ''; took(r, verb); paint();
+}
+async function poll(){
+  clearTimeout(pollT);
+  if (shown() && can() && !busy) { let r; try { r = await S.call('instructor', {}); } catch(e){} if (r && r.ok) { took(r, 'instructor'); paint(); } }
+  pollT = setTimeout(poll, 10000);
+}
+
+pg.addEventListener('click', e => {
+  const t = e.target.closest('button'); if (!t || t.disabled) return;
+  if (t.dataset.v) { let a = {}; try { a = JSON.parse(t.dataset.a || '{}'); } catch(_){} send(t.dataset.v, a); return; }
+  if (t.dataset.arm) { armFor = armFor === t.dataset.arm ? '' : t.dataset.arm; paint(); return; }
+  if (t.dataset.show) { showArmed = !showArmed; paint(); return; }
+  const val = k => { const i = pg.querySelector('input[data-in="' + k + '"]'); return i ? parseFloat(i.value) : NaN; };
+  if (t.dataset.armgo) {
+    const k = t.dataset.k, v = val(k);
+    if (!isFinite(v)) { last = {ok: false, at: Date.now(), line: 'Type a value first.'}; paint(); return; }
+    if (k === 'v1') put('c700-instr-v1', String(v));
+    armFor = '';
+    send('fail', {f: t.dataset.armgo, act: 'arm', k: k === 'v1' ? 'ias' : k, v, label: k === 'v1' ? 'V1' : undefined});
+    return;
+  }
+  if (t.dataset.final) { const nm = val('nm'), ft = val('ft'); send('move', {to: 'final', nm: isFinite(nm) ? nm : 10, ft: isFinite(ft) ? ft : 3000}); return; }
+  if (t.dataset.fuel) { const kg = val('kg'); if (!isFinite(kg)) { last = {ok: false, at: Date.now(), line: 'Type the fuel in kg first.'}; paint(); return; } send('fuel', {kg}); }
+});
+
+/* Another tablet's action: its board reaches here through the room. */
+window.addEventListener('efb-instructor', e => {
+  const v = e.detail || {};
+  const nb = v.ok ? clean(v.board) : null;
+  if (nb) { board = nb; boardAt = Date.now(); }
+  if (v.verb && v.verb !== 'instructor') last = {ok: !!v.ok, at: v.at || Date.now(),
+    line: (v.ok ? (v.board && v.board.did ? cap(v.board.did) : 'Done.') : 'Not done: ' + (v.error || 'refused'))};
+  if (!busy) paint();
+});
+/* Repaint when the page is shown, the link changes, or the tablet wakes. */
+new MutationObserver(() => { if (!pg.hidden) { paint(); poll(); } }).observe(pg, {attributes: true, attributeFilter: ['hidden']});
+document.addEventListener('visibilitychange', () => { if (shown()) poll(); });
+window.efbInstructor = { paint, poll, board: () => board };
+paint();
+} catch(e){ try { console.warn('instructor page disabled:', e); } catch(_){} }
 })();
 /* ================================================================
    CHART TABS — added 2026-10-05 (D4). Design: Reference/DAP-Charts.md.
