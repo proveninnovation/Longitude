@@ -711,10 +711,12 @@
   .sh-tab .pb{position:absolute;left:6px;right:6px;bottom:3px;height:3px;border-radius:2px;background:var(--line);overflow:hidden}
   .sh-tab .pb b{display:block;height:100%;background:var(--list-accent);opacity:.7}
   .sh-tab .pb.full b{background:var(--tab-done);opacity:1}
-  .sh-tab.pad{flex:1.3 1 0;color:var(--comm);background:var(--comm-bg);border:1px solid var(--comm-line);border-bottom:0;font-size:11.5px}
+  /* CLR and ARR: no box and no fill, like the other tabs, and italic (Nic, #25, 2026-10-10).
+     The teal text still marks them as pads rather than checklists. */
+  .sh-tab.pad{flex:1.3 1 0;color:var(--comm);background:transparent;border:0;font-size:11.5px;font-style:italic}
   .sh-tab.pad small{font:600 9px ui-monospace,Consolas,monospace;color:var(--ink-faint);letter-spacing:0;margin-top:2px;
     text-transform:none;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
-  .sh-tab.pad.cur{background:color-mix(in srgb,var(--comm) 16%,var(--bg));box-shadow:inset 0 2px 0 var(--comm)}
+  .sh-tab.pad.cur{background:var(--panel);box-shadow:inset 0 2px 0 var(--comm)}
   .sh-tab.setup{flex:1.15 1 0}
   .sh-more{flex:0 0 46px;font-size:20px}
   /* A scrolling strip (Nic, 2026-10-09, on trial): tabs keep a usable width and the row
@@ -940,7 +942,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v37</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v38</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -2517,8 +2519,9 @@ PHASES.forEach((p, pi) => {
   } else {
     head.innerHTML =
       '<span class="idx"><span class="tick">✓</span><span class="ix">' + flowNo + '</span></span>' +
+      /* p.mode ("When PF requests · challenge & response") is no longer shown under a checklist's
+         title (Nic, #25, 2026-10-10). The data stays in PHASES, as the record of how each is run. */
       '<span class="name">' + p.title +
-        (p.mode ? '<span class="when">' + p.mode + '</span>' : '') +
       '</span><span class="count"></span><span class="chev">▾</span>';
   }
 
@@ -2898,7 +2901,7 @@ function fileFlows(pg){
   if (!pending.length) return;
   const d = document.createElement('details');
   d.className = 'fl';
-  d.innerHTML = '<summary><span class="fchev">▸</span>Flows<span class="names"></span></summary><div class="flows"></div>';
+  d.innerHTML = '<summary><span class="fchev">▸</span>FLOWS (pre-checklist)<span class="names"></span></summary><div class="flows"></div>';
   d.querySelector('.names').textContent = pending.map(c => {
     const nm = c.querySelector('.head .name'); if (!nm) return '';
     const t = nm.cloneNode(true); t.querySelectorAll('.trig,.when,.cf').forEach(x => x.remove());
@@ -3089,7 +3092,14 @@ show(cur);
 setTimeout(() => {
   if (document.querySelector('#ctabs [data-more]')) return;
   const b = document.createElement('button'); b.type = 'button'; b.className = 'sh-tab sh-more'; b.dataset.more = '1'; b.textContent = '⋯';
+  b.dataset.fallback = '1';
   b.addEventListener('click', more); stripW.after(b);
+  /* On a slow tablet the chart bar, and its own ⋯, can arrive after the 1.5 s, which left two ⋯
+     on screen (Nic, #25, 2026-10-10). The bar's one wins: the fallback steps aside when it lands. */
+  const mo = new MutationObserver(() => {
+    if (document.querySelector('#ctabs [data-more]')) { b.remove(); mo.disconnect(); }
+  });
+  mo.observe(document.body, {childList: true, subtree: true});
 }, 1500);
 
 } catch(e){ try { console.warn('tab shell disabled:', e); document.body.classList.remove('shell'); } catch(_){} }
