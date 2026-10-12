@@ -184,6 +184,7 @@
   /* Larger, and the checklist green rather than white (Nic, #25, 2026-10-11): it matches the bar
      beside it and the tick boxes, and stays clear of the PF/PM/BOTH colours. */
   .card.list .name{letter-spacing:.3px;text-transform:uppercase;font-size:18px;color:var(--list-accent)}
+  .card.list .name .tnote{text-transform:none;letter-spacing:0}
   .count{font-size:12px;color:var(--ink-faint);font-variant-numeric:tabular-nums;min-width:38px;text-align:right}
   .item{display:flex;gap:10px;align-items:baseline;padding:10px 6px;border-top:1px solid var(--list-line);cursor:pointer}
   .item:first-child{border-top:0}
@@ -736,6 +737,9 @@
   .sh-tab.setup{flex:1.15 1 0}
   /* ATC's strip (Neil, 2026-10-13): nine tabs, all pads in the CLR/ARR style, so they fit 768 px. */
   .sh-tab.pad.atc{font-size:10.5px;line-height:1.1}
+  /* ATC's tabs upright, and their second line a little larger (Nic, #30, 2026-10-13). */
+  .sh-tab.pad.atc{font-style:normal}
+  .sh-tab.pad.atc small{font-size:10.5px;margin-top:3px}
   .sh-more{flex:0 0 46px;font-size:20px}
   /* A scrolling strip (Nic, 2026-10-09, on trial): tabs keep a usable width and the row
      swipes sideways, with ‹ › at an edge that has more. Without body.sh-scroll it is as before. */
@@ -936,18 +940,20 @@
   .vf-why{flex:1 1 200px;color:var(--ink-faint);font-size:12px}
   .vf-why.warn{color:var(--warn)}
   .vf-more{min-height:36px;touch-action:manipulation}
-  .vf-list{width:100%;border-collapse:collapse;margin:6px 0 2px;font-size:13px}
-  .vf-list td{padding:4px 8px 4px 0;border-top:1px solid var(--line);white-space:nowrap}
-  .vf-list td.f{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:700;color:var(--ink);font-size:15px}
+  /* The controller list: larger text, more space between rows and bigger INFO buttons
+     (Nic, #30, 2026-10-13; was 13 px text, 4 px row padding, an 11.5 px button). */
+  .vf-list{width:100%;border-collapse:collapse;margin:6px 0 2px;font-size:15px}
+  .vf-list td{padding:9px 10px 9px 0;border-top:1px solid var(--line);white-space:nowrap;vertical-align:middle}
+  .vf-list td.f{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:700;color:var(--ink);font-size:18px}
   .vf-list td.w{white-space:normal;width:100%}
   .vf-list td.d{text-align:right;color:var(--ink-dim);font-weight:600}
   .vf-list tr.hit td{color:var(--comm)}
-  .vf-list .x{color:var(--ink-faint);font-size:12px}
+  .vf-list .x{color:var(--ink-faint);font-size:13.5px}
   /* The controller's own information, one button a row (Nic, #27, 2026-10-11; a vPilot feature). */
-  .vf-list .vf-i{min-height:0;margin-left:6px;padding:2px 8px;border-radius:6px;border:1px solid var(--line);background:transparent;
-    color:var(--comm);font-size:11.5px;font-weight:700;letter-spacing:.04em;vertical-align:1px;touch-action:manipulation}
+  .vf-list .vf-i{min-height:34px;margin-left:8px;padding:5px 14px;border-radius:8px;border:1px solid var(--line);background:transparent;
+    color:var(--comm);font-size:13.5px;font-weight:700;letter-spacing:.04em;vertical-align:middle;touch-action:manipulation}
   .vf-list .vf-i[aria-expanded="true"]{background:var(--comm-bg);border-color:var(--comm-line)}
-  .vf-list tr.vf-it td{border-top:0;padding:0 8px 8px 0;white-space:pre-wrap;color:var(--ink-dim);font-size:12.5px;line-height:1.45}
+  .vf-list tr.vf-it td{border-top:0;padding:0 10px 10px 0;white-space:pre-wrap;color:var(--ink-dim);font-size:14px;line-height:1.5}
   @media print{ .vf{display:none !important} }
 
   /* ---- Route check (rc-*) — its own block, mounted under the VATSIM panel */
@@ -984,7 +990,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v47</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v48</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -1276,7 +1282,7 @@ const PHASES = [
     conv:'Before Taxi checklist'}}
  ]},
 
-{kind:'list', short:'Before taxi', title:'Before Taxi', mode:'When PF requests · challenge &amp; response',
+{kind:'list', short:'Before taxi', title:'Before Taxi', tnote:'(after start)', mode:'When PF requests · challenge &amp; response',
  items:[
   ['Engine indications','Checked','PF',{c:'full', ev:'ANSWERED BY PF at NIC’S REQUEST 2026-10-10 (issue #25), was BOTH. ADDED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”): “add new line at top Engine indications - Checked”. Not an Operators Guide Before Taxi item; it closes the start, whose own checklist (old section 4) Nic removed in the same pass.'}],
   ['Flight controls','Free and correct','PF',{c:'full', ev:'Operators Guide §XVII p.17-4 Before Taxi 1, verbatim. Corroborated on camera — VS-002 (Innsbruck–London) @ 1:37 — “before taxi, flight controls” / “flight controls are all set” — so this item is a Longitude document AND the real crew running it.'}],
@@ -1344,10 +1350,10 @@ const PHASES = [
   ['MFD synoptic — PREFLIGHT','Verify — all green','PM',['preflight-synoptic'],{c:'full', ev:'ADDED at NIC’S REQUEST 2026-10-02 (the Longitude repo issue #1, “Changes to checklist items 02-10-26”): “MFD SYNOPTIC PREFLIGHT - VERIFY all green”. Already flow step 7.6 (Systems → Synoptics → Pre-Flight on the MFD GTC); now verified on the list too. Not an Operators Guide Before Takeoff item.'}],
   ['Flight controls','Free','PF',{c:'full', ev:'FOLDED into Before Takeoff at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”): the Cleared for Takeoff list (old section 8) now runs as the second half of this one, from this line. Operators Guide §XVII p.17-5 CLEARED FOR TAKEOFF 1, verbatim. Corroborated on camera — VS-003 (New York–London) @ 7:57 — “control lock is unlocked, flight controls are free”. The whole below-the-line block runs at 7:57–8:13, items 1 to 4 in order.'}],
   ['EIS / CAS','Checked — no messages','BOTH',{c:'full', ev:'MOVED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”) up to sit under Flight controls. Operators Guide §XVII p.17-5 CLEARED FOR TAKEOFF 4, verbatim, with Operators Guide §I Limitations — item 4 behind it (takeoff with any abnormal message prohibited). Corroborated on camera — VS-003 (New York–London) @ 8:13 — “EIS and CAS, no final messages, checked”. Note their word: FINAL messages — the last look before the brakes come off.'}],
-  ['Takeoff clearance','Received','PM',{c:'full', ev:'ADDED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”): “between what was lines 8.b and 8.c add new line Takeoff clearance - Received”. Not an Operators Guide item; it is the event the Guide’s CLEARED FOR TAKEOFF divider is named for, and the landing lights in the next line go on with it.'}],
   ['A/T ARM','Armed','PF',{c:'full', ev:'MOVED at NIC’S REQUEST 2026-10-05 (issue #20, his reply on v24) below Takeoff clearance — “put 7.i A/T ARM after the clearance in the checklist”. That settles the caution below: the list, the flow and the Guide’s limitation now agree. ADDED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”): “add new line 7.i A/T ARM - Armed”. It replaces the old Cleared for Takeoff 8.e (Autothrottle — Armed, TO white), removed in the same pass. CAUTION, put back to Nic: Operators Guide §I Limitations says the autothrottle may not be armed before takeoff clearance is received, and this line now sits ABOVE “Takeoff clearance — Received”. The flow still arms it after the clearance.'}],
   ['FMA','VERIFY (TO &amp; ALTS armed)','BOTH',{c:'full', ev:'ANSWERED BY BOTH at NIC’S REQUEST 2026-10-10 (issue #25), was PM. MOVED at NIC’S REQUEST 2026-10-05 (issue #20, his reply on v24) with A/T ARM, below Takeoff clearance — “7.j FMA also needs to move down with 7.i”. ADDED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”): “add new line 7.j FMA - VERIFY (TO & ALTS armed)”. JayDee MSFS checklist v1.32.3: TO / TO green and ALTS white after TO/GA, and AT FMA TO white on arming.'}],
-  ['Exterior lights','Set','PM',{c:'full', ev:'CHANGED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”), was “Set — pulse and anti-collision on, taxi off, landing on with the clearance”. The breakdown stays in the line-up step of the flow. Operators Guide §XVII p.17-5 CLEARED FOR TAKEOFF 3, verbatim; the breakdown is JayDee MSFS checklist v1.32.3 (Landing Lights ON, Anti-Collision ON, Taxi Light OFF). CHANGED 2026-09-13 — NIC (v3 review, item 8): pulse light on whenever on or crossing a runway, and it “replaces ‘Strobes’”. The old response said “landing and strobes on”: there is no strobe on the Longitude (the white flashing light is the ANTI COLL — Operators Guide §XVI p.16-4), and pulse is the light that marks runway occupancy. Same page notes pulse and landing lights share the belly fixtures and cannot both be selected, so selecting landing on the clearance drops pulse. Corroborated on camera — VS-003 (New York–London) @ 7:57 and @ 8:13, where the lights are answered twice: “exterior lights will be set, second” on entering, then “exterior lights are checked, are all set” with the clearance — which is the two-stage selection this response describes.'}]
+  ['Exterior lights','Set','PM',{c:'full', ev:'CHANGED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”), was “Set — pulse and anti-collision on, taxi off, landing on with the clearance”. The breakdown stays in the line-up step of the flow. Operators Guide §XVII p.17-5 CLEARED FOR TAKEOFF 3, verbatim; the breakdown is JayDee MSFS checklist v1.32.3 (Landing Lights ON, Anti-Collision ON, Taxi Light OFF). CHANGED 2026-09-13 — NIC (v3 review, item 8): pulse light on whenever on or crossing a runway, and it “replaces ‘Strobes’”. The old response said “landing and strobes on”: there is no strobe on the Longitude (the white flashing light is the ANTI COLL — Operators Guide §XVI p.16-4), and pulse is the light that marks runway occupancy. Same page notes pulse and landing lights share the belly fixtures and cannot both be selected, so selecting landing on the clearance drops pulse. Corroborated on camera — VS-003 (New York–London) @ 7:57 and @ 8:13, where the lights are answered twice: “exterior lights will be set, second” on entering, then “exterior lights are checked, are all set” with the clearance — which is the two-stage selection this response describes.'}],
+  ['Takeoff clearance','Received','PM',{c:'full', ev:'MOVED to the last line at NIC’S REQUEST 2026-10-13 (issue #30, his list of 12 Oct): “Before Takeoff checklist - move 7.k to the last line”. Was 7.k, now 7.n; A/T ARM, FMA and Exterior lights each move up one (7.l→7.k, 7.m→7.l, 7.n→7.m). So A/T ARM is checked above the clearance again, as before v25; the flow still arms it after the clearance. Before that: ADDED at NIC’S REQUEST 2026-10-04 (issue #20, “Changes to checklist items 04-10-26”): “between what was lines 8.b and 8.c add new line Takeoff clearance - Received”. Not an Operators Guide item; it is the event the Guide’s CLEARED FOR TAKEOFF divider is named for, and the landing lights in the next line go on with it.'}]
  ]},
 
 
@@ -2633,7 +2639,9 @@ PHASES.forEach((p, pi) => {
       '<span class="idx"><span class="tick">✓</span><span class="ix">' + flowNo + '</span></span>' +
       /* p.mode ("When PF requests · challenge & response") is no longer shown under a checklist's
          title (Nic, #25, 2026-10-10). The data stays in PHASES, as the record of how each is run. */
-      '<span class="name">' + p.title +
+      /* p.tnote: a lower-case aside after the upper-case title, shown only in the header, so the
+         title itself (the spoken "… checklist complete", block times) is unchanged (Nic, #30). */
+      '<span class="name">' + p.title + (p.tnote ? ' <span class="tnote">' + p.tnote + '</span>' : '') +
       '</span><span class="count"></span><span class="chev">▾</span>';
   }
 
@@ -5670,8 +5678,8 @@ css.textContent = `
   .ls td.w{color:var(--ink-faint);font-size:12.5px}
   .ls tr.t td{font-weight:700;border-bottom-color:var(--ink-faint)}
   .ls .over{color:var(--warn)}
-  .ls-sb,.ls-none,.ls-note{color:var(--ink-faint);font-size:12.5px;line-height:1.45;margin:8px 2px 0;max-width:560px}
-  .ls:has(.ls-sim:not(:empty)) .ls-note{display:none}
+  .ls td.v .lb{margin-left:6px;font-size:11px;color:var(--ink-faint)}
+  .ls-sb,.ls-none{color:var(--ink-faint);font-size:12.5px;line-height:1.45;margin:8px 2px 0;max-width:560px}
 `;
 document.head.appendChild(css);
 const el = document.createElement('div');
@@ -5689,31 +5697,35 @@ function paint(p){
     body.innerHTML ='<p class="ls-none">No load yet. <b>Load from SimBrief</b> above brings the weights and fuel here.</p>';
     return;
   }
-  const k = d.u === 'lbs' ? LB : 1, u = d.u === 'lbs' ? 'lb' : 'kg';
+  /* Always kg, with lb beside each weight in brackets (Nic, #30, 2026-10-13: "LOAD SHEET (kgs)").
+     A plan SimBrief issued in lb is converted here; args() still works from the plan's own units. */
+  const kg = n => d.u === 'lbs' ? n / LB : n;
   const f = n => Math.round(n).toLocaleString('en-AU');
+  const lb = n => '<small class="lb">(' + f(n * LB) + ')</small>';
   const half = n => (n / 2).toLocaleString('en-AU', {maximumFractionDigits: 1});     // 3,045 → 1,522.5, so the halves add up
-  const pw = PAX_KG * k, crew = CREW_KG * k, bow = d.oew + crew, pax = d.pax * pw;
-  const zfw = bow + pax + d.cargo, ramp = zfw + d.ramp, tow = ramp - d.taxi, ldw = tow - d.trip;
-  const lim = (v, m) => '<td class="v' + (m && v > m ? ' over' : '') + '">' + f(v) + '</td><td class="w">' +
+  const oew = kg(d.oew), cargo = kg(d.cargo), block = kg(d.ramp), taxi = kg(d.taxi), trip = kg(d.trip);
+  const max = {zfw: d.max.zfw && kg(d.max.zfw), tow: d.max.tow && kg(d.max.tow), ldw: d.max.ldw && kg(d.max.ldw)};
+  const crew = CREW_KG, bow = oew + crew, pax = d.pax * PAX_KG;
+  const zfw = bow + pax + cargo, ramp = zfw + block, tow = ramp - taxi, ldw = tow - trip;
+  const lim = (v, m) => '<td class="v' + (m && v > m ? ' over' : '') + '">' + f(v) + lb(v) + '</td><td class="w">' +
     (m ? (v > m ? 'over ' : 'max ') + f(m) : '') + '</td>';
-  const row = (a, v, w) => '<tr><td>' + a + '</td><td class="v">' + f(v) + '</td><td class="w">' + (w || '') + '</td></tr>';
-  body.innerHTML = '<div class="ls-h">LOAD · ' + u + ' · Nic&rsquo;s figures</div><table>' +
-    row('Basic empty', d.oew, 'SimBrief OEW, as the GTC&rsquo;s BEW') +
+  const row = (a, v, w) => '<tr><td>' + a + '</td><td class="v">' + f(v) + lb(v) + '</td><td class="w">' + (w || '') + '</td></tr>';
+  body.innerHTML = '<div class="ls-h">LOAD SHEET (kgs)</div><table>' +
+    row('Basic empty', oew, 'SimBrief OEW, as the GTC&rsquo;s BEW') +
     row('Crew &amp; stores', crew, half(crew) + ' each crew seat') +
-    '<tr class="t"><td>Basic operating</td><td class="v">' + f(bow) + '</td><td class="w">as the GTC</td></tr>' +
-    row('Passengers', pax, d.pax + ' × ' + f(pw) + ', one a seat from the front' +
+    '<tr class="t"><td>Basic operating</td><td class="v">' + f(bow) + lb(bow) + '</td><td class="w">as the GTC</td></tr>' +
+    row('Passengers', pax, d.pax + ' × ' + f(PAX_KG) + ', one a seat from the front' +
       (d.maxPax && d.pax > d.maxPax ? ' · <span class="over">more than the ' + d.maxPax + ' seats</span>' : '')) +
-    row('Baggage', d.cargo, 'baggage station · the GTC&rsquo;s Cargo') +
-    '<tr class="t"><td>Zero fuel</td>' + lim(zfw, d.max.zfw) + '</tr>' +
-    row('Block fuel', d.ramp, half(d.ramp) + ' each wing tank') +
-    '<tr class="t"><td>Take-off</td>' + lim(tow, d.max.tow) + '</tr>' +
-    '<tr class="t"><td>Landing</td>' + lim(ldw, d.max.ldw) + '</tr>' +
+    row('Baggage', cargo, 'baggage station · the GTC&rsquo;s Cargo') +
+    '<tr class="t"><td>Zero fuel</td>' + lim(zfw, max.zfw) + '</tr>' +
+    row('Block fuel', block, half(block) + ' each wing tank') +
+    '<tr class="t"><td>Take-off</td>' + lim(tow, max.tow) + '</tr>' +
+    '<tr class="t"><td>Landing</td>' + lim(ldw, max.ldw) + '</tr>' +
     '</table>' +
-    '<p class="ls-sb">Fuel: taxi ' + f(d.taxi) + ' · trip ' + f(d.trip) + ' · contingency ' + f(d.cont) +
-      ' · alternate ' + f(d.altn) + ' · reserve ' + f(d.res) + ' · extra ' + f(d.extra) + '. Take-off is block less taxi; landing is take-off less trip.</p>' +
-    '<p class="ls-sb">SimBrief&rsquo;s own, with passengers at ' + f(d.paxW) + ' and no crew line: zero fuel ' + f(d.sb.zfw) +
-      ' · take-off ' + f(d.sb.tow) + ' · landing ' + f(d.sb.ldw) + '.</p>' +
-    '<p class="ls-note">Shown only. Set it in the sim&rsquo;s Weight &amp; Balance by hand for now: loading it straight into the sim is being built (issue #24).</p>';
+    /* Nic, #30: the two paragraphs that followed (SimBrief's own totals, and "shown only … being
+       built") are gone. Load into sim, below, is the sheet's last line now. */
+    '<p class="ls-sb">Fuel: taxi ' + f(taxi) + ' · trip ' + f(trip) + ' · contingency ' + f(kg(d.cont)) +
+      ' · alternate ' + f(kg(d.altn)) + ' · reserve ' + f(kg(d.res)) + ' · extra ' + f(kg(d.extra)) + '. Take-off is block less taxi; landing is take-off less trip.</p>';
 }
 window.addEventListener('efb-plan', e => paint(e.detail));
 paint(window.efbPlan ? window.efbPlan() : null);
@@ -6722,10 +6734,10 @@ if (window.efbShell) {
   /* The plan panel heads DISPATCH (Nic, #27, 2026-10-11): load the plan, then check it, then the load. */
   const sp = document.getElementById('slot-plan');
   if (sp && window.efbShell.pg) pv.appendChild(sp);
-  /* Block times (#30) under the plan: the crew's own record of the flight so far. */
-  if (window.efbBlocks && window.efbShell.pg) pv.appendChild(window.efbBlocks.el);
   if (window.efbRoute) { pv.appendChild(window.efbRoute.el); window.efbRoute.open(true); }
   if (window.efbLoads) pv.appendChild(window.efbLoads.el);
+  /* Block times (#30), under the load sheet (Nic, #30, 2026-10-13; it was under the plan). */
+  if (window.efbBlocks && window.efbShell.pg) pv.appendChild(window.efbBlocks.el);
 }
 
 /* ---- the chart key, on the Pads sheet beside the SimBrief Pilot ID ---- */
