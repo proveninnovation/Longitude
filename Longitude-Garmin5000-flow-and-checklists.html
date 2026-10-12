@@ -961,7 +961,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v45</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v46</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -1986,6 +1986,76 @@ const PHASES = [
 +'<div><h5>Fuel / weight capacities</h5><table><tr><td>Max usable fuel</td><td>6,600 kg</td></tr><tr><td>Max payload, with full fuel</td><td>1,450 kg</td></tr><tr><td>Max passenger capacity</td><td>12 (plus 2 crew)</td></tr><tr><td>Max baggage capacity</td><td>505 kg</td></tr></table></div>'
 +'<div><h5>Standard runway distances (sea level, ISA, max weight)</h5><table><tr><td>Takeoff distance</td><td>4,810 ft (1,466 m)</td></tr><tr><td>Landing distance</td><td>3,170 ft (966 m)</td></tr></table></div>'
 +'</div><p class="qr-n">Nic’s summary, 10 October 2026. A sim reference, not an AFM.</p>'},
+{kind:'ref', qr:1, c:'med', ev:'ADDED 2026-10-12 at Neil’s request, distilled from VATPAC’s own “Milk Run Monday Pilot Briefing” video (youtube iNOThIn8Vc8, 15:45; raw transcript Reference/Transcripts/MRM-Pilot-Briefing-raw-transcript.md; full note Vatsim/Milk-Run-Monday.md), the VATSIM events API (times, routes) and AIP GEN 3.4 as quoted in NAFC OPS 007 (POL/POLAIR). Rated med on the ladder’s “right source, wrong airframe” rung: VATPAC is the authority on its own event procedure, but the video is undated, its demo crews fly 737s, and SID/STAR/waypoint names in it may be stale. Nothing here is Longitude-specific except the VMO aside. The STAR-terminus actions are an on-screen table at 11:00, not spoken.', short:'Milk Run', title:'Milk Run Monday &mdash; VATPAC',
+ when:'Quick reference &middot; VATPAC&rsquo;s pilot briefing, distilled',
+ html:
+ '<div class="rsec"><h4>The event</h4>'
++'<p><b>Every Monday 0700&ndash;1100Z</b> (6&ndash;10&nbsp;pm AEDT, 5&ndash;9&nbsp;pm AEST). YMML, YSSY and YSCB, '
++'often over 200 movements, so the frequencies are busy and ATC is strict. A-CDM departure slots are sometimes in use. '
++'<b>Current charts beat this card</b>: the briefing is undated and procedure names change.</p>'
++'<table class="rtab">'
++'<tr><td class="q"><b>ML &rarr; SY</b></td><td>ML H129 DOSEL Y59 RIVET</td></tr>'
++'<tr><td class="q"><b>SY &rarr; ML</b></td><td>TESAT H65 LEECE Q29 ML</td></tr>'
++'<tr><td class="q"><b>ML &rarr; CB</b></td><td>ML H129 DOSEL Y59 ARRAN J42 CB</td></tr>'
++'<tr><td class="q"><b>CB &rarr; ML</b></td><td>CB UQ215 TANTA Q29 ML</td></tr>'
++'<tr><td class="q"><b>SY &rarr; CB</b></td><td>TESAT H65 CB</td></tr>'
++'<tr><td class="q"><b>CB &rarr; SY</b></td><td>CB W423 CULIN Y59 TESAT</td></tr>'
++'</table>'
++'<p>Levels go by direction: <b>odd</b> on tracks 000&ndash;179 (the north-easterly legs), <b>even</b> on 180&ndash;359.</p></div>'
+
++'<div class="rsec"><h4>Filing as Polair</h4>'
++'<p>Police aircraft file as <b>POL</b> and are called <b>POLAIR</b> on the radio (AIP GEN 3.4), so '
++'<b>POL55</b> is spoken <span class="say">Polair five five</span>. Put <b>CS/POLAIR</b> in the remarks. '
++'<b>Never POLR</b>: that is <i>Polair Red</i>, which asks for priority handling.</p></div>'
+
++'<div class="rsec"><h4>Clearance and push</h4>'
++'<table class="rtab">'
++'<tr><td class="q"><b>ATIS first</b></td><td>Before the clearance call, and at the latest before taxi. Set QNH.</td></tr>'
++'<tr><td class="q"><b>PDC</b></td><td>A text clearance: read back <b>only the SID, squawk and bay</b>. <span class="say">Sydney Delivery, Polair 55, PDC readback, &hellip; squawk &hellip;, bay &hellip;</span></td></tr>'
++'<tr><td class="q"><b>Push</b></td><td>Ask for it on the position the ATIS names. <b>Delivery or Coordinator only queues you</b>; Ground approves it. Have the tug connected, keep the brake on, and go <b>as soon as it&rsquo;s approved</b>. Work out the direction from the chart if none is given.</td></tr>'
++'<tr><td class="q"><b>Melbourne TDP</b></td><td>Melbourne may give a towbar disconnect point: <span class="say">disconnect point Yankee 3</span>. Chart 20-9B, or vats.im/ml-push. If you can&rsquo;t push to one, say <b>unable</b>.</td></tr>'
++'<tr><td class="q"><b>Taxi</b></td><td><span class="say">&hellip; received Charlie, request taxi.</span> Slow and sure.</td></tr>'
++'</table></div>'
+
++'<div class="rsec"><h4>Departure</h4>'
++'<ul><li><b>Change to Tower yourself</b> at the holding point (at Sydney, holding short of Sierra). Ground won&rsquo;t hand you over. <span class="say">Polair 55, ready.</span></li>'
++'<li>Radar SIDs: the <b>turn comes with the takeoff clearance</b>. Make it at the charted altitude.</li>'
++'<li><b>Never climb through the initial level.</b> Normally <b>5,000 ft</b> at SY and ML and <b>10,000 ft</b> at CB, but the level in your clearance is the one that counts.</li>'
++'<li><b>Departures, first call:</b> level passing and cleared level. <span class="say">Departures, Polair 55, passing 2,800, climbing via SID to 5,000.</span> After that, give <b>only the cleared level</b> to each new controller.</li>'
++'<li>Transition altitude <b>10,000 ft</b>, transition level <b>FL110</b>.</li></ul></div>'
+
++'<div class="rsec"><h4>En route and descent</h4>'
++'<ul><li>Expect <b>sequencing</b>: Mach, vectors, holds. Be ready to copy a hold.</li>'
++'<li><b>STAR clearance &ldquo;when ready descend&rdquo;</b> means descend at <b>your own top of descent</b>. Report leaving cruise level only if the frequency is quiet.</li>'
++'<li><b>Inbound Sydney, expect the ODALE re-route</b>: <span class="say">re-cleared direct &hellip;, thence ODALE for the ODALE &hellip; arrival</span>. The PM copies it onto the pad and reads it back from the pad.</li>'
++'<li>Speed assignments such as <span class="say">maintain 300 knots until RIVET</span> are within V<sub>MO</sub> (325 kt above 8,000 ft). Use the speedbrake. If you&rsquo;re not sure when normal speed resumes, <b>ask</b>.</li>'
++'<li><b>250 kt below 10,000 ft</b> unless the speed restriction is cancelled or a higher speed is assigned.</li>'
++'<li><b>Approach, first call:</b> <span class="say">&hellip; descending via STAR to &hellip;, received &hellip;</span>. Act on a vector, speed or direct <b>at once</b>, and turn the right way.</li></ul></div>'
+
++'<div class="rsec"><h4>Sydney: keep the discontinuity</h4>'
++'<p>The Sydney STARs end in vectors, so <b>don&rsquo;t delete the discontinuity</b> after the last fix. With no vector by then:</p>'
++'<table class="rtab">'
++'<tr><td class="q"><b>RIVET &middot; BOOGI</b></td><td>Direct TESAT, then heading <b>049</b> from TESAT</td></tr>'
++'<tr><td class="q"><b>RIVET &middot; NASHO</b></td><td>Heading <b>155</b></td></tr>'
++'<tr><td class="q"><b>ODALE &middot; ANKUB</b></td><td>Direct TESAT, then heading <b>049</b> from TESAT</td></tr>'
++'</table></div>'
+
++'<div class="rsec"><h4>Sydney independent visual approaches</h4>'
++'<ul><li>Report <span class="say">runway 34R in sight</span> as soon as you can. There is no IVA without it.</li>'
++'<li><span class="say">&hellip; join final runway 34R, from that heading cleared independent visual approach</span>.</li>'
++'<li><b>Never fly through your runway&rsquo;s centreline</b>, even without a vector or a clearance. Turn onto final yourself.</li>'
++'<li><b>&ldquo;Expect ILS, then IVA when visual&rdquo;</b>: fly the ILS to below the cloud, report <span class="say">visual</span>, and you&rsquo;ll be re-cleared for the IVA.</li>'
++'<li><b>&ldquo;Intercept the localiser&rdquo; is not an approach clearance.</b> Stay at the assigned altitude until you&rsquo;re cleared for the ILS or the IVA.</li></ul></div>'
+
++'<div class="rsec"><h4>Landing and go-around</h4>'
++'<p><b>Expect a late landing clearance.</b> Brief the height by which you go around without one; the PM calls it. '
++'On <span class="say">go around</span>, apply TOGA, fly any heading and altitude you&rsquo;re given straight away, '
++'otherwise climb to the missed-approach altitude. <span class="say">Going around, Polair 55.</span></p></div>'
+
++'<div class="rsec"><h4>Where this came from</h4>'
++'<p>VATPAC&rsquo;s own <b>Milk Run Monday Pilot Briefing</b> video, and VATSIM&rsquo;s event listing for the routes. '
++'The demo crews fly 737s and the video is undated. The Polair designators are from the AIP. '
++'<b>Nic has not seen this card.</b></p></div>'},
 ];
 
 /* =================================================================
