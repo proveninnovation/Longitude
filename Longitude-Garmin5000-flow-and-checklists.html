@@ -961,7 +961,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v44</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v45</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -5916,7 +5916,9 @@ function draw(){
     '<span class="in-k" style="flex:0 0 auto;margin-left:10px">Rate</span>' +
     [[.25, '¼×'], [.5, '½×'], [1, '1×'], [2, '2×'], [4, '4×']].map(([v, l]) => btn(l, 'simctl', {op: 'rate', v}, {cls: board && rate === v ? 'in-cur' : ''})).join('') +
     '</div><div class="in-row"><span class="in-k" style="flex:0 0 auto">Time' + (b.local ? ' <b>' + esc(b.local) + '</b>' : '') + '</span>' +
-    TIMES.map(([l, hh, mm]) => btn(l, 'simctl', {op: 'time', h: hh, m: mm})).join('') + '</div></div>';
+    TIMES.map(([l, hh, mm]) => btn(l, 'simctl', {op: 'time', h: hh, m: mm})).join('') + '</div>' +
+    '<div class="in-row"><span class="in-k" style="flex:0 0 auto">FSUIPC7</span>' + btn('Rescan controllers', 'simctl', {op: 'rescan'}) + '</div>' +
+    '<p class="in-note">For when FSUIPC7 forgets button assignments. Sends its <i>Rescan Connected Controllers</i> control (1157), which re-reads the controllers and their assignments. The nearest FSUIPC offers to the <i>Reload</i> button on its Buttons page.</p></div>';
 
   /* Failures */
   h += '<div class="in-card"><h3>Failures</h3>';
