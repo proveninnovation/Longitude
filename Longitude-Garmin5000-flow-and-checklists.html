@@ -713,7 +713,9 @@
     color:var(--ink);touch-action:manipulation}
   .pg-tab:active{transform:none}
   .pg-tab[aria-current="page"]{color:var(--pm);box-shadow:inset 0 -3px 0 var(--pm)}
-  body.pg:not(.pg-cl) .sh-tabw{display:none}
+  .pg-tab.cog{flex:0 0 58px;display:flex;align-items:center;justify-content:center;padding:0}
+  .pg-tab.cog svg{display:block}
+  body.pg:not(.pg-cl):not(.pg-atc) .sh-tabw{display:none}
   body.pg .sh-menu{top:calc(var(--shtop,0px) + 4px);bottom:auto}
   .sh-tabs{display:flex;gap:3px;margin:0 -8px}
   .sh-tab{flex:1 1 0;min-width:0;min-height:0;height:50px;padding:0 2px 3px;border:0;border-radius:9px 9px 0 0;position:relative;
@@ -732,6 +734,8 @@
     text-transform:none;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
   .sh-tab.pad.cur{background:var(--panel);box-shadow:inset 0 2px 0 var(--comm)}
   .sh-tab.setup{flex:1.15 1 0}
+  /* ATC's strip (Neil, 2026-10-13): nine tabs, all pads in the CLR/ARR style, so they fit 768 px. */
+  .sh-tab.pad.atc{font-size:10.5px;line-height:1.1}
   .sh-more{flex:0 0 46px;font-size:20px}
   /* A scrolling strip (Nic, 2026-10-09, on trial): tabs keep a usable width and the row
      swipes sideways, with ‹ › at an edge that has more. Without body.sh-scroll it is as before. */
@@ -740,6 +744,7 @@
   body.sh-scroll .sh-tabs::-webkit-scrollbar{display:none}
   body.sh-scroll .sh-tab{flex:1 0 64px;scroll-snap-align:start}
   body.sh-scroll .sh-tab.pad{flex:1.3 0 84px}
+  body.sh-scroll .sh-tab.pad.atc{flex:1 0 80px}
   body.sh-scroll .sh-tab.setup{flex:1.15 0 70px}
   .sh-arr{position:absolute;top:0;bottom:4px;z-index:3;width:30px;min-height:0;padding:0;border:0;border-radius:0;
     font:700 24px/1 system-ui,sans-serif;color:var(--ink-dim);touch-action:manipulation}
@@ -802,6 +807,8 @@
   .sh-menu button{display:block;width:100%;text-align:left;border:0;border-radius:0;background:transparent;padding:6px 14px;
     color:var(--ink-dim);font-size:13px;line-height:1.25;min-height:34px}
   .sh-menu button.ref,.sh-menu button.sub{padding-left:24px}
+  .sh-menu button.cogp{font:700 14.5px system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);min-height:40px}
+  .sh-menu button.cogp + .mh{border-top:1px solid var(--line);margin-top:4px}
   /* fixed slots: VATSIM and ⋯ at the ends, the five chart kinds equal between them */
   body.shell #ctabs{overflow-x:hidden}
   body.shell #ctabs > *{flex:1 1 0;min-width:0}
@@ -855,9 +862,25 @@
   .kp-say .ph{color:var(--trig);font-weight:600}
   .kp-say .kn{color:var(--list-accent);font-weight:600}
   .kp-say + .kp-row{margin-top:8px}
+  .kp-do b{color:var(--comm)}
+  .kp-do span{color:var(--ink)}
   .kp-live{font-weight:600;color:var(--comm)}
   .kb .src.warn{color:var(--warn);opacity:1}
   .kp-hint{color:var(--ink-faint);font-size:12px;margin:4px 2px 0;line-height:1.45}
+  /* The pad rules (Neil, 2026-10-13): title line, framed boxes, the calls, then one folded NOTES. */
+  section.kp > .tp-h{margin:20px 0 14px}
+  .kp-boxes{border:2px solid color-mix(in srgb,var(--comm) 55%,transparent);border-radius:16px;padding:10px 10px 4px;
+    background:color-mix(in srgb,var(--comm) 6%,transparent);margin:0 -4px 18px}
+  .kp-boxes .kp-row:last-child{margin-bottom:6px}
+  .kp-calls{margin:0 0 14px}
+  .kp-calls .kp-say{font-size:14px;margin-bottom:7px}
+  .kp-hr{border:0;border-top:1px solid var(--line);margin:9px 0}
+  details.kp-notes{margin:6px 0 10px;border-top:1px solid var(--line)}
+  details.kp-notes>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:40px;
+    font:700 11px system-ui,sans-serif;letter-spacing:.1em;color:var(--ink-faint)}
+  details.kp-notes>summary::-webkit-details-marker{display:none}
+  details.kp-notes[open]>summary .fchev{transform:rotate(90deg)}
+  details.kp-notes .kp-sec:first-of-type{margin-top:8px}
   @media (max-width:560px){ .kp-row{flex-wrap:wrap} .kb{flex-basis:30%} .kp-say{flex-direction:column;gap:0} }
 
   /* the tray — one fixed height for every kind of box (P9) */
@@ -961,7 +984,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v46</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v47</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -2940,7 +2963,7 @@ document.body.classList.add('shell');
 
 /* The header readout: cleared level and squawk. The pads fill it. */
 const ro = document.createElement('span');
-ro.className = 'sh-ro'; ro.id = 'shRo'; ro.title = 'Cleared level and squawk, from the CLR tab';
+ro.className = 'sh-ro'; ro.id = 'shRo'; ro.title = 'Cleared level and squawk, from ATC → Clearance';
 titlebar.insertBefore(ro, titlebar.querySelector('.bar'));
 
 const strip = document.createElement('nav');
@@ -2962,9 +2985,18 @@ document.body.classList.add('pg');
 const pgRow = document.createElement('nav');
 pgRow.className = 'pg-tabs'; pgRow.setAttribute('aria-label', 'Pages');
 hdrWrap.insertBefore(pgRow, stripW);
-const PGS = [['SETUP', 'Setup'], ['DISPATCH', 'Dispatch'], ['FLIGHT-PLAN', 'Flight-plan'], ['CHECKLISTS', 'Checklists'],
-  ['ATC', 'ATC'], ['INSTRUCTOR', 'Instructor'], ['REFERENCE', 'Reference']];
-const LAYER = {'DISPATCH': 'PLAN', 'FLIGHT-PLAN': 'OFP', 'ATC': 'VATSIM'};
+/* After flying it (Neil, 2026-10-13): REFERENCE became the cog, and SETUP and INSTRUCTOR moved
+   under it; CLR, ARR, Hold and Other left the checklist strip for ATC, which has a strip of its own. */
+const GEAR = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+  '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
+const PGS = [['DISPATCH', 'Dispatch'], ['FLIGHT-PLAN', 'Flight-plan'], ['CHECKLISTS', 'Checklists'], ['ATC', 'ATC'], ['MORE', GEAR]];
+const LAYER = {'DISPATCH': 'PLAN', 'FLIGHT-PLAN': 'OFP'};
+/* ATC's strip. Controllers is the chart layer's VATSIM page; the rest are the pads, CLR and ARR
+   each cut in three. The entryPads VIEWS carry the same keys. sub: under the strip's Other menu
+   rather than a tab of its own (Neil, 2026-10-13); OTHER's page is the Scratchpad. */
+const ATCT = [{k:'CTL', label:'Controllers'}, {k:'DATIS', label:'Dept ATIS'}, {k:'CLR', label:'Clearance'}, {k:'STAR', label:'STAR'},
+  {k:'AATIS', label:'Dest ATIS'}, {k:'IAP', label:'IAP'}, {k:'HOLD', label:'Hold', sub:1}, {k:'XATIS', label:'Alt ATIS', sub:1}, {k:'OTHER', label:'Scratchpad', sub:1}];
+const ATCK = ATCT.map(t => t.k), COG = ['setup', 'instructor', 'ref'];
 function arrows(){
   const m = strip.scrollWidth - strip.clientWidth;
   arrL.hidden = strip.scrollLeft <= 2; arrR.hidden = strip.scrollLeft >= m - 2;
@@ -3022,8 +3054,6 @@ cards.forEach(card => {
   const k = 'L' + (n++), pg = page(k);
   const l = links.find(x => x.listCard === card);
   const label = l ? l.label : (card.querySelector('.head .name') || {}).textContent || k;
-  if (label === 'Prep') TABS.push({k:'CLR'});
-  if (label === 'Descent') TABS.push({k:'ARR'});
   TABS.push({k, label: SHORT[label] || label, phase: label, card});
   pg.appendChild(card);
   /* The checklist is always open, at the top of its tab: its head no longer folds it. */
@@ -3034,8 +3064,6 @@ cards.forEach(card => {
   lastPage = pg;
 });
 if (pending.length && lastPage) fileFlows(lastPage);
-if (!TABS.some(t => t.k === 'CLR')) TABS.splice(1, 0, {k:'CLR'});
-if (!TABS.some(t => t.k === 'ARR')) TABS.push({k:'ARR'});
 
 /* INSTRUCTOR (Nic, #27; contents #29): the instructorPage IIFE fills it. This is what shows if that can't run. */
 page('instructor').innerHTML = '<div class="tp-h"><h2>Instructor</h2></div>' +
@@ -3105,71 +3133,97 @@ paintSetup();
 
 /* ---- the strip ---------------------------------------------------- */
 let cur = get(VIEWK);
-if (!TABS.some(t => t.k === cur) && !['ref', 'HOLD', 'OTHER', 'instructor'].includes(cur)) cur = 'setup';
+if (cur === 'ARR') cur = 'STAR';                 // a tablet last on the old ARR tab
+if (!TABS.some(t => t.k === cur) && !ATCK.includes(cur) && !COG.includes(cur)) cur = 'setup';
 
 /* ---- the page row ------------------------------------------------- */
 const CLK = 'c700-lastcl';      // the checklist tab CHECKLISTS returns to
+const ATK = 'c700-lastatc';     // and the ATC tab ATC returns to
 function lastCl(){
   const k = get(CLK);
   return TABS.some(t => t.k === k && k !== 'setup') ? k : (TABS.find(t => t.k !== 'setup') || {k: 'setup'}).k;
 }
+function lastAtc(){ const k = get(ATK); return ATCK.includes(k) ? k : 'CTL'; }
 function layer(){ try { return window.efbCharts && window.efbCharts.active ? window.efbCharts.active() : 'EFB'; } catch(e){ return 'EFB'; } }
 function pgNow(){
   const a = layer();
   for (const p in LAYER) if (LAYER[p] === a) return p;
-  if (cur === 'setup') return 'SETUP';
-  if (cur === 'instructor') return 'INSTRUCTOR';
-  if (['ref', 'HOLD', 'OTHER'].includes(cur)) return 'REFERENCE';
+  if (a === 'VATSIM' || ATCK.includes(cur)) return 'ATC';
+  if (COG.includes(cur)) return 'MORE';
   return 'CHECKLISTS';
 }
 function renderPg(){
   const now = pgNow();
-  pgRow.innerHTML = PGS.map(([k, l]) => '<button type="button" class="pg-tab" data-pg="' + k + '"' +
-    (k === 'REFERENCE' ? ' data-more="1"' : '') + (k === now ? ' aria-current="page"' : '') + '>' + l + '</button>').join('');
+  pgRow.innerHTML = PGS.map(([k, l]) => '<button type="button" class="pg-tab' + (k === 'MORE' ? ' cog' : '') + '" data-pg="' + k + '"' +
+    (k === 'MORE' ? ' data-more="1" aria-label="Setup, instructor and reference"' : '') + (k === now ? ' aria-current="page"' : '') + '>' + l + '</button>').join('');
   document.body.classList.toggle('pg-cl', now === 'CHECKLISTS');
+  document.body.classList.toggle('pg-atc', now === 'ATC');
+  return now;
 }
 pgRow.addEventListener('click', e => {
   const b = e.target.closest('[data-pg]'); if (!b) return;
   const p = b.dataset.pg;
-  if (p === 'REFERENCE') { more(); return; }
+  if (p === 'MORE') { more(); return; }
   closeMenu();
   if (LAYER[p]) { if (window.efbCharts && window.efbCharts.tab) window.efbCharts.tab(LAYER[p]); renderTabs(); return; }
-  show(p === 'SETUP' ? 'setup' : p === 'INSTRUCTOR' ? 'instructor' : lastCl());
+  show(p === 'ATC' ? lastAtc() : lastCl());
 });
 
 function chartOpen(){ try { return !!(window.efbCharts && window.efbCharts.debug().open); } catch(e){ return false; } }
+let stripFor = '';
 function renderTabs(){
-  const co = chartOpen();
-  renderPg();
-  /* SETUP lives in the page row now (Nic, #27). */
-  strip.innerHTML = TABS.filter(t => t.k !== 'setup').map(t => {
-    const c = t.k === cur && !co ? ' cur' : '';
-    if (t.k === 'CLR' || t.k === 'ARR') {
+  const co = chartOpen(), now = renderPg();
+  const atc = now === 'ATC';
+  strip.setAttribute('aria-label', atc ? 'ATC' : 'Checklists');
+  if (atc) {
+    const vat = layer() === 'VATSIM';
+    const subNow = ATCT.find(t => t.sub && t.k === cur && !co);
+    strip.innerHTML = ATCT.filter(t => !t.sub).map(t => {
+      const c = (t.k === 'CTL' ? vat : t.k === cur && !co) ? ' cur' : '';
       const info = (window.efbPads && window.efbPads.tabInfo) ? window.efbPads.tabInfo(t.k) : '';
-      return '<button type="button" class="sh-tab pad' + c + '" data-k="' + t.k + '">' + t.k + '<small>' + info + '</small></button>';
-    }
-    if (t.k === 'setup') return '<button type="button" class="sh-tab setup' + c + '" data-k="setup">Setup</button>';
+      return '<button type="button" class="sh-tab pad atc' + c + '" data-k="' + t.k + '">' + t.label + '<small>' + (info || '&nbsp;') + '</small></button>';
+    }).join('') +
+      /* Other: a menu, like the cog. While one of its pages is open, the tab is current and names it. */
+      '<button type="button" class="sh-tab pad atc' + (subNow ? ' cur' : '') + '" data-atcmore="1">Other ▾<small>' + (subNow ? subNow.label : '&nbsp;') + '</small></button>';
+  } else strip.innerHTML = TABS.filter(t => t.k !== 'setup').map(t => {
+    const c = t.k === cur && !co ? ' cur' : '';
     const tot = t.card.querySelectorAll('.item').length, got = t.card.querySelectorAll('.item.done').length;
     /* The bar stays when the list is done, full and a darker green; the heading stays white (Neil, 2026-10-08). */
     const bar = got ? '<span class="pb' + (got === tot ? ' full' : '') + '"><b style="width:' + Math.round(100 * got / tot) + '%"></b></span>' : '';
     return '<button type="button" class="sh-tab' + (tot && got === tot ? ' done' : '') + c + '" data-k="' + t.k + '">' + t.label + bar + '</button>';
   }).join('');
+  /* The strip changed from checklists to ATC or back: start it from its own left edge. */
+  if (stripFor !== (atc ? 'ATC' : 'CL')) { stripFor = atc ? 'ATC' : 'CL'; strip.scrollLeft = 0; reveal(); }
   arrows();
 }
 
+/* Controllers is the chart layer's VATSIM page. Without the chart layer, the panel comes here. */
+function controllers(){
+  const go = () => {
+    try { if (window.efbCharts && window.efbCharts.tab) { if (cur === 'CTL') window.efbCharts.tab('VATSIM'); return; } } catch(e){}
+    const p = page('CTL');
+    if (window.efbVatsim && window.efbVatsim.el && window.efbVatsim.el.parentNode !== p) p.appendChild(window.efbVatsim.el);
+    p.hidden = cur !== 'CTL';
+  };
+  window.efbCharts ? go() : setTimeout(go, 0);
+}
 function show(k, keepScroll){
-  if (!pages[k] && !['CLR', 'ARR', 'HOLD', 'OTHER'].includes(k)) k = 'setup';
+  if (k === 'ARR') k = 'STAR';
+  if (!pages[k] && !ATCK.includes(k)) k = 'setup';
   cur = k; put(VIEWK, k);
   if (k !== 'setup' && TABS.some(t => t.k === k)) put(CLK, k);
-  page(k);
+  if (ATCK.includes(k)) put(ATK, k);
+  if (k !== 'CTL') page(k);
   Object.keys(pages).forEach(x => { pages[x].hidden = x !== k; });
-  try { if (window.efbCharts && window.efbCharts.home) window.efbCharts.home(); } catch(e){}
+  if (k === 'CTL') controllers();
+  else try { if (window.efbCharts && window.efbCharts.home) window.efbCharts.home(); } catch(e){}
   closeMenu();
   renderTabs(); reveal();
   if (!keepScroll) window.scrollTo(0, 0);
   try { window.dispatchEvent(new CustomEvent('efb-view', {detail: k})); } catch(e){}
 }
 strip.addEventListener('click', e => {
+  if (e.target.closest('[data-atcmore]')) { atcMore(e.target.closest('[data-atcmore]')); return; }
   const b = e.target.closest('[data-k]'); if (b) show(b.dataset.k);
 });
 
@@ -3190,11 +3244,12 @@ pos.addEventListener('click', () => {
   if (t) setTimeout(() => show(t.k), 0);
 }, true);
 
-/* ---- ⋯ : HOLD, OTHER and the reference cards ---------------------- */
+/* ---- the cog: Setup, Instructor and the reference cards ------------ */
 const menu = document.createElement('div');
 menu.className = 'sh-menu'; menu.hidden = true;
 const refs = Array.from(ref.querySelectorAll('section.card'));
-menu.innerHTML = '<div class="mh">PADS</div><button type="button" class="sub" data-go="HOLD">Hold</button><button type="button" class="sub" data-go="OTHER">Other</button>' +
+/* Hold and Other are ATC tabs now (Neil, 2026-10-13); Instructor (on top, Neil) and Setup came off the page row. */
+menu.innerHTML = '<button type="button" class="cogp" data-go="instructor">Instructor</button><button type="button" class="cogp" data-go="setup">Setup</button>' +
   /* Two lists since Nic's #26: QUICK REFERENCE (cards marked qr) and FLOW & CRM GUIDANCE since Nic's follow-up (the rest, which was REFERENCE). */
   [['QUICK REFERENCE', c => c.dataset.qr], ['FLOW &amp; CRM GUIDANCE', c => !c.dataset.qr]].map(([h, f]) =>
     '<div class="mh">' + h + '</div>' + refs.map((c, i) => {
@@ -3203,8 +3258,23 @@ menu.innerHTML = '<div class="mh">PADS</div><button type="button" class="sub" da
       return '<button type="button" class="ref" data-ref-i="' + i + '">' + nm.textContent.trim().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])) + '</button>';
     }).join('')).join('');
 document.body.appendChild(menu);
-function closeMenu(){ menu.hidden = true; }
-function more(){ menu.hidden = !menu.hidden; }
+/* ATC's Other menu: Hold, Alt ATIS, Scratchpad (Neil, 2026-10-13). */
+const atcm = document.createElement('div');
+atcm.className = 'sh-menu atcm'; atcm.hidden = true;
+atcm.innerHTML = ATCT.filter(t => t.sub).map(t => '<button type="button" class="cogp" data-go="' + t.k + '">' + t.label + '</button>').join('');
+document.body.appendChild(atcm);
+function atcMore(b){
+  if (!atcm.hidden) { atcm.hidden = true; return; }
+  menu.hidden = true; atcm.hidden = false;
+  const r = b.getBoundingClientRect();
+  atcm.style.left = Math.max(10, Math.min(r.left, window.innerWidth - atcm.offsetWidth - 10)) + 'px'; atcm.style.right = 'auto';
+}
+atcm.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) show(g.dataset.go); });
+document.addEventListener('click', e => {
+  if (!atcm.hidden && !e.target.closest('.atcm') && !e.target.closest('[data-atcmore]')) atcm.hidden = true;
+}, true);
+function closeMenu(){ menu.hidden = true; atcm.hidden = true; }
+function more(){ atcm.hidden = true; menu.hidden = !menu.hidden; }
 menu.addEventListener('click', e => {
   const g = e.target.closest('[data-go]');
   if (g) { show(g.dataset.go); return; }
@@ -4007,7 +4077,8 @@ function text(max){
 const VIS = ['GT 10KM', '10KM', '8KM', '5KM', '3000M', '1500M', 'CAVOK'];
 const APCH = ['INST', 'ILS', 'GLS', 'RNP', 'VISUAL', 'INDEP VIS'];
 /* Every ATIS box is predicted from the live weather (wxPick, below): the VATSIM ATIS,
-   else the real-world METAR. The letter comes from VATSIM only. */
+   else the real-world METAR. The letter comes from VATSIM only.
+   side: 'dep', 'arr', or 'alt' (the alternate, read like an arrival). */
 const atisRows = side => {
   const live = id => ({pred: () => (wxPick(side, id) || {}).v, src: () => (wxPick(side, id) || {}).s});
   return [
@@ -4032,7 +4103,8 @@ const SPEC = {
         pred: () => (valOrPred('ATIS', 'rwy') || {}).v || st.plan.depRwy, src: () => valOrPred('ATIS', 'rwy') ? valOrPred('ATIS', 'rwy').s : 'PLAN'},
       {id:'sid', l:'SID', k:'opts', badge:'sid', heavy:1, w:1.5, none:1, pred: () => st.plan.sid, src: 'PLAN'},
       {id:'trans', l:'TRANS', k:'opts', badge:'sidTrans', w:1, pred: () => st.plan.sidTrans, src: 'PLAN'} ],
-    [ {id:'lvl', l:'VIA SID TO', k:'level', heavy:1, w:1},
+    /* 5000 by default, dull (Neil, 2026-10-13): the usual climb-via-SID altitude (MEL heard 5000). */
+    [ {id:'lvl', l:'VIA SID TO', k:'level', heavy:1, w:1, pred: () => 'A50', src: 'STD'},
       {id:'sq', l:'SQUAWK', k:'squawk', heavy:1, w:1},
       {id:'dep', l:'DEP FREQ', k:'freq', heavy:1, w:1.5} ] ]},
   AATIS: {rows: atisRows('arr')},
@@ -4059,38 +4131,77 @@ const SPEC = {
       {id:'efc', l:'EFC', k:'time', w:1} ],
     [ {id:'notes', l:'NOTES · INK', k:'ink', w:1, tall:1} ] ]},
   /* Anything the others have no box for. */
-  OTHER: {rows: [[ {id:'line', l:'ANYTHING ELSE · INK', k:'ink', w:1, tall:1} ]]}
+  OTHER: {rows: [[ {id:'line', l:'ANYTHING ELSE · INK', k:'ink', w:1, tall:1} ]]},
+  /* The alternate's ATIS (Neil, 2026-10-13). A new pad: an older page ignores its keys. */
+  XATIS: {rows: atisRows('alt')}
 };
 const NAMES = Object.keys(SPEC);
 const FD = {};
 NAMES.forEach(n => { FD[n] = {}; SPEC[n].rows.forEach(r => r.forEach(F => { FD[n][F.id] = F; })); });
 
-/* What each page shows, top to bottom. */
+/* What each page shows, top to bottom. The keys are ATC's tabs (tabShell's ATCT); CLR and
+   ARR were one page each until 2026-10-13, when Neil had each cut in three after flying it.
+   part: the page shows only that row of its pad, so Clear empties only that row. */
+const DULL = 'Dull = predicted: tap the box again, or its chip, to take it.';
 const VIEWS = {
-  CLR: {pads:['ATIS', 'CLR'], h:'Clearance', sub: () => ap(st.plan.dep) + ' · departure ATIS, then the airways clearance',
+  DATIS: {pads:['ATIS'], h:'Departure ATIS', sub: () => ap(st.plan.dep) + ' · copied before the clearance',
     blocks: () => [
       ['sec', 'ATIS · ' + ap(st.plan.dep), 'broadcast order · heavy = read back' + wxNote('dep')], ['rows', 'ATIS'],
-      ['sec', 'Clearance', 'in the order ATC says it'],
+      ['hint', DULL + ' The ATIS runway predicts the clearance runway.'] ]},
+  CLR: {pads:['CLR'], h:'Clearance', sub: () => ap(st.plan.dep) + ' · the airways clearance, by voice or by PDC',
+    blocks: () => [
+      ['sec', 'Request', 'by voice · CTAF: from Centre'],
       /* The request calls (Reference/ATC-Australia-Real-World.md §2a). Known slots fill in green (K5). */
-      ['say', 'DEL', '[ACFT], [TYPE], IFR for [DEST], information [ATIS], request clearance.'],
+      ['say', 'DEL · CALL', '[ACFT], [TYPE], IFR for [DEST], information [ATIS], request clearance.'],
+      /* The whole clearance in ATC's order, then the bay, then the callsign (Neil forgot the bay,
+         2026-10-12). VATPAC Aerodrome RT: "During your readback, you should advise them of your
+         parking bay (if known)", example "... departure frequency 129.7, bay 3, QFA421". Real MEL,
+         Cairns and Gold Coast audio ends the same way ([[ATC-Australia-Real-World]] §2). CASA
+         §5.21.1.1 d requires the bay only in a PDC readback. */
+      ['say', 'DEL · READBACK', 'Cleared to [DEST] via [FIX], flight planned route, runway [RWY], [SID] departure, [TRANS] transition, climb via SID to [LVL], squawk [SQ], departure [DFREQ], bay [BAY], [ACFT].'],
+      ['hr'],      // the calls in three groups: DEL, CTAF, PDC (Neil, 2026-10-13)
       ['say', 'CTAF · TAXI', '[ACFT], [TYPE], IFR, taxiing [DEPT] for [DEST], runway [RWY].'],
       ['say', 'CTAF · AIRBORNE', '[ACFT], [DIST] miles [DIR] [DEPT], passing [ALT], climbing to [ALT:CLIMB], estimating [FIX] [TIME], request clearance.'],
+      ['sec', 'Clearance', 'in the order ATC says it, or as the PDC prints it'],
       ['rows', 'CLR'],
-      ['hint', 'Dull = predicted: tap the box again, or its chip, to take it. The ATIS runway predicts the clearance runway.'] ]},
-  ARR: {pads:['ARR', 'AATIS'], h:'Arrival', sub: () => ap(st.plan.arr) + ' · the STAR clearance, the arrival ATIS, then Approach',
+      /* PDC prompts (Neil, 2026-10-13). AIP ENR 1.1 §2.2.9 and CASA Fig. 93 via
+         Reference/ATC-Entry-Pads-Australia.md §2; the Hoppie airports and the OzStrips text are
+         VATPAC's; the readback order is CASA's, with VATPAC's transition (Vatsim/Milk-Run-Monday.md). */
+      ['sec', 'PDC', 'a text clearance · still read back by voice'],
+      ['do', 'GET IT', 'By datalink (Hoppie) at YMML, YSSY, YPAD, YPPH, YBBN, YSCB, YPDN, YBCG, YBCS, YBTL and YWLM; elsewhere on VATSIM it comes as a private message. No later than 15 min before off-blocks.'],
+      ['do', 'COPY', 'Runway, SID, transition, CLIMB VIA SID TO, DEP FREQ and squawk into the boxes above, so the PF can crosscheck them.'],
+      ['do', 'SET', 'SID and transition against the FMS · CLIMB VIA SID TO in the altitude preselector · squawk in the transponder · DEP FREQ on standby.'],
+      ['do', 'NOT IN IT', 'A route amendment never comes by PDC: that is a voice clearance. Don&rsquo;t log on to CPDLC until the PDC is in.'],
+      ['hr'],
+      ['say', 'PDC · CALL', 'Delivery, [ACFT], PDC readback.'],
+      ['say', 'PDC · READBACK', '[ACFT], [SID] departure, [TRANS] transition, squawk [SQ], bay [BAY], information [ATIS].'],
+      ['hint', 'On Delivery, or Ground if there is none, before asking for push or taxi. Read back only the SID (with its runway or transition), the squawk, the bay, and anything the PDC asks for. ' + DULL] ]},
+  STAR: {pads:['ARR'], part:0, h:'STAR clearance', sub: () => ap(st.plan.arr) + ' · from Centre, at cruise',
     blocks: () => [
       ['sec', 'STAR clearance · Centre', 'at cruise · STAR → transition → runway → level'], ['rows', 'ARR', 0],
+      ['hint', 'No level is predicted on arrival: an empty LEVEL means not cleared below the current level. WR = when ready, VIA = via the STAR. The arrival ATIS runway predicts the STAR runway.'] ]},
+  AATIS: {pads:['AATIS'], h:'Destination ATIS', sub: () => ap(st.plan.arr) + ' · copied before descent',
+    blocks: () => [
       ['sec', 'ATIS · ' + ap(st.plan.arr), 'broadcast order · heavy = read back' + wxNote('arr')], ['rows', 'AATIS'],
+      ['hint', DULL + ' The QNH here predicts the approach QNH.'] ]},
+  IAP: {pads:['ARR'], part:1, h:'Approach', sub: () => ap(st.plan.arr) + ' · the first altitude below transition, from Approach',
+    blocks: () => [
       ['sec', 'First altitude · Approach', 'level → QNH → approach → frequency'],
       ['say', 'APPROACH', '[ACFT], descending to [ALT], received [ATIS:AATIS].'],
       ['say', 'IF NEEDED', '[ACFT], require [APPROACH] runway [RWY:ARWY].'],
       ['rows', 'ARR', 1],
-      ['hint', 'No level is predicted on arrival: an empty LEVEL means not cleared below the current level. WR = when ready, VIA = via the STAR.'] ]},
+      ['hint', 'The QNH is predicted from the destination ATIS and never completed by the page: key it as heard.'] ]},
+  XATIS: {pads:['XATIS'], h:'Alternate ATIS', sub: () => st.plan.altn ? ap(st.plan.altn) + ' · the alternate' : 'No alternate in the plan: SimBrief&rsquo;s, or type one on DISPATCH',
+    blocks: () => [
+      ['sec', 'ATIS · ' + ap(st.plan.altn), 'broadcast order · heavy = read back' + wxNote('alt')], ['rows', 'XATIS'],
+      ['hint', DULL] ]},
   HOLD: {pads:['HOLD'], h:'Hold', sub: () => 'Fix, inbound course, turns, leg, level, expect further clearance',
     blocks: () => [['rows', 'HOLD']]},
-  OTHER: {pads:['OTHER'], h:'Other', sub: () => 'Whatever the other pads have no box for',
+  OTHER: {pads:['OTHER'], h:'Scratchpad', sub: () => 'Whatever the other pads have no box for',
     blocks: () => [['rows', 'OTHER']]}
 };
+/* The boxes a page shows, per pad: a page with a part shows one row of its pad. */
+const viewRows = (vk, n) => { const V = VIEWS[vk]; return V && V.part !== undefined ? [SPEC[n].rows[V.part]] : SPEC[n].rows; };
 const ap = s => esc(s || '····');
 
 /* ---- state ---------------------------------------------------- */
@@ -4129,8 +4240,20 @@ window.efbPads = {
   setChart: (n, id, v) => { chg(fk(n, id, 'chart'), v || null); save(); render(); },
   /* The box being edited ('CLR|sid'), or ''. The chart preload waits for its box to close. */
   editing: () => { try { return focus || ''; } catch(e){ return ''; } },
-  tabInfo: k => k === 'CLR' ? ap(st.plan.dep) + (val('ATIS', 'info') ? ' · ' + esc(val('ATIS', 'info')) : '')
-                            : ap(st.plan.arr) + (val('AATIS', 'info') ? ' · ' + esc(val('AATIS', 'info')) : '')
+  /* The line under each ATC tab: the airport and the ATIS letter, or what the page holds. */
+  tabInfo: k => {
+    const atis = (ic, n) => ic ? esc(ic) + (val(n, 'info') ? ' · ' + esc(val(n, 'info')) : '') : '';
+    switch (k) {
+      case 'DATIS': return atis(st.plan.dep, 'ATIS');
+      case 'AATIS': return atis(st.plan.arr, 'AATIS');
+      case 'XATIS': return atis(st.plan.altn, 'XATIS');
+      case 'CLR':   return esc(fmtVal('CLR', 'sq') || fmtVal('CLR', 'sid') || st.plan.dep || '');
+      case 'STAR':  return esc(fmtVal('ARR', 'star') || st.plan.arr || '');
+      case 'IAP':   return esc(fmtVal('ARR', 'rwy') ? 'RWY ' + fmtVal('ARR', 'rwy') : st.plan.arr || '');
+      case 'HOLD':  return esc(fmtVal('HOLD', 'fix'));
+    }
+    return '';
+  }
 };
 window.addEventListener('efb-charts', () => render());
 
@@ -4182,7 +4305,8 @@ planHost.insertAdjacentHTML('beforeend',
     '<button type="button" id="epSbGo">Load from SimBrief</button></div>' +
   '<div class="st-row"><span class="st-k">Or type</span>' +
     '<input id="epDep" class="ap" placeholder="DEP" maxlength="4" autocorrect="off" spellcheck="false"><span>→</span>' +
-    '<input id="epArr" class="ap" placeholder="ARR" maxlength="4" autocorrect="off" spellcheck="false"></div>');
+    '<input id="epArr" class="ap" placeholder="ARR" maxlength="4" autocorrect="off" spellcheck="false"><span>alt</span>' +
+    '<input id="epAlt" class="ap" placeholder="ALTN" maxlength="4" autocorrect="off" spellcheck="false"></div>');
 const tabHost = slotTab || document.createElement('div');
 tabHost.insertAdjacentHTML('beforeend',
   '<div class="st-row"><span class="st-k">Entry</span><div class="st-seg" id="epMode">' +
@@ -4196,7 +4320,7 @@ tabHost.insertAdjacentHTML('beforeend',
   '<div class="st-row"><span class="st-k">SimBrief ID</span>' +
     '<input id="epSb" placeholder="Pilot ID" autocapitalize="off" autocorrect="off" spellcheck="false"></div>');
 const $ = s => document.getElementById(s);
-const fSb = $('epSb'), fDep = $('epDep'), fArr = $('epArr'), stEl = $('epSt');
+const fSb = $('epSb'), fDep = $('epDep'), fArr = $('epArr'), fAlt = $('epAlt'), stEl = $('epSt');
 fSb.value = get(SBKEY);
 fSb.addEventListener('change', () => put(SBKEY, fSb.value.trim()));
 function paintSettings(){
@@ -4257,13 +4381,14 @@ async function loadSimBrief(){
         ? 'No plan generated on that account yet. Generate the OFP in SimBrief, then Load plan'
         : (why.replace(/^Error:\s*/, '') || 'no plan'));
     }
-    const g = d.general || {};
+    const g = d.general || {}, al = [].concat(d.alternate || [])[0] || {};
     /* The navlog, cut to what the route check shows: [ident, via, sid/star 0|1]. */
     const nl = Array.isArray(d.navlog) ? d.navlog : ((d.navlog && d.navlog.fix) || []);
     const fx = [].concat(nl).filter(f => f && f.ident && !/^(TOC|TOD)$/.test(f.ident))
       .map(f => [String(f.ident), String(f.via_airway || ''), f.is_sid_star === '1' ? 1 : 0]);
     setPlan({
       cs: (d.atc && d.atc.callsign) || '', dep: d.origin.icao_code || '', arr: d.destination.icao_code || '',
+      altn: /^[A-Z]{4}$/.test(al.icao_code || '') ? al.icao_code : '',     // for ATC → Alt ATIS
       depRwy: d.origin.plan_rwy || '', arrRwy: d.destination.plan_rwy || '',
       sid: g.sid_ident || '', sidTrans: g.sid_trans || '', star: g.star_ident || '', starTrans: g.star_trans || '',
       via: g.sid_trans || firstFix(g.route, g.sid_ident), route: g.route || '', fx,
@@ -4310,18 +4435,24 @@ stEl.addEventListener('click', e => {
   staleFrom = ''; render();
 });
 function typedPlan(){
-  const dep = norm(fDep.value).slice(0, 4), arr = norm(fArr.value).slice(0, 4);
-  if (dep === (st.plan.dep || '') && arr === (st.plan.arr || '')) return;
-  setPlan({dep, arr, via:'', src:'typed'});
+  const dep = norm(fDep.value).slice(0, 4), arr = norm(fArr.value).slice(0, 4), altn = norm(fAlt.value).slice(0, 4);
+  if (dep === (st.plan.dep || '') && arr === (st.plan.arr || '')) {
+    /* Only the alternate changed: keep the rest of the plan, SimBrief's included. */
+    if (altn === (st.plan.altn || '')) return;
+    st.plan = Object.assign({}, st.plan, {altn}); save(); procs = null;
+    render(); loadProcs(); refreshWx(true); chg('~plan', st.plan); announcePlan();
+    return;
+  }
+  setPlan({dep, arr, altn, via:'', src:'typed'});
 }
 $('epSbGo').addEventListener('click', loadSimBrief);
 fSb.addEventListener('keydown', e => { if (e.key === 'Enter') loadSimBrief(); });
-[fDep, fArr].forEach(f => { f.addEventListener('change', typedPlan);
+[fDep, fArr, fAlt].forEach(f => { f.addEventListener('change', typedPlan);
   f.addEventListener('keydown', e => { if (e.key === 'Enter') f.blur(); }); });
 
 /* ---- procedures: fetched for THIS route, held in memory --------- */
 async function loadProcs(){
-  const dep = st.plan.dep, arr = st.plan.arr, k = dep + '>' + arr;
+  const dep = st.plan.dep, arr = st.plan.arr, altn = st.plan.altn || '', k = dep + '>' + arr + '>' + altn;
   if (!dep && !arr) return;
   if (procs && procsKey === k) return;
   procsKey = k; procsMsg = 'Loading SIDs and STARs…'; status();
@@ -4336,7 +4467,7 @@ async function loadProcs(){
       rw: (e.getAttribute('Runways') || '').split(',').filter(Boolean),
       tr: Array.from(e.querySelectorAll('Transition'), t => t.getAttribute('Name'))
     }));
-    procs = { dep:{rw:rwys(dep), p:list('SID', dep)}, arr:{rw:rwys(arr), p:list('STAR', arr)} };
+    procs = { dep:{rw:rwys(dep), p:list('SID', dep)}, arr:{rw:rwys(arr), p:list('STAR', arr)}, alt:{rw: altn ? rwys(altn) : [], p:[]} };
     procsMsg = procs.dep.p.length + ' SIDs · ' + procs.arr.p.length + ' STARs (VATPAC dataset, this session only)';
   } catch(e){ procs = null; procsMsg = 'Procedures unavailable — key or write them in.'; }
   render();
@@ -4355,7 +4486,7 @@ function status(msg){
       (hasContent() ? '<button type="button" data-stale="clear">Clear pads</button>' : '') +
       '<button type="button" data-stale="keep">Keep</button></span>'
     : '');
-  fDep.value = p.dep || ''; fArr.value = p.arr || '';
+  fDep.value = p.dep || ''; fArr.value = p.arr || ''; fAlt.value = p.altn || '';
 }
 
 /* ---- options -------------------------------------------------- */
@@ -4381,7 +4512,7 @@ function opts(n, kind){
   return {list:[], plan:''};
 }
 function rwys(side){
-  const pr = procs && procs[side], pl = side === 'dep' ? st.plan.depRwy : st.plan.arrRwy;
+  const pr = procs && procs[side], pl = side === 'dep' ? st.plan.depRwy : side === 'arr' ? st.plan.arrRwy : '';
   return pr && pr.rw.length ? pr.rw : (pl ? [pl] : []);
 }
 const optsOf = (n, F) => F.badge ? opts(n, F.badge) : {list: F.list ? F.list() : [], plan: ''};
@@ -4440,7 +4571,9 @@ const inkable = (n, F) => F.k === 'ink' || (mode === 'pen' && (F.k !== 'opts' ||
 const VDATA = 'https://data.vatsim.net/v3/vatsim-data.json', VMETAR = 'https://metar.vatsim.net/';
 const wx = {};                                   // ICAO → {atis: {code, at, f}, metar: {raw, at, f}, ga, gm}
 let vAt = 0, vBusy = false, mAt = {};
-const wxIcao = side => (side === 'dep' ? st.plan.dep : st.plan.arr) || '';
+const wxIcao = side => (side === 'dep' ? st.plan.dep : side === 'alt' ? st.plan.altn : st.plan.arr) || '';
+/* The ATC pages that read the weather: every pad page but Hold and Other. */
+const WXV = ['DATIS', 'CLR', 'STAR', 'AATIS', 'IAP', 'XATIS'];
 /* What was read hours ago (the arrival's weather, fetched on the ground) is never
    shown: ga / gm are when each source was last read, and the cache counts only while
    it is fresher than a little over one refresh (Neil, 2026-10-09, C1). */
@@ -4519,8 +4652,8 @@ function parseMetar(raw){
 }
 async function refreshWx(force){
   const vk = view();
-  if (!force && (document.visibilityState !== 'visible' || (vk !== 'CLR' && vk !== 'ARR'))) return;
-  const icaos = [st.plan.dep, st.plan.arr].filter(x => /^[A-Z]{4}$/.test(x || ''));
+  if (!force && (document.visibilityState !== 'visible' || !WXV.includes(vk))) return;
+  const icaos = [...new Set([st.plan.dep, st.plan.arr, st.plan.altn])].filter(x => /^[A-Z]{4}$/.test(x || ''));
   if (!icaos.length) return;
   let changed = false;
   if (!vBusy && Date.now() - vAt > 60000) {
@@ -4616,6 +4749,9 @@ const SLOT = {
   ATIS: () => val('ATIS', 'info'), AATIS: () => val('AATIS', 'info'),
   RWY: () => val('CLR', 'rwy') || val('ATIS', 'rwy'), ARWY: () => val('ARR', 'rwy') || val('AATIS', 'rwy'),
   FIX: () => st.plan.via,
+  /* the PDC readback reads the clearance boxes back */
+  LVL: () => (fmtVal('CLR', 'lvl') || '').replace(/ \(A\d+\)$/, '') || null, DFREQ: () => fmtVal('CLR', 'dep') || null,
+  SID: () => fmtVal('CLR', 'sid') || null, TRANS: () => fmtVal('CLR', 'trans') || null, SQ: () => fmtVal('CLR', 'sq') || null,
   CLIMB: () => st.plan.fl ? (st.plan.fl >= 11000 ? 'FL' + String(Math.round(st.plan.fl / 100)).padStart(3, '0') : String(st.plan.fl)) : null
 };
 function say(who, tpl){
@@ -4625,6 +4761,8 @@ function say(who, tpl){
   }) + '</span></div>';
 }
 
+const NOTESK = 'c700-padnotes';
+let notesOpen = get(NOTESK) === '1';
 function render(){
   renderRo(); renderCs(); status();
   const vk = view();
@@ -4637,19 +4775,30 @@ function render(){
   let h = '<div class="tp-h"><h2>' + V.h + '</h2><div class="kp-tools">' +
     '<button type="button" data-a="undo" title="Undo on this tablet">↶</button>' +
     (mode === 'pen' ? '<button type="button" data-a="erase" aria-pressed="' + erasing + '" title="Strokes the pen passes over are removed whole">Erase</button>' : '') +
-    '<button type="button" data-a="clear" title="Empty this page (↶ undoes it)">Clear</button></div></div>' +
-    '<p class="tp-sub">' + V.sub() + '</p>';
+    '<button type="button" data-a="clear" title="Empty this page (↶ undoes it)">Clear</button></div></div>';
+  /* The pad rules (Neil, 2026-10-13, after flying it: ATC calls are the busiest moments, and the
+     eye must land on the boxes). In this order and nothing else: the title line; the boxes, framed;
+     the pilot's calls; then everything else under one folded NOTES. Whatever order VIEWS gives. */
+  let boxes = '', calls = '', notes = '<p class="kp-hint">' + V.sub() + '</p>';
   V.blocks().forEach(b => {
-    if (b[0] === 'sec') h += '<div class="kp-sec">' + b[1] + '<em>' + b[2] + '</em></div>';
-    else if (b[0] === 'say') h += say(b[1], b[2]);
-    else if (b[0] === 'hint') h += '<p class="kp-hint">' + b[1] + '</p>';
+    if (b[0] === 'sec') notes += '<div class="kp-sec">' + b[1] + '<em>' + b[2] + '</em></div>';
+    else if (b[0] === 'say') calls += say(b[1], b[2]);
+    else if (b[0] === 'hr') calls += '<hr class="kp-hr">';
+    else if (b[0] === 'do') notes += '<div class="kp-say kp-do"><b>' + esc(b[1]) + '</b><span>' + b[2] + '</span></div>';
+    else if (b[0] === 'hint') notes += '<p class="kp-hint">' + b[1] + '</p>';
     else if (b[0] === 'rows') {
-      const rows = b[2] === undefined ? SPEC[b[1]].rows : [SPEC[b[1]].rows[b[2]]];
-      rows.forEach(r => { h += '<div class="kp-row">' + r.map(F => boxHtml(b[1], F)).join('') + '</div>'; });
+      const rows = b[2] === undefined ? SPEC[b[1]].rows : [SPEC[b[1]].rows[b[2]]];   // b[2]: one row (a page with a part)
+      rows.forEach(r => { boxes += '<div class="kp-row">' + r.map(F => boxHtml(b[1], F)).join('') + '</div>'; });
     }
   });
+  /* "Calls" is a title line like the page's own (Neil, 2026-10-13), with no tools. */
+  /* A rule opens the calls too, so every group sits between two (Neil, 2026-10-13). */
+  h += '<div class="kp-boxes">' + boxes + '</div>' + (calls ? '<div class="tp-h"><h2>Calls</h2></div><div class="kp-calls"><hr class="kp-hr">' + calls + '</div>' : '') +
+    '<details class="kp-notes"' + (notesOpen ? ' open' : '') + '><summary><span class="fchev">▸</span>NOTES</summary>' + notes + '</details>';
   el.innerHTML = h;
   el.classList.add('kp');
+  /* A repaint rebuilds the page, so the fold's state lives here, one for all the pads. */
+  const nd = el.querySelector('.kp-notes'); if (nd) nd.addEventListener('toggle', () => { notesOpen = nd.open; put(NOTESK, notesOpen ? '1' : ''); });
   el.querySelectorAll('canvas').forEach(c => { canv.push(c); bindInk(c); if (ro) ro.observe(c); else paint(c); });
   renderTray();
   if (focus) {
@@ -4708,7 +4857,8 @@ function renderTray(){
 }
 
 /* ---- entry: open, settle, commit ------------------------------- */
-const vkOf = n => Object.keys(VIEWS).find(k => VIEWS[k].pads.includes(n)) || n;
+/* Undo is per page: the page on screen, when it shows the pad (ARR is on STAR and IAP). */
+const vkOf = n => { const v = view(); return v && VIEWS[v].pads.includes(n) ? v : Object.keys(VIEWS).find(k => VIEWS[k].pads.includes(n)) || n; };
 /* Store a value. A value replaces the box's ink; a new pick drops a hand-picked chart. */
 function setVal(n, F, v){
   const f = fs(n, F.id);
@@ -4739,7 +4889,7 @@ function reconcile(n, fid, kind){
 }
 /* CAVOK replaces visibility and cloud, so it fills the other; moving either off it clears a CAVOK left in the other. */
 function linked(n, id){
-  if (n !== 'ATIS' && n !== 'AATIS') return;
+  if (n !== 'ATIS' && n !== 'AATIS' && n !== 'XATIS') return;
   const o = id === 'vis' ? 'cld' : id === 'cld' ? 'vis' : null; if (!o) return;
   const k = fk(n, o, o === 'vis' ? 'sel' : 'v');
   if (val(n, id) === 'CAVOK') { if (val(n, o) !== 'CAVOK') op(k, 'CAVOK'); }
@@ -4791,7 +4941,7 @@ function press(k){
   if (k === 'CLR') { buf = ''; render(); return; }
   if (k === 'NEXT') {                            // a physical keyboard's Enter or Tab
     if (!buf && !val(n, id) && predOf(n, F)) setVal(n, F, predOf(n, F));
-    const row = SPEC[n].rows.flat(), i = row.indexOf(F), nx = row.slice(i + 1).find(x => x.k !== 'ink');
+    const row = viewRows(view(), n).flat(), i = row.indexOf(F), nx = i < 0 ? null : row.slice(i + 1).find(x => x.k !== 'ink');
     return nx ? open(n + '|' + nx.id) : close();
   }
   if (s.kind === 'opts') return;
@@ -4833,6 +4983,18 @@ document.addEventListener('click', e => {
   if (a) {
     if (a.dataset.a === 'undo') { close(); undoOne(vk); }
     else if (a.dataset.a === 'erase') { close(); erasing = !erasing; }
+    else if (a.dataset.a === 'clear' && VIEWS[vk].part !== undefined) {
+      /* Half a pad (STAR, IAP): empty this page's boxes key by key, as one undoable gesture,
+         so the other half and the other tablet's copy of it are left alone. */
+      close();
+      const n = VIEWS[vk].pads[0];
+      gesture(vk, () => viewRows(vk, n).flat().forEach(F => {
+        const f = fs(n, F.id);
+        ['v', 'sel', 'x', 'chart'].forEach(k => { if (f[k]) op(fk(n, F.id, k), null); });
+        Object.keys(f.ch || {}).forEach(c => { if (f.ch[c]) op(fk(n, F.id, 'ch|' + c), null); });
+        f.s.slice().forEach(t => op(fk(n, F.id, 's|' + t.id), null));
+      }));
+    }
     else if (a.dataset.a === 'clear') {
       close();
       const names = VIEWS[vk].pads;
@@ -6735,7 +6897,7 @@ function show(){
        frame-ancestors 'self' to every site but its own list (localhost is on it, so a local
        test frames it and the live page wouldn't), and signing in to it inside a frame takes a
        partner token. In its own tab the sign-in and everything behind it work as normal. */
-    head.innerHTML = '<b>' + (window.efbShell && window.efbShell.pg ? 'ATC' : 'VATSIM') + '</b><span class="t">VATSIM frequencies from where the aeroplane is on the network</span><span class="sp"></span>' +
+    head.innerHTML = '<b>' + (window.efbShell && window.efbShell.pg ? 'CONTROLLERS' : 'VATSIM') + '</b><span class="t">VATSIM frequencies from where the aeroplane is on the network</span><span class="sp"></span>' +
       '<a class="ext" href="https://vatsim-radar.com/" target="_blank" rel="noopener">VATSIM Radar ↗</a>';
     if (window.efbVatsim.el.parentNode !== vv) vv.appendChild(window.efbVatsim.el);
   }
