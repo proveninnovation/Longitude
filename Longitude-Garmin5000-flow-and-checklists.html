@@ -813,6 +813,21 @@
   .sh-menu button.ref,.sh-menu button.sub{padding-left:24px}
   .sh-menu button.cogp{font:700 14.5px system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);min-height:40px}
   .sh-menu button.cogp + .mh{border-top:1px solid var(--line);margin-top:4px}
+  /* The slate (video V3): black and white whatever the theme, because it is shown to cameras. */
+  .slate{position:fixed;inset:0;z-index:300;background:#000;color:#fff;display:flex;flex-direction:column;user-select:none;-webkit-user-select:none}
+  .slate[hidden]{display:none}
+  .slate .sl-top{display:flex;align-items:center;gap:12px;padding:12px 16px;font:700 clamp(18px,3.4vw,30px) system-ui,sans-serif;letter-spacing:.04em}
+  .slate .sl-fl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .slate .sl-which button,.slate .sl-x{background:transparent;color:#fff;border:2px solid #fff;border-radius:10px;font:700 15px system-ui,sans-serif;min-height:44px;padding:0 14px;margin-left:6px}
+  .slate .sl-which button[aria-pressed="true"]{background:#fff;color:#000}
+  .slate .sl-tap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:transparent;color:#fff;border:0;width:100%;cursor:pointer}
+  .slate .sl-clk{font:800 min(16vw,30vh)/1 ui-monospace,Consolas,monospace;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .slate .sl-z{font:700 clamp(18px,4vw,36px) system-ui,sans-serif;letter-spacing:.3em;margin-top:.3em}
+  .slate .sl-day{font:600 clamp(16px,3vw,28px) system-ui,sans-serif;letter-spacing:.12em;margin-top:.6em;opacity:.85}
+  .slate .sl-hint{font:600 14px system-ui,sans-serif;letter-spacing:.12em;margin-top:1.4em;opacity:.55}
+  .slate .sl-log{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center;padding:0 16px 16px;font:600 15px ui-monospace,Consolas,monospace;opacity:.75;min-height:22px}
+  .slate .sl-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+  .slate .sl-flash.on{opacity:1}
   /* fixed slots: VATSIM and ⋯ at the ends, the five chart kinds equal between them */
   body.shell #ctabs{overflow-x:hidden}
   body.shell #ctabs > *{flex:1 1 0;min-width:0}
@@ -990,7 +1005,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v51</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v52</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -3260,7 +3275,7 @@ const menu = document.createElement('div');
 menu.className = 'sh-menu'; menu.hidden = true;
 const refs = Array.from(ref.querySelectorAll('section.card'));
 /* Hold and Other are ATC tabs now (Neil, 2026-10-13); Instructor (on top, Neil) and Setup came off the page row. */
-menu.innerHTML = '<button type="button" class="cogp" data-go="instructor">Instructor</button><button type="button" class="cogp" data-go="setup">Setup</button>' +
+menu.innerHTML = '<button type="button" class="cogp" data-go="instructor">Instructor</button><button type="button" class="cogp" data-go="setup">Setup</button><button type="button" class="cogp" data-slate="1">Slate</button>' +
   /* Two lists since Nic's #26: QUICK REFERENCE (cards marked qr) and FLOW & CRM GUIDANCE since Nic's follow-up (the rest, which was REFERENCE). */
   [['QUICK REFERENCE', c => c.dataset.qr], ['FLOW &amp; CRM GUIDANCE', c => !c.dataset.qr]].map(([h, f]) =>
     '<div class="mh">' + h + '</div>' + refs.map((c, i) => {
@@ -6739,6 +6754,137 @@ setInterval(() => { if (el.isConnected && el.offsetParent) paint(); }, 15000);
 paint();
 window.efbBlocks = { el, times: () => Object.assign({}, st.t), paint };
 } catch(e){ try { console.warn('block times disabled:', e); } catch(_){} }
+})();
+/* ================================================================
+   SLATE — added 2026-10-13 (video build plan, stage V3).
+   Design: Video/Build-Plan.md §V3 (SimVideo repo) and
+   Reference/EFB-Internals.md §"The slate".
+
+   A full-screen camera slate, opened from the cog: a large UTC clock to
+   the tenth of a second, the flight (callsign and route) and, on each
+   tap, a 1 kHz 300 ms beep with a 200 ms white flash. Shown to every
+   camera at the start and end of a flight, so each camera and audio file
+   can be synced, and its drift measured, in post (research T1-S1, T1-S3).
+
+   - The beep is the sync anchor: the sync tool (SimVideo sync/) looks for
+     exactly this tone. Change one, change the other.
+   - Audio starts on the first tap (tablets need a user gesture). The
+     flash and the tone are started together; the tone can trail the
+     flash by the audio output latency, which is logged with each tap.
+   - Local only: works with no relay and no room code. Each tap raises an
+     'efb-slate' event for a later link to the flight log, and is kept in
+     c700-slates (14 h, like the block times) so the overlay lists them.
+   - Not a PHASES row, so no c:/ev:.
+================================================================ */
+(function slate(){
+'use strict';
+try {
+const KEY = 'c700-slates', STALE = 14 * 3600 * 1000;
+const TONE_HZ = 1000, TONE_S = 0.3, RAMP_S = 0.01, FLASH_MS = 200;
+const get = k => { try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } };
+const put = (k, v) => { try { localStorage.setItem(k, v); } catch(e){} };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const two = n => String(n).padStart(2, '0');
+const clock = ms => { const d = new Date(ms); return two(d.getUTCHours()) + ':' + two(d.getUTCMinutes()) + ':' + two(d.getUTCSeconds()) + '.' + Math.floor(d.getUTCMilliseconds() / 100); };
+const MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const day = ms => { const d = new Date(ms); return two(d.getUTCDate()) + ' ' + MON[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); };
+
+let taps = [];
+try { const j = JSON.parse(get(KEY) || 'null'); if (j && Array.isArray(j.taps) && Date.now() - (j.at || 0) < STALE) taps = j.taps; } catch(e){}
+function save(){ put(KEY, JSON.stringify({at: Date.now(), taps})); }
+
+const ov = document.createElement('div');
+ov.className = 'slate'; ov.hidden = true;
+ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-label', 'Slate');
+ov.innerHTML =
+  '<div class="sl-top"><span class="sl-fl"></span><span class="sl-which" role="group" aria-label="Which slate">' +
+    '<button type="button" data-w="start">START</button><button type="button" data-w="end">END</button></span>' +
+    '<button type="button" class="sl-x" aria-label="Close slate">&#x2715;</button></div>' +
+  '<button type="button" class="sl-tap" aria-label="Mark: beep and flash"><span class="sl-clk">--:--:--.-</span><span class="sl-z">UTC</span>' +
+    '<span class="sl-day"></span><span class="sl-hint">TAP TO MARK &middot; beep + flash</span></button>' +
+  '<div class="sl-log"></div><div class="sl-flash"></div>';
+document.body.appendChild(ov);
+const $ = s => ov.querySelector(s);
+let which = 'start', raf = 0, ctx = null, wake = null;
+
+function flight(){
+  const p = (window.efbPlan && window.efbPlan()) || {};
+  const s = v => typeof v === 'string' ? v : '';
+  const route = s(p.dep) && s(p.arr) ? s(p.dep) + ' \u2192 ' + s(p.arr) : '';
+  return [s(p.cs), route].filter(Boolean).join(' \u00b7 ') || 'NO PLAN LOADED';
+}
+function paintWhich(){ ov.querySelectorAll('[data-w]').forEach(b => b.setAttribute('aria-pressed', b.dataset.w === which ? 'true' : 'false')); }
+function paintLog(){
+  $('.sl-log').innerHTML = taps.slice(-6).map(t => '<span>' + esc(String(t.which).toUpperCase()) + ' ' + esc(clock(t.utc)) + 'Z</span>').join('');
+}
+function tick(){
+  const now = Date.now();
+  $('.sl-clk').textContent = clock(now);
+  $('.sl-day').textContent = day(now);
+  raf = requestAnimationFrame(tick);
+}
+function beep(){
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  if (!ctx) ctx = new AC();
+  if (ctx.state === 'suspended') ctx.resume();
+  const t0 = ctx.currentTime + 0.005;
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = 'sine'; o.frequency.value = TONE_HZ;
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(0.9, t0 + RAMP_S);
+  g.gain.setValueAtTime(0.9, t0 + TONE_S - RAMP_S);
+  g.gain.linearRampToValueAtTime(0, t0 + TONE_S);
+  o.connect(g); g.connect(ctx.destination);
+  o.start(t0); o.stop(t0 + TONE_S + 0.02);
+  const lat = (ctx.baseLatency || 0) + (ctx.outputLatency || 0);
+  return Math.round(lat * 1000);
+}
+function mark(){
+  const utc = Date.now();
+  let lat = null;
+  try { lat = beep(); } catch(e){}
+  const f = $('.sl-flash');
+  f.classList.add('on');
+  setTimeout(() => f.classList.remove('on'), FLASH_MS);
+  const t = {utc, which, latency_ms: lat};
+  taps.push(t); save(); paintLog();
+  try { window.dispatchEvent(new CustomEvent('efb-slate', {detail: Object.assign({flight: flight()}, t)})); } catch(e){}
+}
+async function open(){
+  which = taps.length && Date.now() - taps[taps.length - 1].utc < STALE ? 'end' : 'start';
+  $('.sl-fl').textContent = flight();
+  paintWhich(); paintLog();
+  ov.hidden = false;
+  cancelAnimationFrame(raf); tick();
+  try { if (document.documentElement.requestFullscreen && !document.fullscreenElement) await document.documentElement.requestFullscreen(); } catch(e){}
+  try { if ('wakeLock' in navigator) wake = await navigator.wakeLock.request('screen'); } catch(e){}
+}
+function close(){
+  ov.hidden = true;
+  cancelAnimationFrame(raf);
+  try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen(); } catch(e){}
+  try { if (wake) wake.release(); } catch(e){}
+  wake = null;
+}
+ov.addEventListener('click', e => {
+  if (e.target.closest('.sl-x')) { close(); return; }
+  const w = e.target.closest('[data-w]');
+  if (w) { which = w.dataset.w; paintWhich(); return; }
+  if (e.target.closest('.sl-tap')) mark();
+});
+document.addEventListener('keydown', e => {
+  if (ov.hidden) return;
+  if (e.key === 'Escape') close();
+  else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); mark(); }
+});
+document.addEventListener('click', e => {
+  if (!e.target.closest('[data-slate]')) return;
+  if (window.efbShell && window.efbShell.more) window.efbShell.more();   // close the cog menu
+  open();
+});
+window.efbSlate = { open, close, mark, taps: () => taps.slice(), spec: {hz: TONE_HZ, ms: TONE_S * 1000, flash_ms: FLASH_MS} };
+} catch(e){ try { console.warn('slate disabled:', e); } catch(_){} }
 })();
 /* ================================================================
    CHECKLIST ITEMS LINKED TO THE AIRCRAFT — added 2026-10-12 (Nic, #30).
