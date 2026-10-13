@@ -960,7 +960,7 @@
   .rc{padding:4px 12px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-dim)}
   .rc[hidden]{display:none}
   .rc-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-height:38px}
-  .rc-tag{font-size:10.5px;font-weight:700;letter-spacing:.1em;color:var(--ink-faint)}
+  .rc-tag{font-size:16px;font-weight:700;letter-spacing:.06em;color:var(--ink-dim)}
   .rc-sum{flex:1 1 200px;color:var(--ink-faint);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .rc-sum b{color:var(--ink-dim)}
   .rc-tog{min-height:36px;touch-action:manipulation}
@@ -990,7 +990,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v49</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v50</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -5674,14 +5674,16 @@ const PAX_KG = 84, CREW_KG = 200, LB = 2.20462;
 const css = document.createElement('style');
 css.textContent = `
   .ls{margin:14px 0 0}
-  .ls-h{font-size:10.5px;font-weight:700;letter-spacing:.1em;color:var(--ink-faint);margin:0 0 4px}
+  /* DISPATCH panel headings sit above the 14-15px text, not below it (Nic, #30, 2026-10-13). */
+  .ls-h{font-size:16px;font-weight:700;letter-spacing:.06em;color:var(--ink-dim);margin:0 0 6px}
   .ls table{border-collapse:collapse;width:100%;max-width:560px;font-size:14px}
   .ls td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:baseline}
   .ls td.v{text-align:right;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:nowrap;color:var(--ink)}
   .ls td.w{color:var(--ink-faint);font-size:12.5px}
   .ls tr.t td{font-weight:700;border-bottom-color:var(--ink-faint)}
   .ls .over{color:var(--warn)}
-  .ls td.v .lb{margin-left:6px;font-size:11px;color:var(--ink-faint)}
+  /* lb in its own column: inside the kg cell its varying width made the kg figures ragged (Nic, #30). */
+  .ls td.lb{text-align:right;padding-left:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:nowrap;font-size:11px;color:var(--ink-faint);font-weight:400}
   .ls-sb,.ls-none{color:var(--ink-faint);font-size:12.5px;line-height:1.45;margin:8px 2px 0;max-width:560px}
 `;
 document.head.appendChild(css);
@@ -5704,19 +5706,19 @@ function paint(p){
      A plan SimBrief issued in lb is converted here; args() still works from the plan's own units. */
   const kg = n => d.u === 'lbs' ? n / LB : n;
   const f = n => Math.round(n).toLocaleString('en-AU');
-  const lb = n => '<small class="lb">(' + f(n * LB) + ')</small>';
+  const lb = n => '<td class="lb">(' + f(n * LB) + ')</td>';
   const half = n => (n / 2).toLocaleString('en-AU', {maximumFractionDigits: 1});     // 3,045 → 1,522.5, so the halves add up
   const oew = kg(d.oew), cargo = kg(d.cargo), block = kg(d.ramp), taxi = kg(d.taxi), trip = kg(d.trip);
   const max = {zfw: d.max.zfw && kg(d.max.zfw), tow: d.max.tow && kg(d.max.tow), ldw: d.max.ldw && kg(d.max.ldw)};
   const crew = CREW_KG, bow = oew + crew, pax = d.pax * PAX_KG;
   const zfw = bow + pax + cargo, ramp = zfw + block, tow = ramp - taxi, ldw = tow - trip;
-  const lim = (v, m) => '<td class="v' + (m && v > m ? ' over' : '') + '">' + f(v) + lb(v) + '</td><td class="w">' +
+  const lim = (v, m) => '<td class="v' + (m && v > m ? ' over' : '') + '">' + f(v) + '</td>' + lb(v) + '<td class="w">' +
     (m ? (v > m ? 'over ' : 'max ') + f(m) : '') + '</td>';
-  const row = (a, v, w) => '<tr><td>' + a + '</td><td class="v">' + f(v) + lb(v) + '</td><td class="w">' + (w || '') + '</td></tr>';
+  const row = (a, v, w) => '<tr><td>' + a + '</td><td class="v">' + f(v) + '</td>' + lb(v) + '<td class="w">' + (w || '') + '</td></tr>';
   body.innerHTML = '<div class="ls-h">LOAD SHEET (kgs)</div><table>' +
     row('Basic empty', oew, 'SimBrief OEW, as the GTC&rsquo;s BEW') +
     row('Crew &amp; stores', crew, half(crew) + ' each crew seat') +
-    '<tr class="t"><td>Basic operating</td><td class="v">' + f(bow) + lb(bow) + '</td><td class="w">as the GTC</td></tr>' +
+    '<tr class="t"><td>Basic operating</td><td class="v">' + f(bow) + '</td>' + lb(bow) + '<td class="w">as the GTC</td></tr>' +
     row('Passengers', pax, d.pax + ' × ' + f(PAX_KG) + ', one a seat from the front' +
       (d.maxPax && d.pax > d.maxPax ? ' · <span class="over">more than the ' + d.maxPax + ' seats</span>' : '')) +
     row('Baggage', cargo, 'baggage station · the GTC&rsquo;s Cargo') +
@@ -6656,7 +6658,7 @@ document.getElementById('reset').addEventListener('click', () => { st.t = {}; sa
 const css = document.createElement('style');
 css.textContent = `
   .bt{margin:14px 0 0;max-width:560px}
-  .bt-h{font-size:10.5px;font-weight:700;letter-spacing:.1em;color:var(--ink-faint);margin:0 0 4px}
+  .bt-h{font-size:16px;font-weight:700;letter-spacing:.06em;color:var(--ink-dim);margin:0 0 6px}
   .bt table{border-collapse:collapse;width:100%;font-size:15px}
   .bt td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:baseline}
   .bt td.bt-n{font-weight:700;width:48px}
