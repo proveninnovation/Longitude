@@ -990,7 +990,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v50</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v51</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -4122,8 +4122,10 @@ const SPEC = {
   /* The arrival is two calls (rev 8): Centre's STAR clearance at cruise, then the
      first altitude below transition, with its QNH and usually the approach. */
   ARR: {rows: [
-    [ {id:'star', l:'STAR', k:'opts', badge:'star', heavy:1, w:1.5, none:1, pred: () => st.plan.star, src: 'PLAN'},
-      {id:'trans', l:'TRANS', k:'opts', badge:'starTrans', w:1, pred: () => st.plan.starTrans, src: 'PLAN'},
+    [ {id:'star', l:'STAR', k:'opts', badge:'star', heavy:1, w:1.5, none:1, pred: () => starPlan().star, src: () => starPlan().src},
+      /* The transition of whichever STAR is in the box: SimBrief's own, else the route fix it joins at. */
+      {id:'trans', l:'TRANS', k:'opts', badge:'starTrans', w:1, pred: () => opts('ARR', 'starTrans').plan || str(st.plan.starTrans),
+        src: () => { const t = opts('ARR', 'starTrans').plan; return !t || same(t, str(st.plan.starTrans)) ? 'PLAN' : 'ROUTE'; }},
       {id:'rwy', l:'RWY', k:'opts', badge:'arrRwy', heavy:1, w:1, max:3,
         pred: () => (valOrPred('AATIS', 'rwy') || {}).v || st.plan.arrRwy, src: () => valOrPred('AATIS', 'rwy') ? valOrPred('AATIS', 'rwy').s : 'PLAN'},
       {id:'lvl', l:'LEVEL', k:'arrlevel', heavy:1, w:2} ],
@@ -4393,6 +4395,7 @@ async function loadSimBrief(){
         : (why.replace(/^Error:\s*/, '') || 'no plan'));
     }
     const g = d.general || {}, al = [].concat(d.alternate || [])[0] || {};
+    /* str(): SimBrief's JSON gives an empty field as {}, not '' (Nic's YMML-YSCB: sid_ident {}), and {} is truthy. */
     /* The navlog, cut to what the route check shows: [ident, via, sid/star 0|1]. */
     const nl = Array.isArray(d.navlog) ? d.navlog : ((d.navlog && d.navlog.fix) || []);
     const fx = [].concat(nl).filter(f => f && f.ident && !/^(TOC|TOD)$/.test(f.ident))
@@ -4400,9 +4403,9 @@ async function loadSimBrief(){
     setPlan({
       cs: (d.atc && d.atc.callsign) || '', dep: d.origin.icao_code || '', arr: d.destination.icao_code || '',
       altn: /^[A-Z]{4}$/.test(al.icao_code || '') ? al.icao_code : '',     // for ATC → Alt ATIS
-      depRwy: d.origin.plan_rwy || '', arrRwy: d.destination.plan_rwy || '',
-      sid: g.sid_ident || '', sidTrans: g.sid_trans || '', star: g.star_ident || '', starTrans: g.star_trans || '',
-      via: g.sid_trans || firstFix(g.route, g.sid_ident), route: g.route || '', fx,
+      depRwy: str(d.origin.plan_rwy), arrRwy: str(d.destination.plan_rwy),
+      sid: str(g.sid_ident), sidTrans: str(g.sid_trans), star: str(g.star_ident), starTrans: str(g.star_trans),
+      via: str(g.sid_trans) || firstFix(g.route, str(g.sid_ident)), route: str(g.route), fx,
       fl: +g.initial_altitude || 0,
       /* The airframe's name in the SimBrief profile ("Longitude" on Nic's), spoken as the type in a
          request call. It is the owner's to rename, so the page never supplies one of its own. */
@@ -4476,7 +4479,9 @@ async function loadProcs(){
     const list = (tag, ap) => Array.from(doc.querySelectorAll(tag + '[Airport="' + ap + '"]'), e => ({
       n: e.getAttribute('Name'),
       rw: (e.getAttribute('Runways') || '').split(',').filter(Boolean),
-      tr: Array.from(e.querySelectorAll('Transition'), t => t.getAttribute('Name'))
+      tr: Array.from(e.querySelectorAll('Transition'), t => t.getAttribute('Name')),
+      /* Where a STAR can be joined without a transition: each runway route's first fix (BUNGO on BUNG5A). */
+      in: Array.from(e.querySelectorAll('Route'), r => r.textContent.trim().split(/[\/\s]/)[0]).filter(Boolean)
     }));
     procs = { dep:{rw:rwys(dep), p:list('SID', dep)}, arr:{rw:rwys(arr), p:list('STAR', arr)}, alt:{rw: altn ? rwys(altn) : [], p:[]} };
     procsMsg = procs.dep.p.length + ' SIDs · ' + procs.arr.p.length + ' STARs (VATPAC dataset, this session only)';
@@ -4506,13 +4511,14 @@ function opts(n, kind){
   const p = st.plan;
   const d = procs && procs.dep, a = procs && procs.arr;
   const sid  = d && find(d.p, fs('CLR', 'sid').sel || fs('CLR', 'sid').x || p.sid);
-  const star = a && find(a.p, fs('ARR', 'star').sel || fs('ARR', 'star').x || p.star);
+  const sp = kind === 'star' || kind === 'starTrans' || kind === 'arrRwy' ? starPlan() : {};
+  const star = a && find(a.p, fs('ARR', 'star').sel || fs('ARR', 'star').x || sp.star);
   switch (kind) {
     case 'depRwy':   return {list: sid && sid.rw.length ? sid.rw : (d ? d.rw : []), plan: p.depRwy};
     case 'sid':      return {list: d ? d.p.map(x => x.n) : [], plan: p.sid};
     case 'sidTrans': return {list: sid ? sid.tr : [], plan: p.sidTrans};
-    case 'star':     return {list: a ? a.p.map(x => x.n) : [], plan: p.star};
-    case 'starTrans':return {list: star ? star.tr : [], plan: p.starTrans};
+    case 'star':     return {list: a ? a.p.map(x => x.n) : [], plan: sp.star};
+    case 'starTrans':return {list: star ? star.tr : [], plan: star ? starTransFor(star) : ''};
     case 'arrRwy':   return {list: star && star.rw.length ? star.rw : (a ? a.rw : []), plan: p.arrRwy};
     /* D3: the approach charts for the chosen runway, from the chart broker. */
     case 'app': {
@@ -4525,6 +4531,37 @@ function opts(n, kind){
 function rwys(side){
   const pr = procs && procs[side], pl = side === 'dep' ? st.plan.depRwy : side === 'arr' ? st.plan.arrRwy : '';
   return pr && pr.rw.length ? pr.rw : (pl ? [pl] : []);
+}
+/* The STAR from the route (Nic, #30, 2026-10-13). SimBrief names none on some plans (his
+   YMML→YSCB came back with no SID or STAR at all), and the one it names was picked for its own
+   planned runway, not the ATIS's. So: walk the en-route fixes back from the destination, and the
+   first one a STAR can be joined at, by a transition or at the start of a runway's route,
+   decides it, if one of its STARs serves the predicted runway (arrival ATIS, else the plan's).
+   Among equals, the dataset's order: POLI9A before POLI9X. A prediction only, marked ROUTE. */
+/* SimBrief's empty fields arrive as {}; a plan loaded before v51 still holds them. */
+const str = v => typeof v === 'string' ? v : '';
+const routeBack = () => (Array.isArray(st.plan.fx) ? st.plan.fx : [])
+  .filter(f => !f[2] && norm(f[0]) !== norm(st.plan.arr)).map(f => norm(f[0])).reverse();
+const starTransFor = s => {
+  if (str(st.plan.starTrans) && same(s.n, str(st.plan.star))) return st.plan.starTrans;
+  for (const fx of routeBack()) { const t = s.tr.find(t => norm(t) === fx); if (t) return t; }
+  return '';
+};
+function starPlan(){
+  const p = {star: str(st.plan.star), arrRwy: str(st.plan.arrRwy)}, a = procs && procs.arr;
+  const rw = norm((valOrPred('AATIS', 'rwy') || {}).v || p.arrRwy);
+  const serves = s => !rw || !s.rw.length || s.rw.some(r => norm(r) === rw);
+  const own = p.star ? (a && find(a.p, p.star)) : null;
+  if (p.star && (!own || serves(own))) return {star: p.star, src: 'PLAN'};
+  if (a) for (const fx of routeBack()) {
+    const hits = a.p.filter(s => s.tr.some(t => norm(t) === fx) || s.in.some(f => norm(f) === fx));
+    if (!hits.length) continue;
+    /* None of them serving the runway predicts nothing: a wrong STAR looks as sure as a right one. */
+    const h = hits.find(serves);
+    if (h) return {star: h.n, src: 'ROUTE'};
+    break;
+  }
+  return {star: p.star || '', src: 'PLAN'};
 }
 const optsOf = (n, F) => F.badge ? opts(n, F.badge) : {list: F.list ? F.list() : [], plan: ''};
 
