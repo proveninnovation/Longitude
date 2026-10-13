@@ -1005,7 +1005,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v52</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v53</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -4429,6 +4429,8 @@ async function loadSimBrief(){
       /* The OFP PDF's file name (issue #19). The OFP page fetches it from SimBrief's own directory. */
       ofp: (/^[A-Za-z0-9_-]+\.pdf$/.test(String(d.files && d.files.pdf && d.files.pdf.link || '')) ? d.files.pdf.link : '')
     });
+    /* Loaded HERE, from SimBrief: the flight log's start (video V13). Not on a plan from the other seat or a reload. */
+    try { window.dispatchEvent(new CustomEvent('efb-simbrief', {detail: st.plan})); } catch(e){}
   } catch(e){ sbMsg = 'SimBrief: ' + esc(e.message || 'fetch failed') + '. The pads still work by hand.'; status(); }
 }
 /* Loading a plan over a tablet that still holds a flight (ticks or pads): offer
@@ -5827,6 +5829,13 @@ window.efbLoads = { el, sim, args };
    - CREW AUDIO (#10, 2026-10-13) travels the same way, figures and all:
      'audio' and 'audio-set' are answered by FS02's bridge, on the same
      channel and key as FS01's. A headset level is recoverable in a second.
+   - THE FLIGHT LOG (video V13, 2026-10-14): 'flight' (start and end only)
+     and 'mark' (slates only) also cross the room, but as a short list the
+     operating tablet rebuilds for itself (fill): a trigger, a seat's slate.
+     A start carries the route from the OPERATING tablet's own plan. The
+     room can start or stop a recording, which its shared checklist could
+     already do; it can't steer what is written. Results go back to the
+     room as SIM|ires and raise 'efb-flight'.
    - ADDRESSING (0.6.0): each bridge's hello names the verbs it answers, so
      a request goes to the host that offers its verb (FS01 the sim, FS02 the
      audio), never to every bridge. A bridge older than 0.6.0 names none and
@@ -5842,7 +5851,8 @@ if (!L || !L.relay || !LS || !window.crypto || !crypto.subtle) return;
 const KEYK = 'c700-simkey', RELAYABLE = ['load', 'ping'], STALE = 14 * 3600 * 1000;
 const INSTR = ['instructor', 'fail', 'simctl', 'move', 'ground', 'fuel'];      // relayed WITH their args
 const AUDIO = ['audio', 'audio-set'];                                            // so is the crew audio (#10)
-const WITHARGS = INSTR.concat(AUDIO), READS = ['instructor', 'audio'];
+const FLOG = ['flight', 'mark'];                                                 // the flight log (V13): rebuilt by fill()
+const WITHARGS = INSTR.concat(AUDIO, FLOG), READS = ['instructor', 'audio'];
 /* Which bridge answers a verb: the one whose hello names it, else one that names nothing
    (a bridge before 0.6.0: FS01), else none. */
 const bridgeFor = v => bridges.find(b => Array.isArray(b.verbs) && b.verbs.includes(v)) || bridges.find(b => !Array.isArray(b.verbs)) || null;
@@ -5873,6 +5883,30 @@ const channel = async k => hex(await crypto.subtle.digest('SHA-256', enc.encode(
 const reqText = r => ['req', r.v, r.id, r.ts, r.to, r.verb, r.a, r.c ? '1' : '0', r.via].join('\n');
 const resText = r => ['res', r.v, r.id, r.host, r.ok ? '1' : '0', r.r, r.ts].join('\n');
 const rid = () => { const a = new Uint8Array(9); crypto.getRandomValues(a); return 'e' + hex(a); };
+
+/* ---- the flight log's arguments (V13), rebuilt from a short list wherever they came from ---- */
+const ICAO = /^[A-Z0-9]{3,4}$/, RWY = /^[0-9]{2}[LCR]?$/, CS = /^[A-Z0-9]{2,8}$/;
+function route(){
+  const p = (window.efbPlan && window.efbPlan()) || {}, o = {};
+  const up = v => typeof v === 'string' ? v.trim().toUpperCase() : '';
+  if (!ICAO.test(up(p.dep)) || !ICAO.test(up(p.arr))) return o;
+  o.origin = up(p.dep); o.destination = up(p.arr);
+  if (RWY.test(up(p.depRwy))) o.origin_rwy = up(p.depRwy);
+  if (RWY.test(up(p.arrRwy))) o.destination_rwy = up(p.arrRwy);
+  if (CS.test(up(p.cs))) o.callsign = up(p.cs);
+  if (typeof p.route === 'string' && p.route.length <= 400 && !/[\u0000-\u001f]/.test(p.route)) o.route = p.route;
+  if (+p.fl >= 1000 && +p.fl <= 60000) o.cruise_alt_ft = Math.round(+p.fl);
+  return o;
+}
+function fill(verb, a){
+  a = a && typeof a === 'object' && !Array.isArray(a) ? a : {};
+  if (verb === 'mark') return a.type === 'slate' && (a.which === 'start' || a.which === 'end') ? {type: 'slate', which: a.which} : null;
+  if (verb !== 'flight') return a;
+  if (a.op === 'status') return {op: 'status'};
+  if (a.op === 'start' && ['prep', 'simbrief', 'button'].includes(a.trigger)) return Object.assign({op: 'start', trigger: a.trigger}, route());
+  if (a.op === 'end' && ['shutdown', 'button'].includes(a.trigger)) return {op: 'end', trigger: a.trigger};
+  return null;
+}
 
 /* ---- the sim channel, on the tablet that holds the key ---- */
 let sws = null, back = 1000, retryT = 0, pingT = 0, bridges = [];
@@ -5953,8 +5987,9 @@ function viaRoom(verb, args){
 async function call(verb, args, o){
   o = o || {};
   if (key()) {
+    if (FLOG.includes(verb) && !(args = fill(verb, args))) return {ok: false, error: 'bad arguments'};
     const r = await direct(verb, args, o);
-    if (WITHARGS.includes(verb) && !READS.includes(verb)) instrShare(rid(), verb, r, seat());
+    if (WITHARGS.includes(verb) && !READS.includes(verb) && !(verb === 'flight' && args.op === 'status')) instrShare(rid(), verb, r, seat());
     return r;
   }
   if (RELAYABLE.includes(verb) || WITHARGS.includes(verb)) return viaRoom(verb, args);
@@ -6012,9 +6047,10 @@ async function instrRelayed(v){
   if (!key() || !v || typeof v.id !== 'string' || seen[v.id]) return;
   seen[v.id] = 1;
   if (Math.abs(Date.now() - (+v.ts || 0)) > 120000) return;
+  const a = FLOG.includes(v.verb) ? fill(v.verb, v.a) : v.a;
   const bad = !WITHARGS.includes(v.verb) ? '“' + v.verb + '” cannot be relayed.'
-    : (!v.a || typeof v.a !== 'object' || Array.isArray(v.a) || JSON.stringify(v.a).length > 2000) ? 'bad arguments' : '';
-  const r = bad ? {ok: false, error: bad} : await direct(v.verb, v.a, {via: 'room'});
+    : (!a || typeof a !== 'object' || Array.isArray(a) || JSON.stringify(a).length > 2000) ? 'bad arguments' : '';
+  const r = bad ? {ok: false, error: bad} : await direct(v.verb, a, {via: 'room'});
   instrShare(v.id, v.verb, r, v.by);
 }
 function instrShare(id, verb, r, by){
@@ -6025,7 +6061,7 @@ function instrShare(id, verb, r, by){
 }
 function instrSeen(v){
   if (waiting[v.id]) waiting[v.id]({ok: v.ok, host: v.host, result: v.board, error: v.error});
-  try { window.dispatchEvent(new CustomEvent(AUDIO.includes(v.verb) ? 'efb-audio' : 'efb-instructor', {detail: v})); } catch(e){}
+  try { window.dispatchEvent(new CustomEvent(AUDIO.includes(v.verb) ? 'efb-audio' : FLOG.includes(v.verb) ? 'efb-flight' : 'efb-instructor', {detail: v})); } catch(e){}
 }
 
 L.on(m => {
@@ -7020,6 +7056,161 @@ paintSetting();
 tick();
 window.efbSimChecks = { tick, cond: COND, vetoed: () => Array.from(vetoed) };
 } catch(e){ try { console.warn('sim checks disabled:', e); } catch(_){} }
+})();
+/* ================================================================
+   FLIGHT BOUNDARIES — added 2026-10-14 (video build plan, stage V13;
+   Nic's answers Q10, Q11 and Q15). Design: Reference/EFB-Sim-Bridge.md
+   §"Flight boundaries from the EFB".
+
+   Tells RigBridge's flight log on FS01, and through it OBS, when a flight
+   begins and ends, and sends the slate's taps into it:
+
+     START      the first tick in cockpit preparation (the phases of the
+                Cockpit Inspection and Cockpit Preparation checklists, flow
+                steps included), or a SimBrief plan loaded on this tablet,
+                whichever comes first.
+     END        the Shutdown checklist completed on this tablet.
+     START/STOP in the cog, under Slate: a shorter recording, or ending one
+                by hand. STOP asks first.
+     SLATE      each tap goes in as a 'slate' mark.
+
+   - Only what is pressed on THIS tablet is sent: a tick from the other
+     seat was sent by that seat. If both send the same edge, the bridge
+     answers a start while recording, or an end with nothing recording,
+     and changes nothing.
+   - Sent by efbSim.call: direct from the tablet holding the sim key, or
+     through it from the other one (fill() in simLink rebuilds the
+     arguments). No key and no linked operating tablet: nothing is sent,
+     and the cog shows no START/STOP. The page works exactly as before.
+   - The operating tablet asks the bridge for the log's state every 30 s
+     while the page is shown, and puts it in the room as SIM|rec, so both
+     cogs show REC with a red dot on the cog.
+   - Not a PHASES row, so no c:/ev:.
+================================================================ */
+(function flightBounds(){
+'use strict';
+try {
+const S = window.efbSim, L = window.efbLink;
+if (!S) return;
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const two = n => String(n).padStart(2, '0');
+const zt = iso => { const d = new Date(iso); return isNaN(d) ? '' : two(d.getUTCHours()) + two(d.getUTCMinutes()) + 'Z'; };
+const str = (v, n) => typeof v === 'string' ? v.slice(0, n) : '';
+
+/* Phase numbers by checklist title, counted as the renderer counts, so a renumbering moves these too. */
+const phaseOf = {};
+(() => { let n = 0; PHASES.forEach(p => { if (p.kind === 'flow') n++; else if (p.kind === 'list') phaseOf[p.title] = n; }); })();
+const PREP = [phaseOf['Cockpit Inspection'], phaseOf['Cockpit Preparation']].filter(Boolean);
+const SHUT = phaseOf['Shutdown'];
+const phase = el => +String(el.dataset.ref || '').split('.')[0];
+const complete = card => { const it = card.querySelectorAll('.item'); return it.length > 0 && Array.from(it).every(e => e.classList.contains('done')); };
+
+/* The log's state: from the bridge on the operating tablet, from the room (SIM|rec) on the other. */
+let rec = null, line = '', lineAt = 0, busy = false;
+const said = () => Date.now() - lineAt < 30000 ? line : '';
+const can = () => S.holds() || (S.linked() && !!S.op());
+function take(st){
+  if (!st || typeof st !== 'object') return;
+  const v = st.video && typeof st.video === 'object' ? str(st.video.state, 40) : '';
+  rec = {on: st.recording === true, flight: str(st.flight, 60), since: str(st.startUtc, 30), by: str(st.startedBy, 80),
+    efb: st.efb === true, video: v, at: Date.now()};
+  share(); paint();
+}
+let shared = '';
+function share(){
+  if (!S.holds() || !L || !L.room() || !rec) return;
+  const v = Object.assign({}, rec); delete v.at;
+  const s = JSON.stringify(v);
+  if (s === shared) return;
+  shared = s; L.send({t: 'pad', k: {'SIM|rec': Object.assign(v, {at: Date.now()})}});
+}
+
+async function send(verb, args, what){
+  if (!can()) return null;
+  const r = await S.call(verb, args);
+  if (r && r.ok && r.result && r.result.status) take(r.result.status);
+  if (verb === 'flight') { lineAt = Date.now(); line = what + ': ' + (r && r.ok ? (r.result && r.result.did) || 'done' : (r && r.error) || 'no answer'); paint(); }
+  return r;
+}
+const start = (trigger, what) => send('flight', {op: 'start', trigger}, what);
+const end = (trigger, what) => send('flight', {op: 'end', trigger}, what);
+
+/* A tick on THIS tablet: the first in cockpit preparation starts; the one that completes Shutdown ends. */
+const prevTick = onTick;
+onTick = function(row, card){
+  prevTick(row, card);
+  try {
+    if (!row.classList.contains('done')) return;
+    const n = phase(row);
+    if (PREP.includes(n)) {
+      const before = Array.from(document.querySelectorAll('.item.done, .row.done')).filter(e => e !== row && PREP.includes(phase(e)));
+      if (!before.length) start('prep', 'Cockpit preparation begun');
+    } else if (n === SHUT && row.classList.contains('item') && complete(card)) end('shutdown', 'Shutdown complete');
+  } catch(e){}
+};
+window.addEventListener('efb-simbrief', () => start('simbrief', 'SimBrief plan loaded'));
+window.addEventListener('efb-slate', e => { const w = e.detail && e.detail.which; if (w === 'start' || w === 'end') send('mark', {type: 'slate', which: w}); });
+/* Either tablet's result, shared through the room: the state it carries. */
+window.addEventListener('efb-flight', e => { const d = e.detail; if (d && d.ok && d.board && d.board.status) take(d.board.status); });
+
+if (L) L.on(m => {
+  if (m.t === 'snap' || m.t === 'reset') { shared = ''; return; }
+  if (m.t === 'padsync') { share(); return; }
+  if (m.t === 'pad' && m.k && typeof m.k === 'object' && 'SIM|rec' in m.k && !S.holds()) {
+    const v = m.k['SIM|rec'];
+    rec = v && typeof v === 'object' ? {on: v.on === true, flight: str(v.flight, 60), since: str(v.since, 30), by: str(v.by, 80),
+      efb: v.efb === true, video: str(v.video, 40), at: +v.at || Date.now()} : null;
+    paint();
+  }
+});
+
+/* The operating tablet asks every 30 s while shown, since the log also starts and ends by itself. */
+async function poll(){
+  if (!S.holds() || !S.bridgeFor('flight') || document.visibilityState === 'hidden') return;
+  const r = await S.call('flight', {op: 'status'});
+  if (r && r.ok && r.result && r.result.status) take(r.result.status);
+}
+setInterval(poll, 30000);
+setTimeout(poll, 3000);
+
+/* ---- START/STOP in the cog, under Slate ---- */
+const css = document.createElement('style');
+css.textContent = `
+  .sh-menu button.cogp.rec-b{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px}
+  .sh-menu button.cogp.rec-b small{font:600 12px system-ui,sans-serif;letter-spacing:0;text-transform:none;color:var(--ink-faint)}
+  .sh-menu button.cogp.rec-b.on{color:#e5484d}
+  .sh-menu button.cogp.rec-b[disabled]{opacity:.5}
+  body.efb-rec .pg-tab.cog{position:relative}
+  body.efb-rec .pg-tab.cog::after{content:'';position:absolute;top:7px;right:9px;width:9px;height:9px;border-radius:50%;background:#e5484d}
+`;
+document.head.appendChild(css);
+const b = document.createElement('button');
+b.type = 'button'; b.className = 'cogp rec-b'; b.hidden = true;
+const slateItem = document.querySelector('.sh-menu [data-slate]');
+if (slateItem) slateItem.after(b);
+function paint(){
+  const on = !!(rec && rec.on);
+  document.body.classList.toggle('efb-rec', on);
+  b.hidden = !slateItem || !can();
+  if (b.hidden) return;
+  b.classList.toggle('on', on);
+  b.disabled = busy;
+  const sub = on ? 'Recording since ' + zt(rec.since) + (rec.efb ? '' : ' · ends by itself') + (rec.video ? ' · OBS ' + rec.video : '')
+    : 'Starts the flight log, and OBS if it is set up';
+  b.innerHTML = (on ? '&#9632; Stop recording' : '&#9679; Start recording') + '<small>' + esc(said() || sub) + '</small>';
+  b.title = on && rec.by ? 'Started: ' + rec.by : '';
+}
+b.addEventListener('click', async () => {
+  if (busy) return;
+  const on = !!(rec && rec.on);
+  if (on) { let yes = true; try { yes = window.confirm('Stop recording this flight' + (rec.flight ? ' (' + rec.flight + ')' : '') + '?'); } catch(_){} if (!yes) return; }
+  busy = true; line = ''; paint();
+  try { await (on ? end('button', 'STOP') : start('button', 'START')); } finally { busy = false; paint(); }
+});
+setInterval(paint, 5000);
+paint();
+window.efbFlight = { state: () => rec && Object.assign({}, rec), start, end, poll, prep: PREP, shutdown: SHUT };
+} catch(e){ try { console.warn('flight boundaries disabled:', e); } catch(_){} }
 })();
 /* ================================================================
    CHART TABS — added 2026-10-05 (D4). Design: Reference/DAP-Charts.md.
