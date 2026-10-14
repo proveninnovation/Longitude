@@ -1005,7 +1005,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v54</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v55</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -1596,7 +1596,8 @@ const PHASES = [
   {who:'PM', t:'Watch them run down — ITT and the CAS as the generators drop off.', c:'low', ev:'CE-525 operator SOP (Alpha Jet / AeroJet) + AC 120-71B — monitor the run-down. No Longitude source; the Operators Guide gives no run-down item.'},
   {who:'PF', t:'<b>EMER LTS off · STBY PWR off · APU off · exterior lights off · BATT buttons both off</b>, in that order.', c:'vhigh', ev:'Operators Guide §XVII p.17-9 Shutdown 5, 6, 7, 8 and 9, verbatim and in that order.'},
   {who:'PM', t:'If we are turning round rather than finishing: <b>Quick Turn</b> instead — engines stopped, power back on APU or external, then straight back to Cockpit Preparation.', c:'vhigh', ev:'Operators Guide §XVII p.17-10 Quick Turn, verbatim — engines to STOP, power on APU or external, then “Return to Normal Procedures, Cockpit Preparation”.'},
-  {who:'BOTH', t:'<b>Debrief before leaving the seat.</b> One thing that went well, one thing to change. Thirty seconds, every flight.', c:'vlow', ev:'Entirely ours. No source of any kind. A habit worth having, and a house convention to put to Nic.'}
+  {who:'BOTH', t:'<b>Debrief before leaving the seat.</b> One thing that went well, one thing to change. Thirty seconds, every flight.', c:'vlow', ev:'Entirely ours. No source of any kind. A habit worth having, and a house convention to put to Nic.'},
+  {who:'PF', t:'Finishing for the day: <b>end the flight to the main menu</b> on FS01 (Esc, Main menu, Yes), then <b>INSTRUCTOR → Rig: hold to shut down</b>.', c:'vlow', ev:'ADDED at NIC’S REQUEST 2026-10-14 (issue #29: “I’m satisfied with the approach you outlined”). A rig step, not an aircraft one: ending to the main menu lets MSFS close itself cleanly, since a hard close has muddled its window positions (Nic, #29). Appended last, so no step moved.'}
  ]},
 
 {kind:'list', short:'Shutdown', title:'Shutdown', mode:'When PF requests · read &amp; do, in this order',
@@ -1794,8 +1795,8 @@ const PHASES = [
 +'<div class="rsec"><h4>The stream</h4>'
 +'<table class="rtab">'
 +'<tr><td class="q"><span class="who PF">PF</span></td><td><span class="say">Reject.</span> Thrust levers closed, <b>maximum braking</b>, reversers.</td></tr>'
-+'<tr><td class="q"><span class="who PM">PM</span></td><td><span class="say">Spoilers up.</span> &nbsp;/&nbsp; <span class="say">Spoilers not up.</span></td></tr>'
-+'<tr><td class="q"><span class="who PM">PM</span></td><td><span class="say">Reversers deployed.</span> &nbsp;/&nbsp; <span class="say">No reverse, left.</span></td></tr>'
++'<tr><td class="q"><span class="who PM">PM</span></td><td><span class="say">Speed brakes are out.</span> &nbsp;/&nbsp; <span class="say">Speed brakes not out.</span></td></tr>'
++'<tr><td class="q"><span class="who PM">PM</span></td><td><span class="say">Two deployed.</span> &nbsp;/&nbsp; <span class="say">No reverse, left.</span></td></tr>'
 +'<tr><td class="q"><span class="who PM">PM</span></td><td><span class="say">Eighty knots… sixty knots.</span></td></tr>'
 +'<tr><td class="q"><span class="who PF">PF</span></td><td><span class="say">Stopped. Park brake set.</span></td></tr>'
 +'<tr><td class="q"><span class="who PM">PM</span></td><td><span class="xc">ATC</span> Stopping on the runway, standby.</td></tr>'
@@ -1804,7 +1805,8 @@ const PHASES = [
 +'and add the inboard panel to all the others. That is exactly why the call is a confirmation with a '
 +'bracketed exception rather than a command. The crew calls them <b>speed brakes</b> and says they are '
 +'<b>out</b> — heard on the Luton landing, VS-002 @ 32:54 — so the wording above is theirs, not the '
-+'737 pack’s.</p>'
++'737 pack’s. Reversers are called <b>by count</b>, in full “two unlocked, two deployed” (VS-002 @ 33:00), '
++'so the reject call is its second half.</p>'
 +'<p><b>There is no autobrake.</b> The Longitude has a brake-by-wire system with anti-skid; braking is the '
 +'PF’s foot, and maximum means maximum. Nothing to arm before takeoff and nothing to disarm afterwards — '
 +'which is one line the 737 stream has and ours does not.</p></div>'
@@ -6194,6 +6196,11 @@ paint();
    - RIG (#22, merged here by Nic on #29, 2026-10-11): the rig shutdown.
      Press and hold 2 s, on the tablet that holds the sim key only; the
      bridge refuses it from anywhere else, and without the hold.
+     From RigBridge 0.10 (#29, 2026-10-14) the crew end the flight to MSFS's
+     main menu first. With a flight still loaded the bridge refuses, and a
+     second hold, "At the main menu: shut down", sends atMenu over that
+     check for when the bridge reads it wrong. An older bridge never
+     refuses, so the second hold never appears there.
 ================================================================ */
 (function instructorPage(){
 'use strict';
@@ -6209,7 +6216,7 @@ const FAILS = [['eng1', 'Engine failure — left'], ['eng2', 'Engine failure —
   ['pitot', 'Pitot blocked'], ['static', 'Static port blocked'], ['brakes', 'Brake failure']];
 const TIMES = [['Dawn', 6, 0], ['Day', 12, 0], ['Dusk', 18, 30], ['Night', 22, 0]];
 
-let board = null, boardAt = 0, last = null, busy = '', armFor = '', showArmed = false, pollT = 0;
+let board = null, boardAt = 0, last = null, busy = '', armFor = '', showArmed = false, pollT = 0, menuAsk = 0;
 
 const css = document.createElement('style');
 css.textContent = `
@@ -6350,9 +6357,11 @@ function draw(){
   /* Rig (#22) */
   const mine = S.holds(), off = !mine || !!busy;
   h += '<div class="in-card in-rig"><h3>Rig</h3>' +
-    '<p class="in-note" style="margin-top:0">FS03 locks, FS02 powers off and MSFS closes itself. Once MSFS has gone, FS01 powers off 30 s later.</p>' +
+    '<p class="in-note" style="margin-top:0"><b>First end the flight on FS01: Esc, Main menu, Yes.</b> Then hold: FS03 locks, FS02 powers off and MSFS closes itself. Once MSFS has gone, FS01 powers off 30 s later.</p>' +
     '<div class="in-row"><button type="button" class="in-hold" data-hold="1"' + (off ? ' disabled' : '') + '>Hold 2 s to shut down the rig<span class="in-fill"></span></button>' +
     '<button type="button" data-rigcancel="1"' + (off ? ' disabled' : '') + '>Cancel FS01 power-off</button></div>' +
+    (asking() ? '<p class="in-note"><b>The bridge thinks MSFS still has a flight loaded.</b> If FS01 really shows the main menu, this goes ahead anyway:</p>' +
+      '<div class="in-row"><button type="button" class="in-hold" data-hold="menu"' + (off ? ' disabled' : '') + '>Hold 2 s: at the main menu, shut down<span class="in-fill"></span></button></div>' : '') +
     '<label class="in-note"><input type="checkbox" data-force="1"' + (get('c700-rig-force') === '1' ? ' checked' : '') + (off ? ' disabled' : '') + '>' +
     'Force-close MSFS if it hasn’t closed within 3 minutes. Otherwise FS01 stays on and says so on its screen.</label>' +
     '<p class="in-note">' + (mine ? 'On the ground only.' : 'Only on the tablet that operates the sim, so a room code alone can never turn a PC off.') + '</p></div>';
@@ -6401,8 +6410,11 @@ async function rig(verb, args, confirm){
   let r; try { r = await S.call(verb, args, {confirm}); } catch(e){ r = {ok: false, error: String(e)}; }
   busy = '';
   last = {ok: !!(r && r.ok), at: Date.now(), line: r && r.ok ? (r.result && r.result.did ? String(r.result.did) : 'Done.') : 'Not done: ' + ((r && r.error) || 'no answer')};
+  if (verb === 'shutdown') menuAsk = !(r && r.ok) && /still has a flight loaded/.test(String(r && r.error)) ? Date.now() : 0;
   paint();
 }
+/* The second hold stays offered for 5 minutes after the bridge said a flight was still loaded. */
+function asking(){ return !!menuAsk && Date.now() - menuAsk < 300000; }
 const letGo = () => { clearTimeout(holdT); holding = false; const b = pg.querySelector('.in-holding'); if (b) b.classList.remove('in-holding'); };
 pg.addEventListener('pointerdown', e => {
   const b = e.target.closest('button[data-hold]'); if (!b || b.disabled) return;
@@ -6410,8 +6422,8 @@ pg.addEventListener('pointerdown', e => {
   holding = true; b.classList.add('in-holding');
   try { b.setPointerCapture(e.pointerId); } catch(_){}
   holdT = setTimeout(() => {
-    const f = pg.querySelector('input[data-force]'), force = !!(f && f.checked);
-    letGo(); rig('shutdown', {force}, true);
+    const f = pg.querySelector('input[data-force]'), force = !!(f && f.checked), atMenu = b.dataset.hold === 'menu';
+    letGo(); rig('shutdown', atMenu ? {force, atMenu: true} : {force}, true);
   }, 2000);
 });
 ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => pg.addEventListener(ev, () => { if (holding) letGo(); }));
