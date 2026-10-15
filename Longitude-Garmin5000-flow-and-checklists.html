@@ -1005,7 +1005,7 @@
       <!-- Published version. publish-efb.ps1 owns this number and bumps it on every
            publish — do not edit it by hand. Nic quotes it back ("in v7, reword 13.d"),
            so it lives in the running view, not behind Review mode. -->
-      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v55</span>
+      <span class="ver" id="ver" title="Published version — quote it when reporting a change">v56</span>
       <div class="bar">
         <button id="jump" aria-expanded="false" aria-haspopup="true">
           <span class="cur">Inspection</span><span class="car">▼</span>
@@ -6511,28 +6511,38 @@ function clean(b){
 const fmt = db => (db > 0 ? '+' : db < 0 ? '−' : '') + Math.abs(db).toFixed(1) + ' dB';
 
 let board = null, err = '', busyRead = false, pollT = 0, drag = '';
-const pend = {}, timer = {};
+const pend = {}, timer = {}, hold = {};
 
 const css = document.createElement('style');
 css.textContent = `
-  .au{max-width:760px}
+  .au{max-width:760px;display:flex;flex-direction:column}
   .au .au-st{color:var(--ink-faint);font-size:13px;margin:0 0 10px}
   .au .au-st b{color:var(--ink-dim)}
   .au .au-err{color:var(--warn);font-size:14px;margin:0 0 10px}
-  .au .au-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin:0 0 12px}
+  .au .au-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin:0 0 12px;display:flex;flex-direction:column}
   .au h3{font-size:15px;margin:0 0 8px;letter-spacing:.3px;color:var(--ink-dim);text-transform:uppercase}
-  .au .au-row{display:grid;grid-template-columns:minmax(120px,1fr) 48px minmax(140px,3fr) 48px 74px;align-items:center;gap:8px;margin:10px 0}
+  .au .au-row{display:grid;grid-template-columns:minmax(110px,1fr) minmax(200px,4fr) 74px;align-items:center;column-gap:16px;flex:1 1 auto;min-height:76px}
   .au .au-k{font-size:15px}
   .au .au-v{font-variant-numeric:tabular-nums;text-align:right;font-size:15px;color:var(--ink-dim)}
   .au .au-why{grid-column:1 / -1;color:var(--ink-faint);font-size:12.5px;margin:-4px 0 0}
   .au button{min-height:44px;border-radius:9px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);font-weight:700;font-size:18px;touch-action:manipulation}
   .au button:disabled{opacity:.4}
-  .au input[type=range]{width:100%;height:44px;accent-color:var(--comm);touch-action:none}
-  .au input[type=range]:disabled{opacity:.35}
+  /* Neil, 15 Oct: no +/- buttons (the slider gets their width), a square handle the size they
+     were, and the rows spread over the screen so a finger doesn't land on the wrong one. --f is
+     the level's fraction of its range; the fill stops under the handle's centre. */
+  .au input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:48px;margin:0;background:transparent;touch-action:none;cursor:pointer}
+  .au input[type=range]::-webkit-slider-runnable-track{height:10px;border-radius:5px;
+    background:linear-gradient(to right,var(--comm) calc(22px + (100% - 44px) * var(--f,.5)),var(--line) 0)}
+  .au input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:44px;height:44px;margin-top:-17px;border-radius:9px;
+    background:var(--comm);border:2px solid var(--panel);box-shadow:0 1px 5px rgba(0,0,0,.45)}
+  .au input[type=range]::-moz-range-track{height:10px;border-radius:5px;background:var(--line)}
+  .au input[type=range]::-moz-range-progress{height:10px;border-radius:5px;background:var(--comm)}
+  .au input[type=range]::-moz-range-thumb{width:40px;height:40px;border-radius:9px;background:var(--comm);border:2px solid var(--panel)}
+  .au input[type=range]:disabled{opacity:.35;cursor:default}
   .au .au-pick{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 0}
   .au .au-pick button{min-width:130px;font-size:16px;padding:6px 18px}
   .au .au-note{color:var(--ink-faint);font-size:12.5px;margin:6px 0 0}
-  @media (max-width:560px){ .au .au-row{grid-template-columns:44px 1fr 44px 70px} .au .au-k{grid-column:1 / -1} }
+  @media (max-width:560px){ .au .au-row{grid-template-columns:1fr 70px} .au .au-k{grid-column:1 / -1} }
 `;
 document.head.appendChild(css);
 
@@ -6554,13 +6564,13 @@ function status(){
 }
 
 /* With FS02 gone, the last values stay on view but greyed: nothing a finger does here can land. */
+const frac = (c, v) => Math.max(0, Math.min(1, (v - c.min) / (c.max - c.min))).toFixed(4);
 function row(c, live){
   const off = c.db == null || !live, v = c.db == null ? 0 : c.db, k = keyOf(c);
   return '<div class="au-row" data-k="' + esc(k) + '">' +
     '<span class="au-k">' + esc(c.label) + '</span>' +
-    '<button type="button" data-step="-1" aria-label="' + esc(c.label) + ' down 1 dB"' + (off ? ' disabled' : '') + '>−</button>' +
-    '<input type="range" min="' + c.min + '" max="' + c.max + '" step="0.5" value="' + v + '" aria-label="' + esc(c.label) + '"' + (off ? ' disabled' : '') + '>' +
-    '<button type="button" data-step="1" aria-label="' + esc(c.label) + ' up 1 dB"' + (off ? ' disabled' : '') + '>+</button>' +
+    '<input type="range" min="' + c.min + '" max="' + c.max + '" step="0.5" value="' + v + '" aria-label="' + esc(c.label) + '"' +
+      ' style="--f:' + frac(c, v) + '"' + (off ? ' disabled' : '') + '>' +
     '<span class="au-v">' + (c.db == null ? '—' : fmt(v)) + '</span>' +
     (c.why ? '<p class="au-why">' + esc(c.why) + '</p>' : '') + '</div>';
 }
@@ -6574,17 +6584,37 @@ function paint(){
     (!sd ? '<div class="au-card"><h3>Which seat is this tablet in?</h3>' +
       '<p class="au-note">The sliders move that seat’s headset. Set once per tablet; it stays when PF and PM swap.</p>' +
       '<div class="au-pick"><button type="button" data-side="L">LEFT seat</button><button type="button" data-side="R">RIGHT seat</button></div></div>' : '') +
-    (mine.length ? '<div class="au-card"><h3>' + NAME[sd] + ' seat · this tablet</h3>' + mine.map(r).join('') + '</div>' : '') +
-    (both.length ? '<div class="au-card"><h3>Both seats</h3>' + both.map(r).join('') + '</div>' : '') +
+    (mine.length ? '<div class="au-card" style="flex:' + mine.length + ' 1 auto"><h3>' + NAME[sd] + ' seat · this tablet</h3>' + mine.map(r).join('') + '</div>' : '') +
+    (both.length ? '<div class="au-card" style="flex:' + both.length + ' 1 auto"><h3>Both seats</h3>' + both.map(r).join('') + '</div>' : '') +
     (board && sd ? '<p class="au-note">Seat set in ⚙ This tablet on Setup. My voice is the headset’s own sidetone: no delay, unlike a Voicemeeter route.</p>' : '') +
     '</div>';
+  fill();
 }
+/* The cards take the height left on screen, each in proportion to its rows. */
+function fill(){
+  const au = pg.querySelector('.au'); if (!au || !shown()) return;
+  au.style.minHeight = Math.max(0, innerHeight - (au.getBoundingClientRect().top + scrollY) - 12) + 'px';
+}
+addEventListener('resize', fill);
 
 function ctlOf(k){ return board && board.controls ? board.controls.find(c => keyOf(c) === k) : null; }
 
+/* A level being changed keeps the value on screen: one still to send, or in flight, or acked
+   less than HOLD ago. Each reply carries every level as FS02 read it, so without this an
+   answer to an earlier send redrew the slider back (Neil, 15 Oct: drag -6 to -24 showed -6,
+   -24, -6.5, -24), and + / − then stepped from that old value, losing presses. Every board
+   that arrives goes through adopt(): this tablet's own replies, and the other tablet's,
+   shared through the room (its 10 s poll, read at FS02 mid-drag, drew -13 after a release
+   at -3.5). */
+const HOLD = 2000;
+const held = k => (k in pend) || !!timer[k] || (hold[k] || 0) > Date.now();
+function adopt(b){
+  if (Array.isArray(b.controls)) b.controls.forEach(c => { const k = keyOf(c), m = ctlOf(k); if (m && m.db != null && held(k)) c.db = m.db; });
+  board = b;
+}
 function took(r){
   const b = r && r.ok ? clean(r.result) : null;
-  if (b) { board = b; err = ''; }
+  if (b) { adopt(b); err = ''; }
   else if (r && !r.ok) err = 'Not set: ' + (r.error || 'refused');
   paint();
 }
@@ -6607,6 +6637,7 @@ function send(k, db){
     if (!c) { timer[k] = 0; return; }
     const a = c.seat ? {id: c.id, seat: c.seat, db: v} : {id: c.id, db: v};
     const r = await S.call('audio-set', a);
+    hold[k] = Date.now() + HOLD;
     if (!drag) took(r); else if (r && !r.ok) err = 'Not set: ' + (r.error || 'refused');
     timer[k] = setTimeout(flush, 150);
   };
@@ -6616,7 +6647,7 @@ function send(k, db){
 function setVal(rowEl, db){
   const c = ctlOf(rowEl.dataset.k); if (!c) return;
   db = Math.max(c.min, Math.min(c.max, Math.round(db * 2) / 2));
-  const inp = rowEl.querySelector('input'); inp.value = db;
+  const inp = rowEl.querySelector('input'); inp.value = db; inp.style.setProperty('--f', frac(c, db));
   rowEl.querySelector('.au-v').textContent = fmt(db);
   c.db = db;
   send(rowEl.dataset.k, db);
@@ -6634,8 +6665,6 @@ pg.addEventListener('pointerup', () => { if (drag) { drag = ''; setTimeout(paint
 pg.addEventListener('click', e => {
   const sd = e.target.closest('[data-side]');
   if (sd) { setSide(sd.dataset.side); return; }
-  const st = e.target.closest('[data-step]');
-  if (st) { const r = st.closest('.au-row'), c = ctlOf(r.dataset.k); if (c && c.db != null) setVal(r, c.db + (+st.dataset.step)); }
 });
 
 function setSide(v){ put(SIDEK, v === 'L' || v === 'R' ? v : ''); paintSide(); paint(); }
@@ -6662,7 +6691,7 @@ function poll(){
 window.addEventListener('efb-view', e => { if (e.detail === 'AUDIO') poll(); else { clearInterval(pollT); pollT = 0; } });
 document.addEventListener('visibilitychange', () => { if (shown()) poll(); });
 /* A level set from the other tablet: its board comes through the room. */
-window.addEventListener('efb-audio', e => { const v = e.detail || {}, b = v.ok ? clean(v.board) : null; if (b && !drag) { board = b; paint(); } });
+window.addEventListener('efb-audio', e => { const v = e.detail || {}, b = v.ok ? clean(v.board) : null; if (b && !drag) { adopt(b); paint(); } });
 
 window.efbAudio = { side, setSide, board: () => board, read };
 paintSide(); paint();
